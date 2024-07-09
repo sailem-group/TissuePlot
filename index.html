@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Sketch</title>
+
+  <link rel="stylesheet" type="text/css" href="style.css">
+
+  <script src="libraries/p5.min.js"></script>
+  <script src="libraries/p5.sound.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
+    integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
+    integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF"
+    crossorigin="anonymous"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+    crossorigin="anonymous"></script>
+
+  <style>
+    .main-container {
+      width: 100%;
+      display: flex;
+    }
+
+    .controls {
+      padding: 8px;
+      width: 20%;
+    }
+
+    #canvasContainer {
+      width: 80%;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <div class="main-container">
+
+      <div id="canvasContainer"></div>
+
+      <div class="controls">
+
+        <!--<div class="mb-3 d-flex justify-content-start align-items-center">
+      <label for="image" class="form-label w-25">Upload Image</label>
+      <input type="file" class="form-control w-50" id="image" accept="image/*" />
+      </div> -->
+
+        <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
+          <label for="positions" class="form-label">Upload Positions File</label>
+          <input type="file" class="form-control" id="positions" accept=".csv" />
+        </div>
+
+        <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
+          <label for="values" class="form-label">Upload Values File</label>
+          <input type="file" class="form-control" id="values" accept=".csv" />
+        </div>
+
+        <div class="mb-3 d-flex justify-content-start align-items-start">
+          <label for="showImage" class="form-label w-50">Show Image</label>
+          <input type="checkbox" class="form-check-input" id="showImage" />
+        </div>
+
+        <div class="mb-3 d-flex justify-content-start align-items-start">
+          <label for="showAllLevels" class="form-label w-50">Show all levels without zoom</label>
+          <input type="checkbox" class="form-check-input" id="showAllLevels" />
+        </div>
+
+        <button onclick="generateVis()" class="btn btn-primary btn-lg">
+          Generate
+        </button>
+
+        <button onclick="showDemo()" class="btn btn-primary btn-lg">
+          Demo
+        </button>
+      </div>
+
+
+    </div>
+  </main>
+  <script src="sketch.js"></script>
+  <script src="processing.js"></script>
+</body>
+
+</html>
