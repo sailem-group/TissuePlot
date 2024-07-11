@@ -119,6 +119,8 @@ class Spot {
         this.barcode = barcode;
         this.x = parseFloat(x);
         this.y = parseFloat(y);
+        this.scaledX = parseFloat(x); // set at drawing, helpful for tooltips
+        this.scaledY = parseFloat(y); // set at drawing, helpful for tooltips
         this.radius = parseFloat(radius);
         this.x1 = { value: parseFloat(x1), color: "#FF0000" }; //red
         this.x2 = { value: parseFloat(x2), color: "#FFA500" }; //orange
