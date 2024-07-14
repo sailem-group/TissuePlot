@@ -40,7 +40,7 @@ function showImageChanged(e) {
     window.showImage = e.target.checked;
 }
 
-function showAllLevelsChanged(e){
+function showAllLevelsChanged(e) {
     console.log(e.target.checked)
     window.showAllLevels = e.target.checked;
 }
@@ -107,7 +107,7 @@ function generateVis() {
     for (let i = 1; i < positionsData.length - 1; i++) {
         let spotCoords = positionsData[i];
         let spotValues = valuesData[i];
-        dataSpots.push(new Spot(spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues[1], spotValues[2], spotValues[3], spotValues[4], spotValues[5], spotValues[6], spotValues[7], spotValues[8], spotValues[9]))
+        dataSpots.push(new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues[1], spotValues[2], spotValues[3], spotValues[4], spotValues[5], spotValues[6], spotValues[7], spotValues[8], spotValues[9]))
     }
     console.log(dataSpots)
     window.drawAtWill = true
@@ -115,12 +115,14 @@ function generateVis() {
 }
 
 class Spot {
-    constructor(barcode, x, y, radius, x1, x2, x3, x4, x5, x6, x7, x8, x9) {
+    constructor(index, barcode, x, y, radius, x1, x2, x3, x4, x5, x6, x7, x8, x9) {
         this.barcode = barcode;
+        this.index = index;
         this.x = parseFloat(x);
         this.y = parseFloat(y);
         this.scaledX = parseFloat(x); // set at drawing, helpful for tooltips
         this.scaledY = parseFloat(y); // set at drawing, helpful for tooltips
+        this.scaledRadius = parseFloat(radius);
         this.radius = parseFloat(radius);
         this.x1 = { value: parseFloat(x1), color: "#FF0000" }; //red
         this.x2 = { value: parseFloat(x2), color: "#FFA500" }; //orange
@@ -132,4 +134,19 @@ class Spot {
         this.x8 = { value: parseFloat(x8), color: "#800080" }; //purple
         this.x9 = { value: parseFloat(x9), color: "#FFC0CB" }; //is that pink?
     }
+
+    getSummary() {
+        return `x1: ${this.x1.value} <br/> 
+        x2: ${this.x2.value} <br/> 
+        x3: ${this.x3.value} <br/> 
+        x4: ${this.x4.value} <br/> 
+        x5: ${this.x5.value} <br/> 
+        x6: ${this.x6.value} <br/> 
+        x7: ${this.x7.value} <br/> 
+        x8: ${this.x8.value} <br/> 
+        x9: ${this.x9.value} <br/> 
+        `
+    }
+
+
 }

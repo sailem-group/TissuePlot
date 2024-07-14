@@ -3,6 +3,8 @@ let canvasHeight = 600;
 let spots = [];
 window.drawAtWill = false;
 let img;
+window.hoveredHex = null;
+let infoBox = document.getElementById("infoBox")
 
 
 // Zoom and pan variables
@@ -25,6 +27,15 @@ function draw() {
   translate(panX, panY);
   scale(zoomFactor);
   drawHexagonGrid(spots);
+  let adjustedMouseX = (mouseX - panX) / zoomFactor;
+  let adjustedMouseY = (mouseY - panY) / zoomFactor;
+  hoveredHex = getHoveredHexagon(adjustedMouseX, adjustedMouseY);
+  console.log(hoveredHex)
+  if (hoveredHex) {
+    infoBox.innerHTML = `
+            <h6 class="card-title">${hoveredHex.index} ${hoveredHex.barcode}</h6>
+            <p class="card-text">${hoveredHex.getSummary()}</p>`
+  }
 }
 
 function setupCanvas(width, height, newSpots) {
@@ -73,26 +84,23 @@ function drawHexagonGrid(spots) {
     let scaledY = (spot.y - minY) * scaleFactor + offsetY;
     spot.scaledX = scaledX
     spot.scaledY = scaledY
+    spot.scaledRadius = (spot.radius + 40) * scaleFactor
     const spotMembership = [spot.x1, spot.x2, spot.x3, spot.x4, spot.x5, spot.x6, spot.x7, spot.x8, spot.x9]
     let sortedSpotMembership = spotMembership.sort((a, b) => b.value - a.value);
 
-    drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, sortedSpotMembership[0].color, true);
+    drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, sortedSpotMembership[0].color);
     if (zoomFactor > 4.2 || window.showAllLevels) {
       drawHexagon(scaledX, scaledY, (spot.radius + 30) * scaleFactor, sortedSpotMembership[1].color);
       drawHexagon(scaledX, scaledY, (spot.radius + 18) * scaleFactor, sortedSpotMembership[2].color);
     }
+    /*if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
+    }*/
   });
 
-  if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
-    spots.forEach(spot => {
-      if (isMouseOverHexagon(spot.scaledX, spot.scaledY, spot.radius)) {
-        displayTooltip(mouseX, mouseY, spot);
-      }
-    })
-  }
+
 }
 
-function drawHexagon(x, y, radius, color, withOverlay = false) {
+function drawHexagon(x, y, radius, color) {
   noFill();
   stroke(color);
   strokeWeight(0.7);
@@ -103,14 +111,6 @@ function drawHexagon(x, y, radius, color, withOverlay = false) {
     let vx = x + cos(angle) * radius;
     let vy = y + sin(angle) * radius;
     vertex(vx, vy);
-
-    if (withOverlay) {
-      push()
-      fill(142)
-      stroke(142);
-      ellipse(vx, vy, radius * 0.12, radius * 0.12);
-      pop()
-    }
   }
   endShape(CLOSE);
 
@@ -148,14 +148,21 @@ function mouseDragged(event) {
 }
 
 function isMouseOverHexagon(x, y, radius) {
+  let d = dist(mouseX, mouseY, x, y);
+  return d < radius;
+}
+
+
+
+function pointInHexagon(px, py, hx, hy, size) {
   for (let i = 0; i < 6; i++) {
-    let angle = TWO_PI / 6 * i;
-    let x_i = x + cos(angle) * radius;
-    let y_i = y + sin(angle) * radius;
-    let nextAngle = TWO_PI / 6 * (i + 1);
-    let x_next = x + cos(nextAngle) * radius;
-    let y_next = y + sin(nextAngle) * radius;
-    if (pointInTriangle(mouseX, mouseY, x, y, x_i, y_i, x_next, y_next)) {
+    let angle1 = PI / 3 * i;
+    let angle2 = PI / 3 * (i + 1);
+    let x1 = hx + cos(angle1) * size;
+    let y1 = hy + sin(angle1) * size;
+    let x2 = hx + cos(angle2) * size;
+    let y2 = hy + sin(angle2) * size;
+    if (pointInTriangle(px, py, hx, hy, x1, y1, x2, y2)) {
       return true;
     }
   }
@@ -163,17 +170,32 @@ function isMouseOverHexagon(x, y, radius) {
 }
 
 function pointInTriangle(px, py, x1, y1, x2, y2, x3, y3) {
-  let d1 = sign(px, py, x1, y1, x2, y2);
-  let d2 = sign(px, py, x2, y2, x3, y3);
-  let d3 = sign(px, py, x3, y3, x1, y1);
-  let hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0);
-  let hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0);
-  return !(hasNeg && hasPos);
+  let d1, d2, d3;
+  let has_neg, has_pos;
+
+  d1 = sign(px, py, x1, y1, x2, y2);
+  d2 = sign(px, py, x2, y2, x3, y3);
+  d3 = sign(px, py, x3, y3, x1, y1);
+
+  has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+  has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+
+  return !(has_neg && has_pos);
 }
 
 function sign(px, py, x1, y1, x2, y2) {
   return (px - x2) * (y1 - y2) - (x1 - x2) * (py - y2);
 }
+
+function getHoveredHexagon(mouseX, mouseY) {
+  for (let hex of spots) {
+    if (pointInHexagon(mouseX, mouseY, hex.scaledX, hex.scaledY, hex.scaledRadius)) {
+      return hex;
+    }
+  }
+  return null;
+}
+
 
 function displayTooltip(x, y, spot) {
   const tooltipText = `
@@ -186,7 +208,7 @@ function displayTooltip(x, y, spot) {
   x7: ${parseFloat(spot.x7.value).toFixed(3)} \n
   x8: ${parseFloat(spot.x8.value).toFixed(3)} \n
   x9: ${parseFloat(spot.x9.value).toFixed(3)}`
-  let tooltipWidth = textWidth(tooltipText) * 2;
+  let tooltipWidth = textWidth(tooltipText) * 1.4;
   let tooltipHeight = 280;
 
   // Adjust tooltip position if it goes out of canvas
@@ -202,7 +224,7 @@ function displayTooltip(x, y, spot) {
   fill(255);
   stroke(255);
   textAlign(CENTER, CENTER);
-  text(tooltipText, x + tooltipWidth / 2, y + tooltipHeight / 2);
+  text(tooltipText, x + tooltipWidth / 2, y + tooltipHeight / 2.2);
 }
 
 
