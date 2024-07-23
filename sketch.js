@@ -30,7 +30,7 @@ function draw() {
   let adjustedMouseX = (mouseX - panX) / zoomFactor;
   let adjustedMouseY = (mouseY - panY) / zoomFactor;
   hoveredHex = getHoveredHexagon(adjustedMouseX, adjustedMouseY);
-  console.log(hoveredHex)
+  // console.log(hoveredHex)
   if (hoveredHex) {
     infoBox.innerHTML = `
             <h6 class="card-title">${hoveredHex.index} ${hoveredHex.barcode}</h6>
@@ -85,7 +85,7 @@ function drawHexagonGrid(spots) {
     spot.scaledX = scaledX
     spot.scaledY = scaledY
     spot.scaledRadius = (spot.radius + 40) * scaleFactor
-    const spotMembership = [spot.x1, spot.x2, spot.x3, spot.x4, spot.x5, spot.x6, spot.x7, spot.x8, spot.x9]
+    const spotMembership = [...spot.values]
     let sortedSpotMembership = spotMembership.sort((a, b) => b.value - a.value);
 
     drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, sortedSpotMembership[0].color);

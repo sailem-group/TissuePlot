@@ -7,6 +7,8 @@ document.getElementById("showAllLevels").addEventListener("change", showAllLevel
 let positionsData = []
 let valuesData = []
 let dataSpots = []
+let dataHeaders = []
+let dataColors = ["#FF0000", "#FFA500", "#90EE90", "#00FF00", "#32CD32", "#87CEEB", "#0000FF", "#800080", "#FFC0CB"]
 let imageWidth;
 let imageHeight;
 window.showImage = false;
@@ -104,49 +106,51 @@ function valuesUploaded(e) {
 }
 
 function generateVis() {
+    dataHeaders = valuesData[0].slice(1)
+    console.log(dataHeaders)
+    while (dataHeaders.length > dataColors.length) {
+        //we have the basic data colors in the array on top, when they are not enough we generate random colors and add them to the array to be used
+        dataColors.push(generateRandomColor());
+    }
     for (let i = 1; i < positionsData.length - 1; i++) {
         let spotCoords = positionsData[i];
-        let spotValues = valuesData[i];
-        dataSpots.push(new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues[1], spotValues[2], spotValues[3], spotValues[4], spotValues[5], spotValues[6], spotValues[7], spotValues[8], spotValues[9]))
+        let spotValues = valuesData[i].slice(1).map((value, i) => {
+            return {
+                value: value,
+                color: dataColors[i]
+            }
+        })
+        dataSpots.push(new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues))
     }
     console.log(dataSpots)
     window.drawAtWill = true
     setupCanvas(1000, 1000, dataSpots)
 }
 
+function generateRandomColor() {
+    return `#${Math.floor(Math.random() * 16777215).toString(16)}`
+}
+
+
 class Spot {
-    constructor(index, barcode, x, y, radius, x1, x2, x3, x4, x5, x6, x7, x8, x9) {
+    constructor(index, barcode, x, y, radius, values) {
         this.barcode = barcode;
         this.index = index;
         this.x = parseFloat(x);
         this.y = parseFloat(y);
+        this.radius = parseFloat(radius);
         this.scaledX = parseFloat(x); // set at drawing, helpful for tooltips
         this.scaledY = parseFloat(y); // set at drawing, helpful for tooltips
-        this.scaledRadius = parseFloat(radius);
-        this.radius = parseFloat(radius);
-        this.x1 = { value: parseFloat(x1), color: "#FF0000" }; //red
-        this.x2 = { value: parseFloat(x2), color: "#FFA500" }; //orange
-        this.x3 = { value: parseFloat(x3), color: "#90EE90" }; //light green
-        this.x4 = { value: parseFloat(x4), color: "#00FF00" }; //green
-        this.x5 = { value: parseFloat(x5), color: "#32CD32" }; //lime green..i guess
-        this.x6 = { value: parseFloat(x6), color: "#87CEEB" }; //sky blue
-        this.x7 = { value: parseFloat(x7), color: "#0000FF" }; //blue
-        this.x8 = { value: parseFloat(x8), color: "#800080" }; //purple
-        this.x9 = { value: parseFloat(x9), color: "#FFC0CB" }; //is that pink?
+        this.scaledRadius = parseFloat(radius); // set at drawing, helpful for tooltips
+        this.values = values;
     }
 
     getSummary() {
-        return `x1: ${this.x1.value} <br/> 
-        x2: ${this.x2.value} <br/> 
-        x3: ${this.x3.value} <br/> 
-        x4: ${this.x4.value} <br/> 
-        x5: ${this.x5.value} <br/> 
-        x6: ${this.x6.value} <br/> 
-        x7: ${this.x7.value} <br/> 
-        x8: ${this.x8.value} <br/> 
-        x9: ${this.x9.value} <br/> 
-        `
+        let summary = ``;
+        this.values.forEach((value, i) => {
+            summary += `${dataHeaders[i]}: ${value.value} <br/>`
+        })
+        return summary;
     }
-
-
 }
+
