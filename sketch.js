@@ -36,7 +36,7 @@ let panY = 0;
 
 
 function setup() {
-  //img = loadImage("./image.png")
+  img = loadImage("./image.png")
   let myCanvas = createCanvas(canvasWidth, canvasHeight);
   myCanvas.parent("canvasContainer")
 
@@ -165,7 +165,7 @@ function drawHexagonGrid(spots) {
           drawMinus(scaledX, scaledY, shapeRadius)
           break;
         case "10":
-          drawVerticalLine(scaledX, scaledY, shapeRadius)
+          drawSlash(scaledX, scaledY, shapeRadius)
           break;
       }
     }
@@ -230,9 +230,10 @@ function drawMinus(x, y, r) {
   line(x - r, y, x + r, y);
 }
 
-function drawVerticalLine(x, y, r) {
-  line(x, y - r, x, y + r);
+function drawSlash(x, y, r) {
+  line(x - r, y + r, x + r, y - r);
 }
+
 
 
 function drawHexagon(x, y, radius, color) {

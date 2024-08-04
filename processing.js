@@ -107,7 +107,7 @@ function generateVis() {
     let sliceFactor = 0
 
     //basically to exclude the cluster values from the direct visualization
-    if (dataHeaders[dataHeaders.length - 1].includes("Cluster")) {
+    if (dataHeaders.at(-1).includes("Cluster")) {
         sliceFactor = 1
     }
     while (dataHeaders.length - sliceFactor > dataColors.length) {
@@ -117,7 +117,7 @@ function generateVis() {
 
     for (let i = 1; i < positionsData.length - 1; i++) {
         let spotCoords = positionsData[i];
-        let spotValues = valuesData[i].slice(1, dataHeaders.length - sliceFactor).map((value, i) => {
+        let spotValues = valuesData[i].slice(1, valuesData[i].length - sliceFactor).map((value, i) => {
             return {
                 value: value,
                 color: dataColors[i]
@@ -139,6 +139,18 @@ function generateRandomColor() {
     return `#${Math.floor(Math.random() * 16777215).toString(16)}`
 }
 
+const shapesToClusterMap = {
+    "1": "triangle",
+    "2": "x",
+    "3": "circle",
+    "4": "star",
+    "5": "hexagon",
+    "6": "square",
+    "7": "diamond",
+    "8": "plus",
+    "9": "dash",
+    "10": "slash-lg",
+}
 
 class Spot {
     constructor(index, barcode, x, y, radius, values, cluster) {
@@ -159,6 +171,9 @@ class Spot {
         this.values.forEach((value, i) => {
             summary += `<span class="legendColor" style="background-color:${dataColors[i]}"></span> ${dataHeaders[i]}: ${value.value} <br/>`
         })
+        if (this.cluster) {
+            summary += `<i style="font-size: 16px" class="bi bi-${shapesToClusterMap[this.cluster]}"></i> Cluster: ${this.cluster} <br/>`
+        }
         return summary;
     }
 }
