@@ -4,18 +4,42 @@ let spots = [];
 window.drawAtWill = false;
 let img;
 window.hoveredHex = null;
+let mouseOverCanvas = false;
 let infoBox = document.getElementById("infoBox")
 
+document.getElementById("image").addEventListener("change", imageUploaded)
+
+
+function imageUploaded(event) {
+  const file = event.target.files[0];
+
+  if (file && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+      // Create an image element using p5.js
+      img = createImg(e.target.result, '');
+      img.hide();
+    };
+
+    reader.readAsDataURL(file);
+  } else {
+    console.log('Not an image file!');
+  }
+
+}
 
 // Zoom and pan variables
 let zoomFactor = 1;
 let panX = 0;
 let panY = 0;
 
+
 function setup() {
-  img = loadImage("./image.png")
+  //img = loadImage("./image.png")
   let myCanvas = createCanvas(canvasWidth, canvasHeight);
   myCanvas.parent("canvasContainer")
+
   setupCanvas(canvasWidth, canvasHeight, []);
 }
 
@@ -29,12 +53,14 @@ function draw() {
   drawHexagonGrid(spots);
   let adjustedMouseX = (mouseX - panX) / zoomFactor;
   let adjustedMouseY = (mouseY - panY) / zoomFactor;
-  hoveredHex = getHoveredHexagon(adjustedMouseX, adjustedMouseY);
+  if (mouseOverCanvas) {
+    hoveredHex = getHoveredHexagon(adjustedMouseX, adjustedMouseY);
+  }
   // console.log(hoveredHex)
   if (hoveredHex) {
     infoBox.innerHTML = `
-            <h6 class="card-title">${hoveredHex.index} ${hoveredHex.barcode}</h6>
-            <p class="card-text">${hoveredHex.getSummary()}</p>`
+            <h6 class="card-title">Spot ${hoveredHex.index} ${hoveredHex.barcode}</h6>
+            <p class="card-text h6"><small> ${hoveredHex.getSummary()}</small></p>`
   }
 }
 
@@ -48,6 +74,23 @@ function setupCanvas(width, height, newSpots) {
   zoomFactor = 1;
   panX = 0;
   panY = 0;
+
+
+  document.getElementById("canvasContainer").querySelector("canvas").addEventListener("mouseleave", () => {
+    hoveredHex = null
+    mouseOverCanvas = false
+  })
+
+  document.getElementById("canvasContainer").querySelector("canvas").addEventListener("mouseout",
+    () => {
+      hoveredHex = null
+      mouseOverCanvas = false
+    }
+  )
+
+  document.getElementById("canvasContainer").querySelector("canvas").addEventListener("mouseover", (e) => {
+    mouseOverCanvas = true
+  })
 
   // Draw the hexagon grid
   drawHexagonGrid(spots);
@@ -73,11 +116,9 @@ function drawHexagonGrid(spots) {
   let imgWidth = dataWidth * scaleFactor;
   let imgHeight = dataHeight * scaleFactor;
 
-  if (window.showImage) {
+  if (img && window.showImage) {
     image(img, imgX, imgY, imgWidth, imgHeight);
   }
-
-
 
   spots.forEach(spot => {
     let scaledX = (spot.x - minX) * scaleFactor + offsetX;
@@ -93,12 +134,106 @@ function drawHexagonGrid(spots) {
       drawHexagon(scaledX, scaledY, (spot.radius + 30) * scaleFactor, sortedSpotMembership[1].color);
       drawHexagon(scaledX, scaledY, (spot.radius + 18) * scaleFactor, sortedSpotMembership[2].color);
     }
-    /*if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
-    }*/
+    if (window.showCluster) {
+      const shapeRadius = (spot.radius - 30) * scaleFactor;
+      switch (spot.cluster) {
+        case "1":
+          drawTriangle(scaledX, scaledY, shapeRadius)
+          break;
+        case "2":
+          drawX(scaledX, scaledY, shapeRadius)
+          break;
+        case "3":
+          drawCircle(scaledX, scaledY, shapeRadius)
+          break;
+        case "4":
+          drawStar(scaledX, scaledY, shapeRadius)
+          break;
+        case "5":
+          drawHexagon(scaledX, scaledY, shapeRadius, sortedSpotMembership[0].color)
+          break;
+        case "6":
+          drawSquare(scaledX, scaledY, shapeRadius)
+          break;
+        case "7":
+          drawDiamond(scaledX, scaledY, shapeRadius)
+          break;
+        case "8":
+          drawPlus(scaledX, scaledY, shapeRadius)
+          break;
+        case "9":
+          drawMinus(scaledX, scaledY, shapeRadius)
+          break;
+        case "10":
+          drawVerticalLine(scaledX, scaledY, shapeRadius)
+          break;
+      }
+    }
   });
 
 
 }
+
+function drawTriangle(x, y, r) {
+  let h = r * sqrt(3) / 2;
+  beginShape();
+  vertex(x, y - r);
+  vertex(x - h, y + r / 2);
+  vertex(x + h, y + r / 2);
+  endShape(CLOSE);
+}
+
+function drawX(x, y, r) {
+  line(x - r, y - r, x + r, y + r);
+  line(x - r, y + r, x + r, y - r);
+}
+
+function drawCircle(x, y, r) {
+  ellipse(x, y, r * 2);
+}
+
+function drawStar(x, y, r) {
+  let angle = TWO_PI / 5;
+  let halfAngle = angle / 2.0;
+  beginShape();
+  for (let a = 0; a < TWO_PI; a += angle) {
+    let sx = x + cos(a) * r;
+    let sy = y + sin(a) * r;
+    vertex(sx, sy);
+    sx = x + cos(a + halfAngle) * r / 2;
+    sy = y + sin(a + halfAngle) * r / 2;
+    vertex(sx, sy);
+  }
+  endShape(CLOSE);
+}
+
+function drawSquare(x, y, r) {
+  rectMode(CENTER);
+  rect(x, y, r * 2, r * 2);
+}
+
+function drawDiamond(x, y, r) {
+  beginShape();
+  vertex(x, y - r);
+  vertex(x + r, y);
+  vertex(x, y + r);
+  vertex(x - r, y);
+  endShape(CLOSE);
+}
+
+function drawPlus(x, y, r) {
+  line(x - r, y, x + r, y);
+  line(x, y - r, x, y + r);
+}
+
+function drawMinus(x, y, r) {
+  line(x - r, y, x + r, y);
+}
+
+function drawVerticalLine(x, y, r) {
+  line(x, y - r, x, y + r);
+}
+
 
 function drawHexagon(x, y, radius, color) {
   noFill();
@@ -194,37 +329,6 @@ function getHoveredHexagon(mouseX, mouseY) {
     }
   }
   return null;
-}
-
-
-function displayTooltip(x, y, spot) {
-  const tooltipText = `
-  x1: ${parseFloat(spot.x1.value).toFixed(3)} \n
-  x2: ${parseFloat(spot.x2.value).toFixed(3)} \n
-  x3: ${parseFloat(spot.x3.value).toFixed(3)} \n
-  x4: ${parseFloat(spot.x4.value).toFixed(3)} \n
-  x5: ${parseFloat(spot.x5.value).toFixed(3)} \n
-  x6: ${parseFloat(spot.x6.value).toFixed(3)} \n
-  x7: ${parseFloat(spot.x7.value).toFixed(3)} \n
-  x8: ${parseFloat(spot.x8.value).toFixed(3)} \n
-  x9: ${parseFloat(spot.x9.value).toFixed(3)}`
-  let tooltipWidth = textWidth(tooltipText) * 1.4;
-  let tooltipHeight = 280;
-
-  // Adjust tooltip position if it goes out of canvas
-  if (x + tooltipWidth > width) {
-    x -= tooltipWidth;
-  }
-  if (y + tooltipHeight > height) {
-    y -= tooltipHeight;
-  }
-
-  fill(0);
-  rect(x, y, tooltipWidth, tooltipHeight);
-  fill(255);
-  stroke(255);
-  textAlign(CENTER, CENTER);
-  text(tooltipText, x + tooltipWidth / 2, y + tooltipHeight / 2.2);
 }
 
 

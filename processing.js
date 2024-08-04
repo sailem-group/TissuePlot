@@ -1,8 +1,9 @@
-//document.getElementById("image").addEventListener("change", imageUploaded)
 document.getElementById("positions").addEventListener("change", positinosUploaded)
 document.getElementById("values").addEventListener("change", valuesUploaded)
 document.getElementById("showImage").addEventListener("change", showImageChanged)
 document.getElementById("showAllLevels").addEventListener("change", showAllLevelsChanged)
+document.getElementById("showCluster").addEventListener("change", showClusterLevelsChanged)
+
 
 let positionsData = []
 let valuesData = []
@@ -13,6 +14,7 @@ let imageWidth;
 let imageHeight;
 window.showImage = false;
 window.showAllLevels = false;
+window.showCluster = false;
 
 async function showDemo() {
 
@@ -21,7 +23,7 @@ async function showDemo() {
     console.log(valuesRes);
     const valuesText = valuesRes;
     const valuesRows = valuesText.split('\n');
-    valuesData = valuesRows.map(row => row.split(','));
+    valuesData = valuesRows.map(row => row.trim().split(','));
 
 
     let positionsCsv = await fetch('./SpotPositions.csv')
@@ -47,23 +49,16 @@ function showAllLevelsChanged(e) {
     window.showAllLevels = e.target.checked;
 }
 
-function imageUploaded(e) {
-    console.log(e)
-    const file = e.target.files[0];
-    if (!file) {
-        return;
+function showClusterLevelsChanged(e) {
+    console.log(e.target.checked)
+    const showAllLevelsCheckbox = document.getElementById("showAllLevels")
+    if (e.target.checked) {
+        showAllLevelsCheckbox.checked = false;
+        showAllLevelsCheckbox.disabled = true;
+    } else {
+        showAllLevelsCheckbox.disabled = false;
     }
-    const image = new Image();
-    image.onload = function () {
-        imageWidth = this.width
-        imageHeight = this.height
-    }
-    image.src = URL.createObjectURL(file);
-    /*let reader = new FileReader();
-    reader.onload = function(e) {
-      window.uploadedImage = e.target.result;
-    };
-    reader.readAsDataURL(file);*/
+    window.showCluster = e.target.checked;
 
 }
 
@@ -97,7 +92,7 @@ function valuesUploaded(e) {
         reader.onload = function (e) {
             const text = e.target.result;
             const rows = text.split('\n');
-            valuesData = rows.map(row => row.split(','));
+            valuesData = rows.map(row => row.trim().split(','));
             console.log(valuesData);
         };
 
@@ -108,19 +103,31 @@ function valuesUploaded(e) {
 function generateVis() {
     dataHeaders = valuesData[0].slice(1)
     console.log(dataHeaders)
-    while (dataHeaders.length > dataColors.length) {
+    let sliceFactor = 0
+
+    //basically to exclude the cluster values from the direct visualization
+    if (dataHeaders[dataHeaders.length - 1].includes("Cluster")) {
+        sliceFactor = 1
+    }
+    while (dataHeaders.length - sliceFactor > dataColors.length) {
         //we have the basic data colors in the array on top, when they are not enough we generate random colors and add them to the array to be used
         dataColors.push(generateRandomColor());
     }
+
     for (let i = 1; i < positionsData.length - 1; i++) {
         let spotCoords = positionsData[i];
-        let spotValues = valuesData[i].slice(1).map((value, i) => {
+        let spotValues = valuesData[i].slice(1, dataHeaders.length - sliceFactor).map((value, i) => {
             return {
                 value: value,
                 color: dataColors[i]
             }
         })
-        dataSpots.push(new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues))
+
+        const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues)
+        if (sliceFactor) {
+            newSpot.cluster = valuesData[i].at(-1)
+        }
+        dataSpots.push(newSpot)
     }
     console.log(dataSpots)
     window.drawAtWill = true
@@ -133,7 +140,7 @@ function generateRandomColor() {
 
 
 class Spot {
-    constructor(index, barcode, x, y, radius, values) {
+    constructor(index, barcode, x, y, radius, values, cluster) {
         this.barcode = barcode;
         this.index = index;
         this.x = parseFloat(x);
@@ -143,12 +150,13 @@ class Spot {
         this.scaledY = parseFloat(y); // set at drawing, helpful for tooltips
         this.scaledRadius = parseFloat(radius); // set at drawing, helpful for tooltips
         this.values = values;
+        this.cluster = cluster;
     }
 
     getSummary() {
         let summary = ``;
         this.values.forEach((value, i) => {
-            summary += `${dataHeaders[i]}: ${value.value} <br/>`
+            summary += `<span class="legendColor" style="background-color:${dataColors[i]}"></span> ${dataHeaders[i]}: ${value.value} <br/>`
         })
         return summary;
     }

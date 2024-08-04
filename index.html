@@ -38,6 +38,18 @@
     #canvasContainer {
       width: 80%;
     }
+
+    .legendColor {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border: 1px solid black;
+    }
+
+    .upload-file-hint {
+      color: gray;
+      font-style: italic;
+    }
   </style>
 </head>
 
@@ -49,18 +61,20 @@
 
       <div class="controls">
 
-        <!--<div class="mb-3 d-flex justify-content-start align-items-center">
-      <label for="image" class="form-label w-25">Upload Image</label>
-      <input type="file" class="form-control w-50" id="image" accept="image/*" />
-      </div> -->
+        <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
+          <label for="image" class="form-label">Upload Image</label>
+          <input type="file" class="form-control" id="image" accept="image/*" />
+        </div>
 
         <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
-          <label for="positions" class="form-label">Upload Positions File</label>
+          <label for="positions" class="form-label">Upload Positions File <sub class="upload-file-hint">(.CSV
+              only)</sub></label>
           <input type="file" class="form-control" id="positions" accept=".csv" />
         </div>
 
         <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
-          <label for="values" class="form-label">Upload Values File</label>
+          <label for="values" class="form-label">Upload Values File <sub class="upload-file-hint">(.CSV
+              only)</sub></label>
           <input type="file" class="form-control" id="values" accept=".csv" />
         </div>
 
@@ -74,6 +88,11 @@
           <input type="checkbox" class="form-check-input" id="showAllLevels" />
         </div>
 
+        <div class="mb-3 d-flex justify-content-start align-items-start">
+          <label for="showCluster" class="form-label w-50">Show Cluster</label>
+          <input type="checkbox" class="form-check-input" id="showCluster" />
+        </div>
+
         <button onclick="generateVis()" class="btn btn-primary btn-lg">
           Generate
         </button>
@@ -85,14 +104,14 @@
 
         <div class="card mt-3">
           <div class="card-header">
-            Hovered Cell
+            Spot Cell Composition
           </div>
           <div id="infoBox" class="card-body">
             <h5 class="card-title"></h5>
-            <p class="card-text"></p>
+            <p class="card-text h6"></p>
           </div>
         </div>
-        
+
       </div>
 
 
