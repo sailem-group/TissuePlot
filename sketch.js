@@ -130,7 +130,7 @@ function drawHexagonGrid(spots) {
     let sortedSpotMembership = spotMembership.sort((a, b) => b.value - a.value);
 
     drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, sortedSpotMembership[0].color);
-    if (zoomFactor > 4.2 || window.showAllLevels) {
+    if ((zoomFactor > 4.2 || window.showAllLevels) && !window.showCluster) {
       drawHexagon(scaledX, scaledY, (spot.radius + 30) * scaleFactor, sortedSpotMembership[1].color);
       drawHexagon(scaledX, scaledY, (spot.radius + 18) * scaleFactor, sortedSpotMembership[2].color);
     }

@@ -53,6 +53,7 @@ function showClusterLevelsChanged(e) {
     console.log(e.target.checked)
     const showAllLevelsCheckbox = document.getElementById("showAllLevels")
     if (e.target.checked) {
+        window.showAllLevels = false;
         showAllLevelsCheckbox.checked = false;
         showAllLevelsCheckbox.disabled = true;
     } else {
