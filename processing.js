@@ -12,6 +12,7 @@ let dataHeaders = []
 let dataColors = ["#FF0000", "#FFA500", "#90EE90", "#00FF00", "#32CD32", "#87CEEB", "#0000FF", "#800080", "#FFC0CB"]
 let imageWidth;
 let imageHeight;
+let hasClusters;
 window.showImage = false;
 window.showAllLevels = false;
 window.showCluster = false;
@@ -50,6 +51,10 @@ function showAllLevelsChanged(e) {
 }
 
 function showClusterLevelsChanged(e) {
+    if (!hasClusters) {
+        alert("No Clusters column exists in the dataset")
+        return;
+    }
     console.log(e.target.checked)
     const showAllLevelsCheckbox = document.getElementById("showAllLevels")
     if (e.target.checked) {
@@ -105,10 +110,12 @@ function generateVis() {
     dataHeaders = valuesData[0].slice(1)
     console.log(dataHeaders)
     let sliceFactor = 0
+    hasClusters = false
 
     //basically to exclude the cluster values from the direct visualization
     if (dataHeaders.at(-1).includes("Cluster")) {
         sliceFactor = 1
+        hasClusters = true
     }
     while (dataHeaders.length - sliceFactor > dataColors.length) {
         //we have the basic data colors in the array on top, when they are not enough we generate random colors and add them to the array to be used
@@ -125,7 +132,7 @@ function generateVis() {
         })
 
         const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues)
-        if (sliceFactor) {
+        if (hasClusters) {
             newSpot.cluster = valuesData[i].at(-1)
         }
         dataSpots.push(newSpot)
