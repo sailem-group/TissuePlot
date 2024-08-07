@@ -3,29 +3,53 @@ document.getElementById("values").addEventListener("change", valuesUploaded)
 document.getElementById("showImage").addEventListener("change", showImageChanged)
 document.getElementById("showAllLevels").addEventListener("change", showAllLevelsChanged)
 document.getElementById("showCluster").addEventListener("change", showClusterLevelsChanged)
+document.getElementById("genesUpload").addEventListener("change", genesUploaded)
+document.getElementById("genes").addEventListener("click", () => { modeChange("genes") })
+document.getElementById("cellComposition").addEventListener("click", () => { modeChange("cellComposition") })
+document.getElementById("selectGenes").addEventListener("change", geneSelected)
+
+
+function createGeneHeatmapGradient() {
+    var xmax = 120;
+    var ymax = 20;
+
+    var colorRectangle = document.createElement("canvas");
+    colorRectangle.width = xmax;
+    colorRectangle.height = ymax;
+    var ctx = colorRectangle.getContext("2d");
+
+    // create gradient
+    var grd = ctx.createLinearGradient(0, 0, xmax, 0);
+    var colorGrad = [...heatMapColors];
+    var numColor = colorGrad.length;
+    for (var j = 0; j < numColor; j++) {
+        grd.addColorStop(j / numColor, colorGrad[j]);
+        grd.addColorStop((j + 1) / numColor - 0.01, colorGrad[j]);
+    }
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, xmax, ymax);
+
+    document.getElementById("heatmapGrad").appendChild(colorRectangle) //i guess
+
+}
 
 
 let positionsData = []
 let valuesData = []
+let genesData = []
 let dataSpots = []
 let dataHeaders = []
 let dataColors = ["#FF0000", "#FFA500", "#90EE90", "#00FF00", "#32CD32", "#87CEEB", "#0000FF", "#800080", "#FFC0CB"]
-let imageWidth;
-let imageHeight;
 let hasClusters;
+window.sketchOptions = {
+    selectedGene: "",
+}
+window.mode = "cellComposition"
 window.showImage = false;
 window.showAllLevels = false;
 window.showCluster = false;
 
 async function showDemo() {
-
-    let valuesCsv = await fetch('./SpotClusterMembership.csv')
-    let valuesRes = await valuesCsv.text()
-    console.log(valuesRes);
-    const valuesText = valuesRes;
-    const valuesRows = valuesText.split('\n');
-    valuesData = valuesRows.map(row => row.trim().split(','));
-
 
     let positionsCsv = await fetch('./SpotPositions.csv')
     let positionsRes = await positionsCsv.text()
@@ -34,6 +58,21 @@ async function showDemo() {
     const positionsRows = positionsText.split('\n');
     positionsData = positionsRows.map(row => row.split(','));
 
+    if (mode == "cellComposition") {
+        let valuesCsv = await fetch('./SpotClusterMembership.csv')
+        let valuesRes = await valuesCsv.text()
+        console.log(valuesRes);
+        const valuesText = valuesRes;
+        const valuesRows = valuesText.split('\n');
+        valuesData = valuesRows.map(row => row.trim().split(','));
+    } else {
+        let genesCsv = await fetch('./AcutalTopExpressedGenes.csv')
+        let genesRes = await genesCsv.text()
+        console.log(genesRes);
+        const genesText = genesRes;
+        const genesRows = genesText.split('\n');
+        genesData = genesRows.map(row => row.trim().split(',').slice(0, 4));
+    }
 
     generateVis()
 }
@@ -106,37 +145,96 @@ function valuesUploaded(e) {
     }
 }
 
+function genesUploaded(e) {
+    console.log(e)
+    const file = e.target.files[0];
+
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            const text = e.target.result;
+            const rows = text.split('\n');
+            //taking the first 4 genes only
+            genesData = rows.map(row => row.trim().split(',').slice(0, 4));
+            console.log(genesData);
+        };
+
+        reader.readAsText(file);
+    }
+}
+
+
 function generateVis() {
-    dataHeaders = valuesData[0].slice(1)
-    console.log(dataHeaders)
-    let sliceFactor = 0
-    hasClusters = false
-
-    //basically to exclude the cluster values from the direct visualization
-    if (dataHeaders.at(-1).includes("Cluster")) {
-        sliceFactor = 1
-        hasClusters = true
+    if (!positionsData || positionsData.length == 0) {
+        alert("Position Data missing")
+        return;
     }
-    while (dataHeaders.length - sliceFactor > dataColors.length) {
-        //we have the basic data colors in the array on top, when they are not enough we generate random colors and add them to the array to be used
-        dataColors.push(generateRandomColor());
-    }
-
-    for (let i = 1; i < positionsData.length - 1; i++) {
-        let spotCoords = positionsData[i];
-        let spotValues = valuesData[i].slice(1, valuesData[i].length - sliceFactor).map((value, i) => {
-            return {
-                value: value,
-                color: dataColors[i]
-            }
-        })
-
-        const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues)
-        if (hasClusters) {
-            newSpot.cluster = valuesData[i].at(-1)
+    if (mode == "cellComposition") {
+        if (!valuesData || valuesData.length == 0) {
+            alert("Values Data missing")
+            return;
         }
-        dataSpots.push(newSpot)
+        dataHeaders = valuesData[0].slice(1)
+        console.log(dataHeaders)
+        let sliceFactor = 0
+        hasClusters = false
+
+        //basically to exclude the cluster values from the direct visualization
+        if (dataHeaders.at(-1).includes("Cluster")) {
+            sliceFactor = 1
+            hasClusters = true
+        }
+        while (dataHeaders.length - sliceFactor > dataColors.length) {
+            //we have the basic data colors in the array on top, when they are not enough we generate random colors and add them to the array to be used
+            dataColors.push(generateRandomColor());
+        }
+
+        for (let i = 1; i < positionsData.length - 1; i++) {
+            let spotCoords = positionsData[i];
+            let spotValues = valuesData[i].slice(1, valuesData[i].length - sliceFactor).map((value, i) => {
+                return {
+                    value: value,
+                    color: dataColors[i]
+                }
+            })
+
+            const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues)
+            if (hasClusters) {
+                newSpot.cluster = valuesData[i].at(-1)
+            }
+            dataSpots.push(newSpot)
+        }
+    } else {
+        if (!genesData || genesData.length == 0) {
+            alert("Values Data missing")
+            return;
+        }
+        dataHeaders = genesData[0]
+        console.log(dataHeaders)
+
+        //populate gene selection with gene headers..i guess
+        let geneOptions = ``
+        dataHeaders.forEach((header, i) => {
+            geneOptions += `<option value="${i}">${header}</option>`
+        })
+        document.getElementById("selectGenes").innerHTML = geneOptions;
+        for (let i = 1; i < positionsData.length - 1; i++) {
+            let spotCoords = positionsData[i];
+            let spotValues = genesData[i].map((value, i) => {
+                let scaledValue = Math.round(value * 10 / 60)
+                return {
+                    value: scaledValue,
+                    color: heatMapColors[parseInt(scaledValue)]
+                }
+            })
+
+            const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues)
+            dataSpots.push(newSpot)
+        }
+        console.log("max " + max)
     }
+
     console.log(dataSpots)
     window.drawAtWill = true
     setupCanvas(1000, 1000, dataSpots)
@@ -144,6 +242,26 @@ function generateVis() {
 
 function generateRandomColor() {
     return `#${Math.floor(Math.random() * 16777215).toString(16)}`
+}
+
+function geneSelected(e) {
+    console.log(e.target.value)
+    window.sketchOptions.selectedGene = e.target.value;
+}
+
+function modeChange(mode) {
+    window.mode = mode
+    resetAll()
+}
+
+function resetAll() {
+    window.drawAtWill = false;
+    positionsData = []
+    valuesData = []
+    genesData = []
+    dataSpots = []
+    dataHeaders = []
+    clearCanvas()
 }
 
 const shapesToClusterMap = {
@@ -175,9 +293,16 @@ class Spot {
 
     getSummary() {
         let summary = ``;
-        this.values.forEach((value, i) => {
-            summary += `<span class="legendColor" style="background-color:${dataColors[i]}"></span> ${dataHeaders[i]}: ${value.value} <br/>`
-        })
+        if (mode == "cellComposition") {
+            this.values.forEach((value, i) => {
+                summary += `<span class="legendColor" style="background-color:${value.color}"></span> ${dataHeaders[i]}: ${value.value} <br/>`
+            })
+        } else {
+            this.values.forEach((value, i) => {
+                summary += `<span class="legendColor" style="background-color:${value.color}"></span> ${dataHeaders[i]}: ${value.value} <br/>`
+            })
+        }
+
         if (this.cluster) {
             summary += `<i style="font-size: 16px" class="bi bi-${shapesToClusterMap[this.cluster]}"></i> Cluster: ${this.cluster} <br/>`
         }
@@ -185,3 +310,19 @@ class Spot {
     }
 }
 
+
+const heatMapColors = [
+    "#543005",
+    "#8c510a",
+    "#bf812d",
+    "#dfc27d",
+    "#f6e8c3",
+    "#f5f5f5",
+    "#c7eae5",
+    "#80cdc1",
+    "#35978f",
+    "#01665e",
+    "#003c30"
+]
+
+createGeneHeatmapGradient()

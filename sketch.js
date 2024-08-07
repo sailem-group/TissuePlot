@@ -64,6 +64,10 @@ function draw() {
   }
 }
 
+function clearCanvas() {
+  clear()
+}
+
 function setupCanvas(width, height, newSpots) {
   canvasWidth = width;
   canvasHeight = height;
@@ -126,48 +130,53 @@ function drawHexagonGrid(spots) {
     spot.scaledX = scaledX
     spot.scaledY = scaledY
     spot.scaledRadius = (spot.radius + 40) * scaleFactor
-    const spotMembership = [...spot.values]
-    let sortedSpotMembership = spotMembership.sort((a, b) => b.value - a.value);
+    if (window.mode == "cellComposition") {
+      const spotMembership = [...spot.values]
+      let sortedSpotMembership = spotMembership.sort((a, b) => b.value - a.value);
 
-    drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, sortedSpotMembership[0].color);
-    if ((zoomFactor > 4.2 || window.showAllLevels) && !window.showCluster) {
-      drawHexagon(scaledX, scaledY, (spot.radius + 30) * scaleFactor, sortedSpotMembership[1].color);
-      drawHexagon(scaledX, scaledY, (spot.radius + 18) * scaleFactor, sortedSpotMembership[2].color);
-    }
-    if (window.showCluster) {
-      const shapeRadius = (spot.radius - 30) * scaleFactor;
-      switch (spot.cluster) {
-        case "1":
-          drawTriangle(scaledX, scaledY, shapeRadius)
-          break;
-        case "2":
-          drawX(scaledX, scaledY, shapeRadius)
-          break;
-        case "3":
-          drawCircle(scaledX, scaledY, shapeRadius)
-          break;
-        case "4":
-          drawStar(scaledX, scaledY, shapeRadius)
-          break;
-        case "5":
-          drawHexagon(scaledX, scaledY, shapeRadius, sortedSpotMembership[0].color)
-          break;
-        case "6":
-          drawSquare(scaledX, scaledY, shapeRadius)
-          break;
-        case "7":
-          drawDiamond(scaledX, scaledY, shapeRadius)
-          break;
-        case "8":
-          drawPlus(scaledX, scaledY, shapeRadius)
-          break;
-        case "9":
-          drawMinus(scaledX, scaledY, shapeRadius)
-          break;
-        case "10":
-          drawSlash(scaledX, scaledY, shapeRadius)
-          break;
+      drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, sortedSpotMembership[0].color);
+      if ((zoomFactor > 4.2 || window.showAllLevels) && !window.showCluster) {
+        drawHexagon(scaledX, scaledY, (spot.radius + 30) * scaleFactor, sortedSpotMembership[1].color);
+        drawHexagon(scaledX, scaledY, (spot.radius + 18) * scaleFactor, sortedSpotMembership[2].color);
       }
+      if (window.showCluster) {
+        const shapeRadius = (spot.radius - 30) * scaleFactor;
+        switch (spot.cluster) {
+          case "1":
+            drawTriangle(scaledX, scaledY, shapeRadius)
+            break;
+          case "2":
+            drawX(scaledX, scaledY, shapeRadius)
+            break;
+          case "3":
+            drawCircle(scaledX, scaledY, shapeRadius)
+            break;
+          case "4":
+            drawStar(scaledX, scaledY, shapeRadius)
+            break;
+          case "5":
+            drawHexagon(scaledX, scaledY, shapeRadius, sortedSpotMembership[0].color)
+            break;
+          case "6":
+            drawSquare(scaledX, scaledY, shapeRadius)
+            break;
+          case "7":
+            drawDiamond(scaledX, scaledY, shapeRadius)
+            break;
+          case "8":
+            drawPlus(scaledX, scaledY, shapeRadius)
+            break;
+          case "9":
+            drawMinus(scaledX, scaledY, shapeRadius)
+            break;
+          case "10":
+            drawSlash(scaledX, scaledY, shapeRadius)
+            break;
+        }
+      }
+    } else {
+      drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, spot.values[window.sketchOptions.selectedGene || 0].color);
+
     }
   });
 
