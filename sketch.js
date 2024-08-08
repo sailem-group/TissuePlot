@@ -1,3 +1,5 @@
+//© Heba Sailem, heba.sailem@kcl.ac.uk
+
 let canvasWidth = 800;
 let canvasHeight = 600;
 let spots = [];

@@ -1,3 +1,4 @@
+//© Heba Sailem, heba.sailem@kcl.ac.uk
 document.getElementById("positions").addEventListener("change", positinosUploaded)
 document.getElementById("values").addEventListener("change", valuesUploaded)
 document.getElementById("showImage").addEventListener("change", showImageChanged)
