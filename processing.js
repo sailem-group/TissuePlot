@@ -31,7 +31,6 @@ function createGeneHeatmapGradient() {
     ctx.fillRect(0, 0, xmax, ymax);
 
     document.getElementById("heatmapGrad").appendChild(colorRectangle) //i guess
-
 }
 
 
@@ -69,10 +68,9 @@ async function showDemo() {
     } else {
         let genesCsv = await fetch('./AcutalTopExpressedGenes.csv')
         let genesRes = await genesCsv.text()
-        console.log(genesRes);
         const genesText = genesRes;
         const genesRows = genesText.split('\n');
-        genesData = genesRows.map(row => row.trim().split(',').slice(0, 4));
+        genesData = scaleData(genesRows.map(row => row.trim().split(',')));
     }
 
     generateVis()
@@ -156,8 +154,7 @@ function genesUploaded(e) {
         reader.onload = function (e) {
             const text = e.target.result;
             const rows = text.split('\n');
-            //taking the first 4 genes only
-            genesData = rows.map(row => row.trim().split(',').slice(0, 4));
+            genesData = scaleData(rows.map(row => row.trim().split(',')));
             console.log(genesData);
         };
 
@@ -190,7 +187,6 @@ function generateVis() {
             //we have the basic data colors in the array on top, when they are not enough we generate random colors and add them to the array to be used
             dataColors.push(generateRandomColor());
         }
-
         for (let i = 1; i < positionsData.length - 1; i++) {
             let spotCoords = positionsData[i];
             let spotValues = valuesData[i].slice(1, valuesData[i].length - sliceFactor).map((value, i) => {
@@ -223,17 +219,15 @@ function generateVis() {
         for (let i = 1; i < positionsData.length - 1; i++) {
             let spotCoords = positionsData[i];
             let spotValues = genesData[i].map((value, i) => {
-                let scaledValue = Math.round(value * 10 / 60)
                 return {
-                    value: scaledValue,
-                    color: heatMapColors[parseInt(scaledValue)]
+                    value: value,
+                    color: heatMapColors[parseInt(value)]
                 }
             })
 
             const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues)
             dataSpots.push(newSpot)
         }
-        console.log("max " + max)
     }
 
     console.log(dataSpots)
@@ -263,6 +257,48 @@ function resetAll() {
     dataSpots = []
     dataHeaders = []
     clearCanvas()
+    document.getElementById("positions").value = null
+    document.getElementById("values").value = null
+    document.getElementById("genesUpload").value = null
+    document.getElementById("image").value = null
+}
+
+function scaleData(matrix) {
+    //scale data for the heatmap, each column should be scaled to values 0-10
+
+    let numRows = matrix.length;
+    let numCols = matrix[0].length;
+
+    let scaledMatrix = [];
+    let headers = JSON.parse(JSON.stringify(matrix[0]))
+
+    matrix = matrix.slice(1)
+
+    for (let col = 0; col < numCols; col++) {
+        // Extract the current column
+        let column = matrix.map((row, i) => parseInt(row[col]));
+
+        // Find the min and max values in the current column
+        let minVal = Math.min(...column);
+        let maxVal = Math.max(...column);
+
+        // Scale the column values
+        let scaledColumn = column.map(value => {
+            // Scale to range 0-10
+            let scaledValue = ((value - minVal) / (maxVal - minVal)) * 10;
+            return Math.round(scaledValue); // Round to the nearest integer
+        });
+
+        // Insert the scaled values into the scaledMatrix
+        scaledColumn.forEach((val, rowIndex) => {
+            if (!scaledMatrix[rowIndex]) scaledMatrix[rowIndex] = [];
+            scaledMatrix[rowIndex][col] = val;
+        });
+    }
+
+    scaledMatrix.unshift(headers)
+
+    return scaledMatrix;
 }
 
 const shapesToClusterMap = {
