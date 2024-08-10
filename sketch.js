@@ -117,9 +117,9 @@ function drawHexagonGrid(spots) {
 
   //console.log(window.uploadedImage)
   // Draw the image behind the hexagons
-  let imgX = (minX - minX) * scaleFactor + offsetX - 90;
+  let imgX = (minX - minX) * scaleFactor + offsetX - 110;
   let imgY = (minY - minY) * scaleFactor + offsetY - 125;
-  let imgWidth = dataWidth * scaleFactor + 175;
+  let imgWidth = dataWidth * scaleFactor + 225;
   let imgHeight = dataHeight * scaleFactor + 225;
 
   if (img && window.showImage) {
