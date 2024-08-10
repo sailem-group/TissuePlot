@@ -24,6 +24,13 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
     crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+    integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"
+    integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy"
+    crossorigin="anonymous"></script>
+
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
   <style>
@@ -52,24 +59,34 @@
       color: gray;
       font-style: italic;
     }
+
+    .hidden{
+      display: none;
+    }
   </style>
 </head>
 
 <body>
   <main>
-    <div class="px-5">
-      <h6 class="display-6 text-end">TissuePlot</h6>
-    </div>
     <div class="main-container">
 
       <div id="canvasContainer"></div>
 
       <div class="controls">
 
-
-        <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
-          <label for="image" class="form-label">Upload Image</label>
-          <input type="file" class="form-control" id="image" accept="image/*" />
+        <div class="d-flex justify-content-between align-items-center pe-2">
+          <h6 class="display-6">TissuePlot</h6>
+          <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle p-1" type="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
+              <i style="font-size: 26px;" class="bi bi-list"></i>
+            </button>
+            <ul class="dropdown-menu">
+              <li><a href="about.html" class="dropdown-item" type="button">About</a></li>
+              <li><a href="help.html" class="dropdown-item" type="button">Help</a></li>
+              <li><a onclick="showDemo()" class="dropdown-item" type="button">Demo</a></li>
+            </ul>
+          </div>
         </div>
 
         <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
@@ -78,95 +95,81 @@
           <input type="file" class="form-control" id="positions" accept=".csv" />
         </div>
 
-        <div class="mb-3 d-flex justify-content-start align-items-start">
-          <label for="showImage" class="form-label w-50">Show Image</label>
-          <input type="checkbox" class="form-check-input" id="showImage" />
+        <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
+          <label for="values" class="form-label">Upload Values File <sub class="upload-file-hint">(.CSV
+              only)</sub></label>
+          <input type="file" class="form-control" id="values" accept=".csv" />
         </div>
 
-
-        <ul class="nav nav-tabs" id="nav-tab" role="tablist">
-
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="cellComposition" data-bs-toggle="tab"
-              data-bs-target="#cell-composition-pane" type="button" role="tab" aria-controls="cell-composition-pane"
-              aria-selected="true">Cell Composition</button>
-          </li>
-
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="genes" data-bs-toggle="tab" data-bs-target="#genes-pane" type="button"
-              role="tab" aria-controls="genes-pane" aria-selected="false">Genes</button>
-          </li>
-        </ul>
-
-        <div class="tab-content py-3" id="nav-tabContent">
-
-          <div class="tab-pane fade show active" id="cell-composition-pane" role="tabpanel"
-            aria-labelledby="cellComposition" tabindex="0">
-
-            <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
-              <label for="values" class="form-label">Upload Values File <sub class="upload-file-hint">(.CSV
-                  only)</sub></label>
-              <input type="file" class="form-control" id="values" accept=".csv" />
-            </div>
-
-            <div class="mb-3 d-flex justify-content-start align-items-start">
-              <label for="showAllLevels" class="form-label w-50">Show all levels without zoom</label>
-              <input type="checkbox" class="form-check-input" id="showAllLevels" />
-            </div>
-
-            <div class="mb-3 d-flex justify-content-start align-items-start">
-              <label for="showCluster" class="form-label w-50">Show Cluster</label>
-              <input type="checkbox" class="form-check-input" id="showCluster" />
-            </div>
-
-            <div class="card mt-3">
-              <div class="card-header">
-                Spot Cell Composition
-              </div>
-              <div id="infoBox" class="card-body">
-                <h5 class="card-title"></h5>
-                <p class="card-text h6"></p>
-              </div>
-            </div>
-    
-          </div>
-
-          <div class="tab-pane fade" id="genes-pane" role="tabpanel" aria-labelledby="genes" tabindex="0">
-
-            <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
-              <label for="genesUpload" class="form-label">Upload Genes File <sub class="upload-file-hint">(.CSV
-                  only)</sub></label>
-              <input type="file" class="form-control" id="genesUpload" accept=".csv" />
-            </div>
-
-            <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
-              <label class="form-label">Select Target Gene </label>
-              <select id="selectGenes" class="form-select" aria-label="select gene">
-                <option selected disabled>No available options</option>
-              </select>
-            </div>
-
-            <div id="heatmapGrad" class="mb-3 d-flex flex-column justify-content-start align-items-start">
-              <h6>Gradient based on values from 0 to 10</h6>
-            </div>
-
-          </div>
-
+        <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
+          <label for="genesUpload" class="form-label">Upload Genes File <sub class="upload-file-hint">(.CSV
+              only)</sub></label>
+          <input type="file" class="form-control" id="genesUpload" accept=".csv" />
         </div>
 
-
-
+        <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
+          <label for="image" class="form-label">Upload Image</label>
+          <input type="file" class="form-control" id="image" accept="image/*" />
+        </div>
 
         <button onclick="generateVis()" class="btn btn-primary btn-lg my-2">
           Generate
         </button>
 
-        <button onclick="showDemo()" class="btn btn-primary btn-lg my-2">
-          Demo
-        </button>
 
+        <div class="mb-3 d-flex justify-content-start align-items-start">
+          <label for="showImage" class="form-label w-50">Show Image</label>
+          <input type="checkbox" class="form-check-input" id="showImage" />
+        </div>
+
+        <div class="mb-3 d-flex justify-content-start align-items-start">
+          <label for="showComposition" class="form-label w-50">Show Cell Composition</label>
+          <input type="checkbox" class="form-check-input" id="showComposition" />
+        </div>
+
+        <div class="mb-3 d-flex justify-content-start align-items-start">
+          <label for="showCluster" class="form-label w-50">Show Cluster</label>
+          <input type="checkbox" class="form-check-input" id="showCluster" />
+        </div>
+
+        <div class="mb-3 d-flex justify-content-start align-items-start">
+          <label for="showGenes" class="form-label w-50">Show Genes</label>
+          <input type="checkbox" class="form-check-input" id="showGenes" />
+        </div>
+
+
+        <div class="mb-3 d-flex justify-content-start align-items-start">
+          <label for="showAllLevels" class="form-label w-50">Show Top Cell Composition</label>
+          <input type="checkbox" class="form-check-input" id="showAllLevels" />
+        </div>
+
+        <div id="composition-specific" class="hidden">
+          <div class="card mt-3">
+            <div class="card-header">
+              Spot Cell Composition
+            </div>
+            <div id="infoBox" class="card-body">
+              <h5 class="card-title"></h5>
+              <p class="card-text h6"></p>
+            </div>
+          </div>
+
+        </div>
+
+        <div id="gene-specific" class="hidden">
+          <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
+            <label class="form-label">Select Target Gene </label>
+            <select id="selectGenes" class="form-select" aria-label="select gene">
+              <option selected disabled>No available options</option>
+            </select>
+          </div>
+
+          <div id="heatmapGrad" class="mb-3 d-flex flex-column justify-content-start align-items-start">
+            <h6>Gradient based on values from 0 to 10</h6>
+          </div>
+
+        </div>
       </div>
-
 
     </div>
   </main>

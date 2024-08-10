@@ -5,9 +5,9 @@ document.getElementById("showImage").addEventListener("change", showImageChanged
 document.getElementById("showAllLevels").addEventListener("change", showAllLevelsChanged)
 document.getElementById("showCluster").addEventListener("change", showClusterLevelsChanged)
 document.getElementById("genesUpload").addEventListener("change", genesUploaded)
-document.getElementById("genes").addEventListener("click", () => { modeChange("genes") })
-document.getElementById("cellComposition").addEventListener("click", () => { modeChange("cellComposition") })
 document.getElementById("selectGenes").addEventListener("change", geneSelected)
+document.getElementById("showComposition").addEventListener("change", showCompositionChanged)
+document.getElementById("showGenes").addEventListener("change", showGenesChanged)
 
 
 function createGeneHeatmapGradient() {
@@ -44,7 +44,7 @@ let hasClusters;
 window.sketchOptions = {
     selectedGene: "",
 }
-window.mode = "cellComposition"
+window.mode = "cellComposition" //cellComposition or genes
 window.showImage = false;
 window.showAllLevels = false;
 window.showCluster = false;
@@ -58,20 +58,19 @@ async function showDemo() {
     const positionsRows = positionsText.split('\n');
     positionsData = positionsRows.map(row => row.split(','));
 
-    if (mode == "cellComposition") {
-        let valuesCsv = await fetch('./SpotClusterMembership.csv')
-        let valuesRes = await valuesCsv.text()
-        console.log(valuesRes);
-        const valuesText = valuesRes;
-        const valuesRows = valuesText.split('\n');
-        valuesData = valuesRows.map(row => row.trim().split(','));
-    } else {
-        let genesCsv = await fetch('./AcutalTopExpressedGenes.csv')
-        let genesRes = await genesCsv.text()
-        const genesText = genesRes;
-        const genesRows = genesText.split('\n');
-        genesData = scaleData(genesRows.map(row => row.trim().split(',')));
-    }
+    let valuesCsv = await fetch('./SpotClusterMembership.csv')
+    let valuesRes = await valuesCsv.text()
+    console.log(valuesRes);
+    const valuesText = valuesRes;
+    const valuesRows = valuesText.split('\n');
+    valuesData = valuesRows.map(row => row.trim().split(','));
+
+    let genesCsv = await fetch('./AcutalTopExpressedGenes.csv')
+    let genesRes = await genesCsv.text()
+    const genesText = genesRes;
+    const genesRows = genesText.split('\n');
+    genesData = scaleData(genesRows.map(row => row.trim().split(',')));
+
 
     generateVis()
 }
@@ -204,7 +203,7 @@ function generateVis() {
         }
     } else {
         if (!genesData || genesData.length == 0) {
-            alert("Values Data missing")
+            alert("Genes Data missing")
             return;
         }
         dataHeaders = genesData[0]
@@ -245,8 +244,34 @@ function geneSelected(e) {
 }
 
 function modeChange(mode) {
+    if (window.mode == mode) {
+        return;
+    }
     window.mode = mode
-    resetAll()
+    generateVis()
+    //resetAll()
+}
+
+function showCompositionChanged(e) {
+    if (e.target.checked) {
+        document.getElementById("composition-specific").classList.remove("hidden")
+        document.getElementById("gene-specific").classList.add("hidden")
+        document.getElementById("showGenes").checked = false
+        modeChange("cellComposition")
+    } else {
+        document.getElementById("composition-specific").classList.add("hidden")
+    }
+}
+
+function showGenesChanged(e) {
+    if (e.target.checked) {
+        document.getElementById("gene-specific").classList.remove("hidden")
+        document.getElementById("composition-specific").classList.add("hidden")
+        document.getElementById("showComposition").checked = false
+        modeChange("genes")
+    } else {
+        document.getElementById("gene-specific").classList.add("hidden")
+    }
 }
 
 function resetAll() {
@@ -276,7 +301,7 @@ function scaleData(matrix) {
 
     for (let col = 0; col < numCols; col++) {
         // Extract the current column
-        let column = matrix.map((row, i) => parseInt(row[col]));
+        let column = matrix.map((row, i) => Math.log(0.01 + parseInt(row[col])));
 
         // Find the min and max values in the current column
         let minVal = Math.min(...column);
@@ -297,6 +322,8 @@ function scaleData(matrix) {
     }
 
     scaledMatrix.unshift(headers)
+
+    console.log(scaledMatrix)
 
     return scaledMatrix;
 }
