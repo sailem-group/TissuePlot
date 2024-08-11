@@ -60,7 +60,7 @@
       font-style: italic;
     }
 
-    .hidden{
+    .hidden {
       display: none;
     }
   </style>
@@ -82,68 +82,96 @@
               <i style="font-size: 26px;" class="bi bi-list"></i>
             </button>
             <ul class="dropdown-menu">
-              <li><a href="about.html" class="dropdown-item" type="button">About</a></li>
-              <li><a href="help.html" class="dropdown-item" type="button">Help</a></li>
-              <li><a onclick="showDemo()" class="dropdown-item" type="button">Demo</a></li>
+              <li><a href="https://github.com/sailem-group/TissuePlot" target="_blank" class="dropdown-item"
+                  type="button">About</a></li>
+              <li><a href="help.html" target="_blank" class="dropdown-item" type="button">Help</a></li>
             </ul>
           </div>
         </div>
 
-        <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
-          <label for="positions" class="form-label">Upload Positions File <sub class="upload-file-hint">(.CSV
-              only)</sub></label>
-          <input type="file" class="form-control" id="positions" accept=".csv" />
-        </div>
 
-        <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
-          <label for="values" class="form-label">Upload Values File <sub class="upload-file-hint">(.CSV
-              only)</sub></label>
-          <input type="file" class="form-control" id="values" accept=".csv" />
-        </div>
+        <ul class="nav nav-tabs" id="nav-tab" role="tablist">
 
-        <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
-          <label for="genesUpload" class="form-label">Upload Genes File <sub class="upload-file-hint">(.CSV
-              only)</sub></label>
-          <input type="file" class="form-control" id="genesUpload" accept=".csv" />
-        </div>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="demoTab" data-bs-toggle="tab" data-bs-target="#demo-pane" type="button"
+              role="tab" aria-controls="demo-pane" aria-selected="true">Demo</button>
+          </li>
 
-        <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
-          <label for="image" class="form-label">Upload Image</label>
-          <input type="file" class="form-control" id="image" accept="image/*" />
-        </div>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="plottingTab" data-bs-toggle="tab" data-bs-target="#plotting-pane" type="button"
+              role="tab" aria-controls="plotting-pane" aria-selected="false">Plotting</button>
+          </li>
+        </ul>
 
-        <button onclick="generateVis()" class="btn btn-primary btn-lg my-2">
-          Generate
-        </button>
+        <div class="tab-content py-3" id="nav-tabContent">
+          <div class="tab-pane fade show active" id="demo-pane" role="tabpanel" aria-labelledby="demoTab" tabindex="0">
+            <button onclick="showDemo()" class="btn btn-primary btn-lg my-2">
+              Show Demo
+            </button>
+
+          </div>
+
+          <div class="tab-pane fade" id="plotting-pane" role="tabpanel" aria-labelledby="plottingTab" tabindex="0">
+
+            <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
+              <label for="positions" class="form-label">Upload Positions File <sub class="upload-file-hint">(.CSV
+                  only)</sub></label>
+              <input type="file" class="form-control" id="positions" accept=".csv" />
+            </div>
+
+            <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
+              <label for="values" class="form-label">Upload Values File <sub class="upload-file-hint">(.CSV
+                  only)</sub></label>
+              <input type="file" class="form-control" id="values" accept=".csv" />
+            </div>
+
+            <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
+              <label for="genesUpload" class="form-label">Upload Genes File <sub class="upload-file-hint">(.CSV
+                  only)</sub></label>
+              <input type="file" class="form-control" id="genesUpload" accept=".csv" />
+            </div>
+
+            <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
+              <label for="image" class="form-label">Upload Image</label>
+              <input type="file" class="form-control" id="image" accept="image/*" />
+            </div>
+
+            <button onclick="generateVis()" class="btn btn-primary btn-lg my-2">
+              Generate
+            </button>
+          </div>
+
+        </div>
 
 
         <div class="mb-3 d-flex justify-content-start align-items-start">
-          <label for="showImage" class="form-label w-50">Show Image</label>
           <input type="checkbox" class="form-check-input" id="showImage" />
+          <label for="showImage" class="form-label mx-2">Tissue Image</label>
         </div>
 
         <div class="mb-3 d-flex justify-content-start align-items-start">
-          <label for="showComposition" class="form-label w-50">Show Cell Composition</label>
-          <input type="checkbox" class="form-check-input" id="showComposition" />
-        </div>
-
-        <div class="mb-3 d-flex justify-content-start align-items-start">
-          <label for="showCluster" class="form-label w-50">Show Cluster</label>
           <input type="checkbox" class="form-check-input" id="showCluster" />
-        </div>
-
-        <div class="mb-3 d-flex justify-content-start align-items-start">
-          <label for="showGenes" class="form-label w-50">Show Genes</label>
-          <input type="checkbox" class="form-check-input" id="showGenes" />
+          <label for="showCluster" class="form-label mx-2">Cluster View</label>
         </div>
 
 
-        <div class="mb-3 d-flex justify-content-start align-items-start">
-          <label for="showAllLevels" class="form-label w-50">Show Top Cell Composition</label>
+        <div class="mb-1 d-flex justify-content-start align-items-start">
+          <input class="form-check-input" type="radio" name="showComposition" id="showComposition" checked>
+          <label for="showComposition" class="form-label mx-2">Cell Proportions View</label>
+        </div>
+
+        <div class="ms-3 mb-3 d-flex justify-content-start align-items-start">
           <input type="checkbox" class="form-check-input" id="showAllLevels" />
+          <label for="showAllLevels" class="form-label mx-2">Show Top Cell Composition</label>
         </div>
 
-        <div id="composition-specific" class="hidden">
+        <div class="mb-3 d-flex justify-content-start align-items-start">
+          <input class="form-check-input" type="radio" name="showGenes" id="showGenes">
+          <label for="showGenes" class="form-label mx-2">Gene View</label>
+        </div>
+
+
+        <div id="composition-specific">
           <div class="card mt-3">
             <div class="card-header">
               Spot Cell Composition
@@ -165,7 +193,7 @@
           </div>
 
           <div id="heatmapGrad" class="mb-3 d-flex flex-column justify-content-start align-items-start">
-            <h6>Gradient based on values from 0 to 10</h6>
+            <h6>Gradient based on values lowest to highest</h6>
           </div>
 
         </div>

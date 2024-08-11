@@ -42,7 +42,7 @@ let dataHeaders = []
 let dataColors = ["#FF0000", "#FFA500", "#90EE90", "#00FF00", "#32CD32", "#87CEEB", "#0000FF", "#800080", "#FFC0CB"]
 let hasClusters;
 window.sketchOptions = {
-    selectedGene: "",
+    selectedGene: 0,
 }
 window.mode = "cellComposition" //cellComposition or genes
 window.showImage = false;
@@ -163,13 +163,15 @@ function genesUploaded(e) {
 
 
 function generateVis() {
+    dataSpots = []
     if (!positionsData || positionsData.length == 0) {
         alert("Position Data missing")
         return;
     }
     if (mode == "cellComposition") {
         if (!valuesData || valuesData.length == 0) {
-            alert("Values Data missing")
+            alert("Membership Data missing")
+            haltProcess()
             return;
         }
         dataHeaders = valuesData[0].slice(1)
@@ -204,6 +206,7 @@ function generateVis() {
     } else {
         if (!genesData || genesData.length == 0) {
             alert("Genes Data missing")
+            haltProcess()
             return;
         }
         dataHeaders = genesData[0]
@@ -288,6 +291,11 @@ function resetAll() {
     document.getElementById("image").value = null
 }
 
+function haltProcess() {
+    window.drawAtWill = false;
+    clearCanvas()
+}
+
 function scaleData(matrix) {
     //scale data for the heatmap, each column should be scaled to values 0-10
 
@@ -301,7 +309,7 @@ function scaleData(matrix) {
 
     for (let col = 0; col < numCols; col++) {
         // Extract the current column
-        let column = matrix.map((row, i) => Math.log(0.01 + parseInt(row[col])));
+        let column = matrix.map((row, i) => Math.log(0.01 + parseFloat(row[col])));
 
         // Find the min and max values in the current column
         let minVal = Math.min(...column);
@@ -376,17 +384,17 @@ class Spot {
 
 
 const heatMapColors = [
-    "#543005",
-    "#8c510a",
-    "#bf812d",
-    "#dfc27d",
-    "#f6e8c3",
-    "#f5f5f5",
-    "#c7eae5",
-    "#80cdc1",
-    "#35978f",
-    "#01665e",
-    "#003c30"
+    "#238A8D",
+    "#1F968B",
+    "#20A387",
+    "#29AF7F",
+    "#3CBB75",
+    "#55C667",
+    "#73D055",
+    "#95D840",
+    "#B8DE29",
+    "#DCE319",
+    "#FDE725"
 ]
 
 createGeneHeatmapGradient()

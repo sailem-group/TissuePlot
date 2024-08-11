@@ -55,7 +55,7 @@ function draw() {
   drawHexagonGrid(spots);
   let adjustedMouseX = (mouseX - panX) / zoomFactor;
   let adjustedMouseY = (mouseY - panY) / zoomFactor;
-  if (mouseOverCanvas) {
+  if (mouseOverCanvas && window.mode == "cellComposition") {
     hoveredHex = getHoveredHexagon(adjustedMouseX, adjustedMouseY);
   }
   // console.log(hoveredHex)
@@ -71,6 +71,7 @@ function clearCanvas() {
 }
 
 function setupCanvas(width, height, newSpots) {
+  spots = []
   canvasWidth = width;
   canvasHeight = height;
   resizeCanvas(canvasWidth, canvasHeight);
@@ -80,7 +81,6 @@ function setupCanvas(width, height, newSpots) {
   zoomFactor = 1;
   panX = 0;
   panY = 0;
-
 
   document.getElementById("canvasContainer").querySelector("canvas").addEventListener("mouseleave", () => {
     hoveredHex = null
@@ -177,11 +177,9 @@ function drawHexagonGrid(spots) {
         }
       }
     } else {
-      drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, spot.values[window.sketchOptions.selectedGene || 0].color);
-
+      drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, spot.values[window.sketchOptions.selectedGene].color);
     }
   });
-
 
 }
 
