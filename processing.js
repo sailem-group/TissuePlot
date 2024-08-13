@@ -65,7 +65,7 @@ async function showDemo() {
     const valuesRows = valuesText.split('\n');
     valuesData = valuesRows.map(row => row.trim().split(','));
 
-    let genesCsv = await fetch('./AcutalTopExpressedGenes.csv')
+    let genesCsv = await fetch('./TopExpressedGenes.csv')
     let genesRes = await genesCsv.text()
     const genesText = genesRes;
     const genesRows = genesText.split('\n');
