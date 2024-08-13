@@ -8,7 +8,7 @@ Khawatmi M., and Sailem H., TissuePlot: A Multi-Scale Interactive Visualization 
 <p>
 In TissuePlot, you can view the proportion of different cell types at each spot, gene levels, as well as any cluster information. For all these views, the user can show or hide the underlying tissue image.
 </p>
-
+<img src="fig1.png" alt="Demonstration of different views in TissuePlot"/>
 <p>
 The current implementation is tested on Visium data from <a href='https://github.com/BayraktarLab/cell2location'>Kleshchevnikov et al., 2022</a> and <a href='http://biovis.net/2024/biovisChallenges_vis/'>Bio+MedVis Challenge @ IEEE VIS 2024</a>. That includes:
 </p>
