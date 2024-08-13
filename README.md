@@ -1,6 +1,9 @@
 <h1>TissuePlot </h1>
 <p>
-TissuePlot is a web application designed for visualizing spatial datasets, including cell proportions across different spots, their phenotypic clusters, and gene expression levels (https://sailem-group.github.io/TissuePlot/). It adopts a hexagon tessellation approach that does not obscure the underlying tissue. If you use our tool please cite:
+TissuePlot is a web application designed for visualizing spatial datasets, including cell proportions across different spots, their phenotypic clusters, and gene expression levels (https://sailem-group.github.io/TissuePlot/). It adopts a hexagon tessellation approach that does not obscure the underlying tissue. 
+</p>
+<p>
+If you use our tool please cite:
 <br/>
 Khawatmi M., and Sailem H., TissuePlot: A Multi-Scale Interactive Visualization Tool for Spatial Data. bioRxiv
 </p>
