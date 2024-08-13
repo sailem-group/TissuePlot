@@ -1,5 +1,33 @@
 <html>
     <body>
-        Help
+        <h1>Help</h1>
+        <p>
+Spatial biological approaches generate various type of measurements, each linked to specific spatial locations. These measurements include gene or protein expression, cell proportion or the phenotypic group of the spot based on clustering of any of the measurements. Images of the sample can also be captured such as H&E tissue image. 
+</p>
+<p>
+To explore the functionality of <b>TissuePlot</b>, you can click the ‘Demo’ under the ‘Demo’ tab. This demo is based on data from Visium. Every spatial location or spot is represented using a hexagon. You can select from three key views from the right menu:
+</p>
+<ul>
+<li>Cell Proportion View: each spot could be composed of different cell types which can be identified using cell deconvolution techniques. TissuePlot shows the most common cell type by encoding it to the hexagon border color. 
+<ul>
+<li>Zoom in to view the most common three cell types as additional hexagons appear</li>
+<li>The user can also view these three most common cell types by selecting ‘Show Top Cell composition’</li>
+<li>Hover over the spot to see actual percentages of all cell types and, if available, the cluster information in the information box on the right menu. </li>
+</ul>
+<li> Cluster View: to view spot cluster, select ‘Cluster View’. This will be combined with Cell Proportion View. Hover over a spot box to see the cluster number in the information box in the right menu. Currently, this feature supports up to 10 clusters. </li>
+<li>Gene View: To activate this view, select the Gene View radio button. This is a mutually exclusive option. A dropdown box will appear, allowing you to select the genes to plot. The displayed values represent log-scaled gene expression levels.</li>
+</ul>
+<p>
+For plotting your data using TissuePlot, upload your data under ‘Plot’ tab. You will need to have Spot positions file, and spot cluster membership or gene expression file. Examples on the format of these files can be found in our GitHub repository
+</p>
+<ul>
+<li>Tissue image: an image of the tissue (e.g. image.png)</li>
+<li>Spot positions file: the corresponding location of each spot on the Tissue Image (e.g. SpotPositions.csv)</li>
+<li>Spot cluster membership: The percentage of different cell types at each spot based on cell deconvolution techniques (e.g. SpotClusterMembership.csv). </li>
+<li>This file may also include a 'Cluster' column to indicate spot clusters based on gene expression data, cell proportion profiles, or other relevant data.</li>
+<li>Gene expression file: RNA counts at each spot. For optimal performance, it's recommended to upload only the top-expressed genes (e.g. TopExpressedGenes.csv).</li>
+</ul>
+
+
     </body>
 </html>
