@@ -30,7 +30,7 @@ function createGeneHeatmapGradient() {
     ctx.fillStyle = grd;
     ctx.fillRect(0, 0, xmax, ymax);
 
-    document.getElementById("heatmapGrad").appendChild(colorRectangle) //i guess
+    document.getElementById("heatmapGrad").appendChild(colorRectangle) 
 }
 
 
@@ -212,7 +212,7 @@ function generateVis() {
         dataHeaders = genesData[0]
         console.log(dataHeaders)
 
-        //populate gene selection with gene headers..i guess
+        //populate gene selection with gene headers
         let geneOptions = ``
         dataHeaders.forEach((header, i) => {
             geneOptions += `<option value="${i}">${header}</option>`
