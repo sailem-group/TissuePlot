@@ -10,6 +10,11 @@ document.getElementById("showComposition").addEventListener("change", showCompos
 document.getElementById("showGenes").addEventListener("change", showGenesChanged)
 
 
+window.onload = async function () {
+    await showDemo()
+    document.getElementById("showCluster").click()    
+}
+
 function createGeneHeatmapGradient() {
     var xmax = 120;
     var ymax = 20;
@@ -30,7 +35,7 @@ function createGeneHeatmapGradient() {
     ctx.fillStyle = grd;
     ctx.fillRect(0, 0, xmax, ymax);
 
-    document.getElementById("heatmapGrad").appendChild(colorRectangle) 
+    document.getElementById("heatmapGrad").appendChild(colorRectangle)
 }
 
 
@@ -89,7 +94,7 @@ function showAllLevelsChanged(e) {
 
 function showClusterLevelsChanged(e) {
     if (!hasClusters) {
-        alert("No Clusters column exists in the dataset")
+        alert("No Cluster column exists in the dataset")
         return;
     }
     console.log(e.target.checked)
