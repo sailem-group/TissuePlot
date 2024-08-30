@@ -5,12 +5,12 @@ let canvasHeight = 600;
 let spots = [];
 window.drawAtWill = false;
 let img;
+let saveFlag = false
 window.hoveredHex = null;
 let mouseOverCanvas = false;
 let infoBox = document.getElementById("infoBox")
 
 document.getElementById("image").addEventListener("change", imageUploaded)
-
 
 function imageUploaded(event) {
   const file = event.target.files[0];
@@ -36,6 +36,10 @@ let zoomFactor = 1;
 let panX = 0;
 let panY = 0;
 
+function saveSVG() {
+  saveFlag = true
+  window.drawAtWill = true;
+}
 
 function setup() {
   img = loadImage("./image.png")
@@ -64,6 +68,12 @@ function draw() {
             <h6 class="card-title">Spot ${hoveredHex.index} ${hoveredHex.barcode}</h6>
             <p class="card-text h6"><small> ${hoveredHex.getSummary()}</small></p>`
   }
+
+  if (saveFlag) {
+    save("tissue_plot");
+    saveFlag = false  
+  }
+
 }
 
 function clearCanvas() {
