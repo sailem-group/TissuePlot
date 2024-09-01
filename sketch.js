@@ -1,5 +1,5 @@
 //© Heba Sailem, heba.sailem@kcl.ac.uk
-
+var Math = require('mathjs');
 let canvasWidth = 800;
 let canvasHeight = 600;
 let spots = [];
@@ -345,7 +345,7 @@ function sign(px, py, x1, y1, x2, y2) {
 function getHoveredHexagon(mouseX, mouseY) {
   for (let hex of spots) {
     if (pointInHexagon(mouseX, mouseY, hex.scaledX, hex.scaledY, hex.scaledRadius)) {
-      return hex;
+      return Math.round(hex*100)/100;
     }
   }
   return null;
