@@ -398,7 +398,7 @@ class Spot {
         }
 
         if (this.cluster) {
-            summary += `<img width="85%" and height="85%" src="cluster-legend.png"/> <br/>`
+            summary += `<br/><b>Cluster</b><img width="95%" and height="95%" src="cluster-legend.png"/> <br/>`
             //summary += `<i style="font-size: 16px" class="bi bi-${shapesToClusterMap[this.cluster]}"></i> Cluster: ${this.cluster} <br/>`
         }
         return summary;
