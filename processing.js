@@ -45,7 +45,7 @@ let genesData = []
 let dataSpots = []
 let dataHeaders = []
 //let dataColors = ["#FF0000", "#FFA500", "#90EE90", "#00FF00", "#32CD32", "#87CEEB", "#0000FF", "#800080", "#FFC0CB"]
-let dataColors = ["#FF0000", "#FFA500", "#9DFF09", "#22FF06", "#22FF9A", "#1297FF", "#0000FF", "#9700FF", "#FB009A"]
+let dataColors = ["#FF0000", "#FFA500", "#9DFF09", "#22FF06", "#FBFB08", "#1297FF", "#0000FF", "#9700FF", "#FB009A"]
 let hasClusters;
 window.sketchOptions = {
     selectedGene: 0,
