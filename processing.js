@@ -398,9 +398,9 @@ class Spot {
         }
 
         if (this.cluster) {
-            summary += `<i style="font-size: 16px" class="bi bi-${shapesToClusterMap[this.cluster]}"></i> <b>Cluster:</b> ${this.cluster} <br/>`
-            summary += `<img width="95%" and height="95%" src="cluster-legend.png"/> <br/>`
-            //summary += `<br/><b>Cluster</b><img width="95%" and height="95%" src="cluster-legend.png"/> <br/>`
+            //summary += `<i style="font-size: 16px" class="bi bi-${shapesToClusterMap[this.cluster]}"></i> <b>Cluster:</b> ${this.cluster} <br/>`
+            //summary += `<img width="95%" and height="95%" src="cluster-legend.png"/> <br/>`
+            summary += `<br/><b>Cluster</b><img width="95%" and height="95%" src="cluster-legend.png"/> <br/>`
 
         }
         return summary;
