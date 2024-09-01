@@ -372,7 +372,7 @@ class Spot {
         let summary = ``;
         if (mode == "cellComposition") {
             this.values.forEach((value, i) => {
-                summary += `<span class="legendColor" style="background-color:${value.color}"></span> ${dataHeaders[i]}: ${value.value.toFixed(2)} <br/>`
+                summary += `<span class="legendColor" style="background-color:${value.color}"></span> ${dataHeaders[i]}: ${Number(value.value).toFixed(2)} <br/>`
             })
         } else {
             this.values.forEach((value, i) => {
