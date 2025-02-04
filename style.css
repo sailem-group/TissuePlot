@@ -1,11 +1,30 @@
 /**© Heba Sailem, heba.sailem@kcl.ac.uk**/
 
-html,
-body {
+html, body {
+  height: 100%;
   margin: 0;
   padding: 0;
 }
 
-canvas {
-  display: block;
+#cluster-dropdown-menu {
+  min-width: 180px;
+  max-height: 120px;
+  overflow-y: auto;
+  border-radius: 5px;
+}
+
+#cluster-dropdown-menu li {
+  display: flex;
+  align-items: center;
+  padding: 0px 5px;
+  cursor: pointer;
+}
+
+#cluster-dropdown-menu li:hover {
+  background-color: #f1f1f1 !important;
+}
+
+#cluster-dropdown-menu input[type="checkbox"] {
+  margin-right: 8px;
+  cursor: pointer;
 }

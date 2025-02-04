@@ -6,7 +6,8 @@ window.drawAtWill = false;
 let img;
 let saveFlag = false
 window.hoveredHex = null;
-let mouseOverCanvas = false;
+window.clickedHex = null;
+let mouseOverCanvas = false; 
 let infoBox = document.getElementById("infoBox")
 
 document.getElementById("image").addEventListener("change", imageUploaded)
@@ -61,12 +62,14 @@ function draw() {
   if (mouseOverCanvas && window.mode == "cellComposition") {
     hoveredHex = getHoveredHexagon(adjustedMouseX, adjustedMouseY);
   }
-  // console.log(hoveredHex)
   if (hoveredHex) {
     infoBox.innerHTML = `
-            <h6 class="card-title">Spot ${hoveredHex.index} ${hoveredHex.barcode}</h6>
+            <h6 class="card-title">${hoveredHex.index} ${hoveredHex.barcode}</h6>
             <p class="card-text h6"><small> ${hoveredHex.getSummary()}</small></p>`
-  }
+  } 
+  // else{
+  //   infoBox.innerHTML =''
+  // }
 
   if (saveFlag) {
     save("tissue_plot");
@@ -78,6 +81,91 @@ function draw() {
 function clearCanvas() {
   clear()
 }
+
+function showBarChart(index, barcode, data, isCellComposition) {
+  const modal = document.getElementById("chartModal");
+  const modalDialog = modal.querySelector(".modal-dialog");
+  // const modalTitle = document.getElementById("modalTitle");
+  const closeModalButton = document.getElementById("closeModal");
+  const chartContainer = document.getElementById("barChart");
+
+  chartContainer.innerHTML = "";
+
+  // modalTitle.innerText = `${index}: ${barcode}`;
+
+  modal.style.display = "block";
+
+  modal.addEventListener("click", function (e) {
+    if (!modalDialog.contains(e.target)) {
+      modal.style.display = "none";
+      chartContainer.innerHTML = "";
+    }
+  });
+
+  // Add a click event to close the modal
+  closeModalButton.onclick = () => {
+    modal.style.display = "none";
+    chartContainer.innerHTML = "";
+  };
+
+  if (isCellComposition) {
+    labels = data.map(item => item.label);
+    values = data.map(item => item.value);
+    colors = data.map(item => item.color);
+  } else {
+    const clusterCounts = {};
+    const clusterColors = {};
+
+    data.forEach(item => {
+      const clusterValue = item.value;
+      const clusterColor = item.color;
+
+      clusterCounts[clusterValue] = (clusterCounts[clusterValue] || 0) + 1;
+
+      if (!clusterColors[clusterValue]) {
+        clusterColors[clusterValue] = clusterColor;
+      }
+    });
+
+    labels = Object.keys(clusterCounts).map(value => `${value}`);
+    values = Object.values(clusterCounts);
+    colors = Object.keys(clusterCounts).map(value => clusterColors[value]);
+  }
+
+
+  const trace = {
+    x: labels,
+    y: values,
+    type: "bar",
+    marker: {
+      color: colors,
+    },
+    text: isCellComposition ? values.map((value, index) => `${labels[index]}: ${value.toFixed(2)}`) : values.map((value, index) => `${labels[index]}: ${value}`),
+    hoverinfo: "text",
+    textposition: "none",
+  };
+
+  const layout = {
+    xaxis: {
+      title: isCellComposition ? "Cell type" : "Clusters",
+    },
+    yaxis: {
+      title: "Values",
+      range: [0, Math.max(...values) + 0.1],
+    },
+    margin: {
+      t: 5,
+      l: 50,
+      r: 20,
+      b: 40,
+    },
+    hovermode: "closest",
+    responsive: true,
+  };
+
+  Plotly.newPlot("barChart", [trace], layout);
+}
+
 
 function setupCanvas(width, height, newSpots) {
   spots = []
@@ -107,7 +195,31 @@ function setupCanvas(width, height, newSpots) {
     mouseOverCanvas = true
   })
 
-  // Draw the hexagon grid
+  document.getElementById("canvasContainer").querySelector("canvas").addEventListener("click", (e) => {
+    const rect = canvas.getBoundingClientRect();
+
+    const adjustedMouseX = (e.clientX - rect.left - panX) / zoomFactor;
+    const adjustedMouseY = (e.clientY - rect.top - panY) / zoomFactor;
+
+    const clickedHex = getHoveredHexagon(adjustedMouseX, adjustedMouseY);
+
+    if (clickedHex) {
+
+      const barChartData = clickedHex.values.map((value, index) => ({
+        label: `X${index + 1}`,
+        value: parseFloat(value.value) || 0,
+        color: value.color,
+      }));
+
+      if (window.mode == "cellComposition") {
+        showBarChart(clickedHex.index, clickedHex.barcode, barChartData, true);
+      }
+      // else {
+      //   showBarChart(clickedHex.index, clickedHex.barcode, barChartData, false);
+      // }
+    }
+  })
+
   drawHexagonGrid(spots);
 }
 
@@ -152,44 +264,124 @@ function drawHexagonGrid(spots) {
       }
       if (window.showCluster) {
         const shapeRadius = (spot.radius - 30) * scaleFactor;
-        switch (spot.cluster) {
-          case "1":
-            drawTriangle(scaledX, scaledY, shapeRadius)
-            break;
-          case "2":
-            drawX(scaledX, scaledY, shapeRadius)
-            break;
-          case "3":
-            drawCircle(scaledX, scaledY, shapeRadius)
-            break;
-          case "4":
-            drawStar(scaledX, scaledY, shapeRadius)
-            break;
-          case "5":
-            drawHexagon(scaledX, scaledY, shapeRadius, sortedSpotMembership[0].color)
-            break;
-          case "6":
-            drawSquare(scaledX, scaledY, shapeRadius)
-            break;
-          case "7":
-            drawDiamond(scaledX, scaledY, shapeRadius)
-            break;
-          case "8":
-            drawPlus(scaledX, scaledY, shapeRadius)
-            break;
-          case "9":
-            drawMinus(scaledX, scaledY, shapeRadius)
-            break;
-          case "10":
-            drawSlash(scaledX, scaledY, shapeRadius)
-            break;
-        }
+        switchCaseCluster(scaledX, scaledY, shapeRadius, spot, sortedSpotMembership[0].color)
       }
     } else {
       drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, spot.values[window.sketchOptions.selectedGene].color);
+      if (window.showCluster) {
+        const shapeRadius = (spot.radius - 30) * scaleFactor;
+        switchCaseCluster(scaledX, scaledY, shapeRadius, spot, spot.values[0].color)
+      }
     }
   });
 
+}
+
+function switchCaseCluster(scaledX, scaledY, shapeRadius, spot, colorValue) {
+  if (window.selectedClusterView === "shapes") {
+    switch (spot.cluster) {
+      case "1":
+        drawTriangle(scaledX, scaledY, shapeRadius)
+        break;
+      case "2":
+        drawX(scaledX, scaledY, shapeRadius)
+        break;
+      case "3":
+        drawCircle(scaledX, scaledY, shapeRadius)
+        break;
+      case "4":
+        drawStar(scaledX, scaledY, shapeRadius)
+        break;
+      case "5":
+        drawHexagon(scaledX, scaledY, shapeRadius, colorValue)
+        break;
+      case "6":
+        drawSquare(scaledX, scaledY, shapeRadius)
+        break;
+      case "7":
+        drawDiamond(scaledX, scaledY, shapeRadius)
+        break;
+      case "8":
+        drawPlus(scaledX, scaledY, shapeRadius)
+        break;
+      case "9":
+        drawMinus(scaledX, scaledY, shapeRadius)
+        break;
+      case "10":
+        drawSlash(scaledX, scaledY, shapeRadius)
+        break;
+      case "11":
+        drawPentagon(scaledX, scaledY, shapeRadius);
+        break;
+      case "12":
+        drawArrow(scaledX, scaledY, shapeRadius);
+        break;
+      case "13":
+        drawChevron(scaledX, scaledY, shapeRadius);
+        break;
+      case "14":
+        drawHash(scaledX, scaledY, shapeRadius);
+        break;
+      case "15":
+        drawCrescent(scaledX, scaledY, shapeRadius);
+        break;
+      case "16":
+        drawEllipse(scaledX, scaledY, shapeRadius);
+        break;
+      case "17":
+        drawPieSlice(scaledX, scaledY, shapeRadius);
+        break;
+      case "18":
+        drawInfinity(scaledX, scaledY, shapeRadius);
+        break;
+      case "19":
+        drawBowtie(scaledX, scaledY, shapeRadius);
+        break;
+      case "20":
+        drawDoubleCircle(scaledX, scaledY, shapeRadius);
+        break;
+      case "21":
+        drawTrapezoid(scaledX, scaledY, shapeRadius);
+        break;
+      case "22":
+        drawSpiral(scaledX, scaledY, shapeRadius);
+        break;
+      case "23":
+        drawZigzag(scaledX, scaledY, shapeRadius);
+        break;
+      case "24":
+        drawBackSlash(scaledX, scaledY, shapeRadius);
+        break;
+      case "25":
+        drawCross(scaledX, scaledY, shapeRadius);
+        break;
+      case "26":
+        drawRhombus(scaledX, scaledY, shapeRadius);
+        break;
+      case "27":
+        drawTShape(scaledX, scaledY, shapeRadius);
+        break;
+      case "28":
+        drawBracket(scaledX, scaledY, shapeRadius);
+        break;
+      case "29":
+        drawLightning(scaledX, scaledY, shapeRadius);
+        break;
+      case "30":
+        drawStarburst(scaledX, scaledY, shapeRadius);
+        break;
+    }
+  } else if (window.selectedClusterView === "numbers") {
+    // Displaying the cluster number instead of a shape
+    drawClusterNumber(scaledX, scaledY, shapeRadius, spot.cluster);
+  }
+}
+
+function drawClusterNumber(x, y, radius, clusterNumber) {
+  textAlign(CENTER, CENTER);
+  textSize(radius * 3); 
+  textStyle(NORMAL);
+  text(clusterNumber, x, y);
 }
 
 function drawTriangle(x, y, r) {
@@ -252,7 +444,194 @@ function drawSlash(x, y, r) {
   line(x - r, y + r, x + r, y - r);
 }
 
+function drawPentagon(x, y, radius) {
+  beginShape();
+  for (let i = 0; i < 5; i++) {
+    const angle = (TWO_PI / 5) * i - HALF_PI;
+    const px = x + radius * cos(angle);
+    const py = y + radius * sin(angle);
+    vertex(px, py);
+  }
+  endShape(CLOSE);
+}
 
+function drawArrow(x, y, radius) {
+  beginShape();
+  vertex(x - radius, y - radius / 2);
+  vertex(x, y - radius);
+  vertex(x + radius, y - radius / 2);
+  vertex(x + radius / 2, y);
+  vertex(x + radius, y + radius / 2);
+  vertex(x, y + radius);
+  vertex(x - radius, y + radius / 2);
+  vertex(x - radius / 2, y);
+  endShape(CLOSE);
+}
+
+function drawChevron(x, y, radius) {
+  beginShape();
+  vertex(x - radius, y - radius * 0.6);
+  vertex(x, y + radius * 0.8);
+  vertex(x + radius, y - radius * 0.6);
+  vertex(x, y - radius * 0.2);
+  endShape(CLOSE);
+}
+
+function drawHash(x, y, radius) {
+  beginShape();
+  rect(x - radius / 8, y - radius / 2, radius * 2, radius / 6);
+  rect(x - radius / 8, y + radius / 2 - radius / 12, radius * 2, radius / 6);
+  rect(x - radius / 2, y - radius / 8, radius / 6, radius * 2);
+  rect(x + radius / 2 - radius / 9, y - radius / 8, radius / 6, radius * 2);
+  endShape(CLOSE);
+}
+
+function drawCrescent(x, y, radius) {
+  beginShape();
+  arc(x, y, radius * 2.2, radius * 2.2, PI / 4, (7 * PI) / 4, PIE);
+  endShape(CLOSE);
+}
+
+function drawEllipse(x, y, radius) {
+  beginShape();
+  ellipse(x, y, radius * 2.5, radius);
+  endShape(CLOSE);
+}
+
+function drawPieSlice(x, y, radius) {
+  beginShape();
+  arc(x, y, radius * 3.5, radius * 2.5, 2, PI / 4, PIE);
+  endShape(CLOSE);
+}
+
+function drawInfinity(x, y, radius) {
+  beginShape();
+  const ellipseWidth = radius * 1.2;
+  const ellipseHeight = radius * 0.8;
+  const spacing = radius * 0.6;
+  ellipse(x - spacing, y, ellipseWidth, ellipseHeight);
+  ellipse(x + spacing, y, ellipseWidth, ellipseHeight);
+  endShape(CLOSE);
+}
+
+function drawBowtie(x, y, radius) {
+  beginShape();
+  vertex(x - radius * 1.2, y - radius * 0.6);
+  vertex(x, y);
+  vertex(x - radius * 1.2, y + radius * 0.6);
+  vertex(x + radius * 1.2, y + radius * 0.6);
+  vertex(x, y);
+  vertex(x + radius * 1.2, y - radius * 0.6);
+  endShape(CLOSE);
+}
+
+function drawDoubleCircle(x, y, radius) {
+  beginShape();
+  ellipse(x, y, radius * 2, radius * 2);
+  ellipse(x, y, radius, radius);
+  endShape(CLOSE);
+}
+
+function drawTrapezoid(x, y, radius) {
+  beginShape();
+  vertex(x - radius * 1.2, y + radius * 0.6);
+  vertex(x - radius * 0.6, y - radius * 0.6);
+  vertex(x + radius * 0.6, y - radius * 0.6);
+  vertex(x + radius * 1.2, y + radius * 0.6);
+  endShape(CLOSE);
+}
+
+function drawSpiral(x, y, radius) {
+  beginShape();
+  const numLoops = 3;
+  const points = 100;
+  const angleStep = (TWO_PI * numLoops) / points;
+  const maxRadius = radius;
+  for (let i = 0; i <= points; i++) {
+    const angle = i * angleStep;
+    const r = (maxRadius * i) / points;
+    const px = x + r * cos(angle);
+    const py = y + r * sin(angle);
+    vertex(px, py);
+  }
+  endShape(CLOSE);
+}
+
+function drawZigzag(x, y, radius) {
+  beginShape();
+  vertex(x - radius, y);
+  vertex(x - radius / 2, y - radius / 2);
+  vertex(x, y);
+  vertex(x + radius / 2, y - radius / 2);
+  vertex(x + radius, y);
+  endShape(CLOSE);
+}
+
+function drawBackSlash(x, y, radius) {
+  beginShape();
+  line(x - radius, y - radius, x + radius, y + radius);
+  endShape(CLOSE);
+}
+
+function drawCross(x, y, radius) {
+  beginShape();
+  rect(x - radius / 9, y - radius / 9, radius / 2, radius * 3);
+  rect(x - radius / 9, y - radius / 9, radius * 3, radius / 2);
+  endShape(CLOSE);
+}
+
+function drawRhombus(x, y, radius) {
+  beginShape();
+  vertex(x, y - radius);
+  vertex(x + radius, y);
+  vertex(x, y + radius);
+  vertex(x - radius, y);
+  endShape(CLOSE);
+}
+
+function drawTShape(x, y, radius) {
+  beginShape();
+  rect(x, y - radius * 0.8, radius * 1.2, radius * 0.4);
+  rect(x, y, radius * 0.4, radius * 1.5);
+  endShape(CLOSE);
+}
+
+function drawBracket(x, y, radius) {
+  beginShape();
+  vertex(x - radius, y - radius / 3);
+  vertex(x + radius, y - radius / 3);
+  endShape();
+
+  beginShape();
+  vertex(x - radius, y + radius / 3);
+  vertex(x + radius, y + radius / 3);
+  endShape();
+}
+
+function drawLightning(x, y, radius) {
+  beginShape();
+  vertex(x - radius / 3, y - radius);
+  vertex(x, y - radius / 3);
+  vertex(x - radius / 3, y);
+  vertex(x, y + radius / 3);
+  vertex(x - radius / 3, y + radius);
+  vertex(x + radius / 3, y + radius / 3);
+  vertex(x, y);
+  vertex(x + radius / 3, y - radius / 3);
+  vertex(x - radius / 3, y - radius);
+  endShape(CLOSE);
+}
+
+function drawStarburst(x, y, radius) {
+  beginShape();
+  for (let i = 0; i < 12; i++) {
+    const angle = (TWO_PI / 12) * i;
+    const x1 = x + radius * cos(angle);
+    const y1 = y + radius * sin(angle);
+    line(x, y, x1, y1);
+  }
+  endShape(CLOSE);
+}
 
 function drawHexagon(x, y, radius, color) {
   noFill();
@@ -271,9 +650,15 @@ function drawHexagon(x, y, radius, color) {
 }
 
 function mouseWheel(event) {
+
+  if (event.target.closest(".controls")) {
+    return; // Ignore scroll events on the controls div
+  }
+
   if (!event.target.className.includes("p5Canvas")) {
     return;
   }
+
   event.preventDefault();
   let zoomAmount = -event.delta * 0.001;
   let newZoomFactor = zoomFactor + zoomAmount;
@@ -305,8 +690,6 @@ function isMouseOverHexagon(x, y, radius) {
   let d = dist(mouseX, mouseY, x, y);
   return d < radius;
 }
-
-
 
 function pointInHexagon(px, py, hx, hy, size) {
   for (let i = 0; i < 6; i++) {
@@ -349,6 +732,3 @@ function getHoveredHexagon(mouseX, mouseY) {
   }
   return null;
 }
-
-
-
