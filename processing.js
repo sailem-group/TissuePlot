@@ -574,7 +574,7 @@ window.generateVis = function () {
 
         //populate gene selection with gene headers
         let geneOptions = ``
-        dataHeaders.forEach((header, i) => {
+        dataHeaders.sort().forEach((header, i) => {
             geneOptions += `<option value="${i}">${header}</option>`
         })
         document.getElementById("selectGenes").innerHTML = geneOptions;
