@@ -381,7 +381,7 @@ function drawClusterNumber(x, y, radius, clusterNumber) {
   textAlign(CENTER, CENTER);
   textSize(radius * 3); 
   textStyle(NORMAL);
-  strokeWeight(0.5);
+  strokeWeight(0.3);
   text(clusterNumber, x, y);
 }
 
