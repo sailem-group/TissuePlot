@@ -32,13 +32,16 @@ function showOrHideOptions() {
     const optionsContainer = document.getElementById("optionsContainer");
     const umapTab = document.getElementById("umapTab");
     const plottingTab = document.getElementById("plottingTab");
-    if (umapTab.classList.contains("active")) {
-        optionsContainer.style.display = "none";
-    } else if (plottingTab.classList.contains("active")) {
-        if (window.showDemoButton == "none"){
-            if (window.getComputedStyle(document.getElementById("fileInputSection")).display == "block") {
+    const canvasContainerID = document.getElementById("canvasContainer");
+    print
+    // if (umapTab.classList.contains("active")) {
+    //     optionsContainer.style.display = "none";
+    // } else 
+    if (plottingTab.classList.contains("active")) {
+        if (window.showDemoButton === "none"){
+            if (window.getComputedStyle(document.getElementById("fileInputSection")).display === "block") {
                 optionsContainer.style.display = "none"; 
-            } else if (window.getComputedStyle(document.getElementById("uploadNewFilesButton")).display == "block") {
+            } else if (window.getComputedStyle(document.getElementById("uploadNewFilesButton")).display === "block") {
                 optionsContainer.style.display = "block";
             }
         }else{
@@ -47,11 +50,18 @@ function showOrHideOptions() {
 
     } else {
         console.log(window.showDemoButton)
-        if (window.showDemoButton == "clicked"){
+        if (window.showDemoButton === "clicked"){
             optionsContainer.style.display = "block";
         } else {
             optionsContainer.style.display = "none";
         }
+    }
+
+    // Disabling mouse interactions on the canvas when optionsContainer is hidden
+    if (optionsContainer.style.display === "none") {
+        canvasContainerID.style.pointerEvents = "none";
+    } else {
+        canvasContainerID.style.pointerEvents = "auto";
     }
 }
 
