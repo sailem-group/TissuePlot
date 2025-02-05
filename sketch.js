@@ -637,7 +637,7 @@ function drawStarburst(x, y, radius) {
 function drawHexagon(x, y, radius, color) {
   noFill();
   stroke(color);
-  strokeWeight(0.7);
+  strokeWeight(0.9);
 
   beginShape();
   for (let i = 0; i < 6; i++) {
