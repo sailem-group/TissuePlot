@@ -31,7 +31,7 @@ function imageUploaded(event) {
 
 }
 
-// Zoom and pan variables
+// // Zoom and pan variables
 let zoomFactor = 1;
 let panX = 0;
 let panY = 0;
@@ -72,11 +72,33 @@ function draw() {
   // }
 
   if (saveFlag) {
-    save("tissue_plot");
+    let svgElements = drawHexagonGrid(spots, true, []);
+
+    // **Calculate the correct viewBox for zoom & pan**
+    let viewBoxX = -panX / zoomFactor;
+    let viewBoxY = -panY / zoomFactor;
+    let viewBoxWidth = canvasWidth / zoomFactor;
+    let viewBoxHeight = canvasHeight / zoomFactor;
+
+    let svgHeader = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvasWidth}" height="${canvasHeight}" viewBox="${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}">`;
+
+    // let svgHeader = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvasWidth}" height="${canvasHeight}" viewBox="0 0 ${canvasWidth} ${canvasHeight}">`;
+    
+    let svgFooter = `</svg>`;
+    let fullSVG = svgHeader + svgElements.join("\n") + svgFooter;
+
+    let blob = new Blob([fullSVG], { type: "image/svg+xml" });
+    let a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "tissue_plot.svg";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     saveFlag = false  
   }
 
 }
+
 
 function clearCanvas() {
   clear()
@@ -223,7 +245,7 @@ function setupCanvas(width, height, newSpots) {
   drawHexagonGrid(spots);
 }
 
-function drawHexagonGrid(spots) {
+function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
   let minX = Math.min(...spots.map(spot => spot.x));
   let maxX = Math.max(...spots.map(spot => spot.x));
   let minY = Math.min(...spots.map(spot => spot.y));
@@ -244,7 +266,17 @@ function drawHexagonGrid(spots) {
   let imgHeight = dataHeight * scaleFactor + 220;
 
   if (img && window.showImage) {
-    image(img, imgX, imgY, imgWidth, imgHeight);
+    console.log(img.elt)
+    if (saveFlag) {
+      if (img) {
+        let imgDataURL = img.canvas.toDataURL("image/png");
+
+        // Add to SVG as an image element
+        svgElements.push(`<image href="${imgDataURL}" x="${imgX}" y="${imgY}" width="${imgWidth}" height="${imgHeight}" preserveAspectRatio="none"/>`);
+    }
+    } else {
+      image(img, imgX, imgY, imgWidth, imgHeight);
+    }
   }
 
   spots.forEach(spot => {
@@ -256,24 +288,47 @@ function drawHexagonGrid(spots) {
     if (window.mode == "cellComposition") {
       const spotMembership = [...spot.values]
       let sortedSpotMembership = spotMembership.sort((a, b) => b.value - a.value);
-
-      drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, sortedSpotMembership[0].color);
-      if ((zoomFactor > 4.2 || window.showAllLevels) && !window.showCluster) {
-        drawHexagon(scaledX, scaledY, (spot.radius + 25) * scaleFactor, sortedSpotMembership[1].color);
-        drawHexagon(scaledX, scaledY, (spot.radius + 10) * scaleFactor, sortedSpotMembership[2].color);
+      if (saveFlag) {
+        svgElements.push(drawHexagonSVG(scaledX, scaledY, spot.scaledRadius, sortedSpotMembership[0].color));
+        if ((zoomFactor > 4.2 || window.showAllLevels) && !window.showCluster) {
+          svgElements.push(drawHexagonSVG(scaledX, scaledY, (spot.radius + 25) * scaleFactor, sortedSpotMembership[1].color));
+          svgElements.push(drawHexagonSVG(scaledX, scaledY, (spot.radius + 10) * scaleFactor, sortedSpotMembership[2].color));
+        }
+      } else {
+        drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, sortedSpotMembership[0].color);
+        if ((zoomFactor > 4.2 || window.showAllLevels) && !window.showCluster) {
+          drawHexagon(scaledX, scaledY, (spot.radius + 25) * scaleFactor, sortedSpotMembership[1].color);
+          drawHexagon(scaledX, scaledY, (spot.radius + 10) * scaleFactor, sortedSpotMembership[2].color);
+        }
       }
       if (window.showCluster) {
         const shapeRadius = (spot.radius - 30) * scaleFactor;
-        switchCaseCluster(scaledX, scaledY, shapeRadius, spot, sortedSpotMembership[0].color)
+        if (saveFlag) {
+          svgElements.push(drawClusterSVG(scaledX, scaledY, shapeRadius, spot, sortedSpotMembership[0].color));
+        } else {
+          switchCaseCluster(scaledX, scaledY, shapeRadius, spot, sortedSpotMembership[0].color);
+        }
       }
     } else {
-      drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, spot.values[window.sketchOptions.selectedGene].color);
+      if (saveFlag) {
+        svgElements.push(drawHexagonSVG(scaledX, scaledY, (spot.radius + 40) * scaleFactor, spot.values[window.sketchOptions.selectedGene].color));
+      } else {
+        drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, spot.values[window.sketchOptions.selectedGene].color);
+      }
       if (window.showCluster) {
         const shapeRadius = (spot.radius - 30) * scaleFactor;
-        switchCaseCluster(scaledX, scaledY, shapeRadius, spot, spot.values[0].color)
+        if (saveFlag) {
+          svgElements.push(drawClusterSVG(scaledX, scaledY, shapeRadius, spot, spot.values[0].color));
+        } else {
+          switchCaseCluster(scaledX, scaledY, shapeRadius, spot, spot.values[0].color);
+        }
       }
     }
   });
+
+  if (saveFlag) {
+    return svgElements;
+  }
 
 }
 
@@ -377,6 +432,92 @@ function switchCaseCluster(scaledX, scaledY, shapeRadius, spot, colorValue) {
   }
 }
 
+function drawClusterSVG(x, y, radius, spot, color) {
+  if (window.selectedClusterView === "shapes") {
+    switch (spot.cluster) {
+        case "1":
+            return `<polygon points="${getTrianglePoints(x, y, radius)}"  fill="none" stroke="${color}" />`;
+        case "2":
+            return `<g>
+                        <line x1="${x - radius}" y1="${y - radius}" x2="${x + radius}" y2="${y + radius}" fill="none" stroke="${color}"/>
+                        <line x1="${x - radius}" y1="${y + radius}" x2="${x + radius}" y2="${y - radius}" fill="none" stroke="${color}"/>
+                    </g>`;
+        case "3":
+            return `<circle cx="${x}" cy="${y}" r="${radius}"  fill="none" stroke="${color}"/>`;
+        case "4":
+            return getStarSVG(x, y, radius, color);
+        case "5":
+            return drawHexagonSVG(x, y, radius, color);
+        case "6":
+            return `<rect x="${x - radius}" y="${y - radius}" width="${radius * 2}" height="${radius * 2}"  fill="none" stroke="${color}"/>`;
+        case "7":
+            return `<polygon points="${getDiamondPoints(x, y, radius)}"  fill="none" stroke="${color}"/>`;
+        case "8":
+            return `<g>
+                        <line x1="${x - radius}" y1="${y}" x2="${x + radius}" y2="${y}" fill="none" stroke="${color}"/>
+                        <line x1="${x}" y1="${y - radius}" x2="${x}" y2="${y + radius}" fill="none" stroke="${color}"/>
+                    </g>`;
+        case "9":
+            return `<line x1="${x - radius}" y1="${y}" x2="${x + radius}" y2="${y}" fill="none" stroke="${color}"/>`;
+        case "10":
+            return `<line x1="${x - radius}" y1="${y + radius}" x2="${x + radius}" y2="${y - radius}" fill="none" stroke="${color}"/>`;
+        case "11":
+            return `<polygon points="${getPentagonPoints(x, y, radius)}"  fill="none" stroke="${color}"/>`;
+        case "12":
+            return `<polygon points="${getArrowPoints(x, y, radius)}"  fill="none" stroke="${color}"/>`;
+        case "13":
+            return `<polygon points="${getChevronPoints(x, y, radius)}"  fill="none" stroke="${color}"/>`;
+        case "14":
+            return getHashSVG(x, y, radius, color);
+        case "15":
+            return getCrescentPath(x, y, radius, color)
+        case "16":
+            return `<ellipse cx="${x}" cy="${y}" rx="${radius * 1.25}" ry="${radius * 0.75}" fill="none" stroke="${color}" />`;
+        case "17":
+            return getPieSlicePath(x, y, radius, color);
+        case "18":
+            return getInfinitySVG(x, y, radius, color);
+        case "19":
+            return getBowtieSVG(x, y, radius, color);
+        case "20":
+            return `<g>
+                        <circle cx="${x}" cy="${y}" r="${radius}" fill="none" stroke="${color}" />
+                        <circle cx="${x}" cy="${y}" r="${radius * 0.5}" fill="none" stroke="${color}" />
+                    </g>`;
+        case "21":
+            return `<polygon points="${getTrapezoidPoints(x, y, radius)}" fill="none" stroke="${color}" />`;
+        case "22":
+            return getSpiralSVG(x, y, radius, color);
+        case "23":
+            return getZigzagSVG(x, y, radius, color);
+        case "24":
+            return `<line x1="${x - radius}" y1="${y - radius}" x2="${x + radius}" y2="${y + radius}" fill="none" stroke="${color}" />`;
+        case "25":
+            return getCrossSVG(x, y, radius, color);
+        case "26":
+            return `<polygon points="${getRhombusPoints(x, y, radius)}" fill="none" stroke="${color}" />`;
+        case "27":
+            return `<g>
+                        <rect x="${x - radius * 0.6}" y="${y - radius}" width="${radius * 1.2}" height="${radius * 0.4}" fill="none" stroke="${color}" />
+                        <rect x="${x - radius * 0.2}" y="${y - radius * 0.6}" width="${radius * 0.4}" height="${radius * 1.5}" fill="none" stroke="${color}" />
+                    </g>`;
+        case "28":
+            return `<g>
+                        <line x1="${x - radius}" y1="${y - radius / 3}" x2="${x + radius}" y2="${y - radius / 3}" fill="none" stroke="${color}" />
+                        <line x1="${x - radius}" y1="${y + radius / 3}" x2="${x + radius}" y2="${y + radius / 3}" fill="none" stroke="${color}" />
+                    </g>`;
+        case "29":
+            return getLightningSVG(x, y, radius, color);
+        case "30":
+            return getStarburstSVG(x, y, radius, color);
+      }
+  } else if (window.selectedClusterView === "numbers") {
+
+      return `<text x="${x}" y="${y}" font-size="${radius * 3}" font-family="Arial" stroke-width="0.3" text-anchor="middle" fill="none" stroke="${color}" dominant-baseline="middle">${spot.cluster}</text>`;
+  }
+}
+
+
 function drawClusterNumber(x, y, radius, clusterNumber) {
   textAlign(CENTER, CENTER);
   textSize(radius * 3); 
@@ -393,6 +534,12 @@ function drawTriangle(x, y, r) {
   vertex(x + h, y + r / 2);
   endShape(CLOSE);
 }
+
+function getTrianglePoints(x, y, r) {
+  let h = r * sqrt(3) / 2;
+  return `${x},${y - r} ${x - h},${y + r / 2} ${x + h},${y + r / 2}`;
+}
+
 
 function drawX(x, y, r) {
   line(x - r, y - r, x + r, y + r);
@@ -418,6 +565,23 @@ function drawStar(x, y, r) {
   endShape(CLOSE);
 }
 
+function getStarSVG(x, y, r, color) {
+  let angle = TWO_PI / 5;
+  let halfAngle = angle / 2;
+  let points = [];
+
+  for (let a = 0; a < TWO_PI; a += angle) {
+      let sx = x + cos(a) * r;
+      let sy = y + sin(a) * r;
+      points.push(`${sx},${sy}`);
+      sx = x + cos(a + halfAngle) * r / 2;
+      sy = y + sin(a + halfAngle) * r / 2;
+      points.push(`${sx},${sy}`);
+  }
+
+  return `<polygon points="${points.join(" ")}" fill="none" stroke="${color}" />`;
+}
+
 function drawSquare(x, y, r) {
   rectMode(CENTER);
   rect(x, y, r * 2, r * 2);
@@ -430,6 +594,10 @@ function drawDiamond(x, y, r) {
   vertex(x, y + r);
   vertex(x - r, y);
   endShape(CLOSE);
+}
+
+function getDiamondPoints(x, y, r) {
+  return `${x},${y - r} ${x + r},${y} ${x},${y + r} ${x - r},${y}`;
 }
 
 function drawPlus(x, y, r) {
@@ -456,6 +624,17 @@ function drawPentagon(x, y, radius) {
   endShape(CLOSE);
 }
 
+function getPentagonPoints(x, y, radius) {
+  let points = [];
+  for (let i = 0; i < 5; i++) {
+      let angle = (Math.PI * 2 / 5) * i - Math.PI / 2;
+      let px = x + radius * Math.cos(angle);
+      let py = y + radius * Math.sin(angle);
+      points.push(`${px},${py}`);
+  }
+  return points.join(" ");
+}
+
 function drawArrow(x, y, radius) {
   beginShape();
   vertex(x - radius, y - radius / 2);
@@ -469,6 +648,17 @@ function drawArrow(x, y, radius) {
   endShape(CLOSE);
 }
 
+function getArrowPoints(x, y, radius) {
+  return `${x - radius},${y - radius / 2} 
+          ${x},${y - radius} 
+          ${x + radius},${y - radius / 2} 
+          ${x + radius / 2},${y} 
+          ${x + radius},${y + radius / 2} 
+          ${x},${y + radius} 
+          ${x - radius},${y + radius / 2} 
+          ${x - radius / 2},${y}`;
+}
+
 function drawChevron(x, y, radius) {
   beginShape();
   vertex(x - radius, y - radius * 0.6);
@@ -476,6 +666,13 @@ function drawChevron(x, y, radius) {
   vertex(x + radius, y - radius * 0.6);
   vertex(x, y - radius * 0.2);
   endShape(CLOSE);
+}
+
+function getChevronPoints(x, y, radius) {
+  return `${x - radius},${y - radius * 0.6}
+          ${x},${y + radius * 0.8}
+          ${x + radius},${y - radius * 0.6}
+          ${x},${y - radius * 0.2}`;
 }
 
 function drawHash(x, y, radius) {
@@ -487,10 +684,40 @@ function drawHash(x, y, radius) {
   endShape(CLOSE);
 }
 
+function getHashSVG(x, y, radius, color) {
+  return `<g>
+            <rect x="${x - radius * 0.95}" y="${y - radius * 0.6}" width="${radius * 1.8}" height="${radius * 0.15}" fill="none" stroke="${color} "/>
+            <rect x="${x - radius *0.95 }" y="${y + radius * 0.35}" width="${radius * 1.8}" height="${radius * 0.15}" fill="none" stroke="${color}"/>
+
+            <rect x="${x - radius * 0.6}" y="${y - radius * 0.95 }" width="${radius * 0.15}" height="${radius * 1.8}" fill="none" stroke="${color}"/>
+            <rect x="${x + radius * 0.35}" y="${y - radius * 0.95}" width="${radius * 0.15}" height="${radius * 1.8}" fill="none" stroke="${color}"/>
+          </g>`;
+}
+
 function drawCrescent(x, y, radius) {
   beginShape();
   arc(x, y, radius * 2.2, radius * 2.2, PI / 4, (7 * PI) / 4, PIE);
   endShape(CLOSE);
+}
+
+function getCrescentPath(x, y, radius, color) {
+  let outerRadius = radius * 1.2;  // Slightly larger outer circle
+  let innerRadius = radius * 0.7;  // Inner cutout
+  let startAngle = Math.PI / 4;    // Start of arc
+  let endAngle = (7 * Math.PI) / 4; // End of arc
+
+  let x1 = x + Math.cos(startAngle) * outerRadius;
+  let y1 = y + Math.sin(startAngle) * outerRadius;
+  let x2 = x + Math.cos(endAngle) * outerRadius;
+  let y2 = y + Math.sin(endAngle) * outerRadius;
+
+  let cutX = x + Math.cos((startAngle + endAngle) / 2) * (innerRadius * 0.2) ;
+  let cutY = y + Math.sin((startAngle + endAngle) / 2) * (innerRadius * 0.2);
+
+  return `<path d="M ${x1},${y1} 
+                  A ${outerRadius},${outerRadius} 0 1,1 ${x2},${y2}
+                  L ${cutX},${cutY} 
+                  Z" fill="none" stroke="${color}"/>`;
 }
 
 function drawEllipse(x, y, radius) {
@@ -505,6 +732,29 @@ function drawPieSlice(x, y, radius) {
   endShape(CLOSE);
 }
 
+function getPieSlicePath(x, y, radius, color) {
+  let outerRadiusX = radius * 1.8;  
+  let outerRadiusY = radius * 1.35;  
+  let innerRadius = radius * 0.5;  
+
+  let startAngle = 2;     
+  let endAngle = Math.PI / 4; 
+
+  // Outer ellipse arc points
+  let x1 = x + Math.cos(startAngle) * outerRadiusX;
+  let y1 = y + Math.sin(startAngle) * outerRadiusY;
+  let x2 = x + Math.cos(endAngle) * outerRadiusX;
+  let y2 = y + Math.sin(endAngle) * outerRadiusY;
+
+  let cutX = x + Math.cos((startAngle - endAngle) / 2) * (innerRadius * 0.2);
+  let cutY = y + Math.sin((startAngle - endAngle) / 2) * (innerRadius * 0.2);
+
+  return `<path d="M ${x1},${y1} 
+                  A ${outerRadiusX},${outerRadiusY} 0 1,1 ${x2},${y2}
+                  L ${cutX},${cutY} 
+                  Z" fill="none" stroke="${color}"/>`;
+}
+
 function drawInfinity(x, y, radius) {
   beginShape();
   const ellipseWidth = radius * 1.2;
@@ -513,6 +763,14 @@ function drawInfinity(x, y, radius) {
   ellipse(x - spacing, y, ellipseWidth, ellipseHeight);
   ellipse(x + spacing, y, ellipseWidth, ellipseHeight);
   endShape(CLOSE);
+}
+
+function getInfinitySVG(x, y, radius, color) {
+  return `<g>
+              <ellipse cx="${x - radius * 0.81}" cy="${y}" rx="${radius * 0.7}" ry="${radius * 0.5}" fill="none" stroke="${color}"/>
+
+              <ellipse cx="${x + radius * 0.81}" cy="${y}" rx="${radius * 0.7}" ry="${radius * 0.5}" fill="none" stroke="${color}"/>
+          </g>`;
 }
 
 function drawBowtie(x, y, radius) {
@@ -524,6 +782,24 @@ function drawBowtie(x, y, radius) {
   vertex(x, y);
   vertex(x + radius * 1.2, y - radius * 0.6);
   endShape(CLOSE);
+}
+
+function getBowtieSVG(x, y, radius, color) {
+  return `<polygon points="
+          ${x - radius * 1.2},${y - radius * 0.6} 
+          ${x},${y} 
+          ${x - radius * 1.2},${y + radius * 0.6} 
+          ${x + radius * 1.2},${y + radius * 0.6} 
+          ${x},${y} 
+          ${x + radius * 1.2},${y - radius * 0.6}" 
+           fill="none" stroke="${color}" />`;
+}
+
+function getTrapezoidPoints(x, y, radius) {
+  return `${x - radius * 1.2},${y + radius * 0.6}
+          ${x - radius * 0.6},${y - radius * 0.6}
+          ${x + radius * 0.6},${y - radius * 0.6}
+          ${x + radius * 1.2},${y + radius * 0.6}`;
 }
 
 function drawDoubleCircle(x, y, radius) {
@@ -542,6 +818,14 @@ function drawTrapezoid(x, y, radius) {
   endShape(CLOSE);
 }
 
+function getTrapezoidPoints(x, y, radius) {
+  return `${x - radius * 1.2},${y + radius * 0.6}
+          ${x - radius * 0.6},${y - radius * 0.6}
+          ${x + radius * 0.6},${y - radius * 0.6}
+          ${x + radius * 1.2},${y + radius * 0.6}`;
+}
+
+
 function drawSpiral(x, y, radius) {
   beginShape();
   const numLoops = 3;
@@ -558,6 +842,24 @@ function drawSpiral(x, y, radius) {
   endShape(CLOSE);
 }
 
+function getSpiralSVG(x, y, radius, color) {
+  let points = [];
+  const numLoops = 3;
+  const steps = 100;
+  const angleStep = (TWO_PI * numLoops) / steps;
+  const maxRadius = radius;
+  for (let i = 0; i <= steps; i++) {
+    const angle = i * angleStep;
+    const r = (maxRadius * i) / steps;
+    const px = x + r * cos(angle);
+    const py = y + r * sin(angle);
+    points.push(`${px},${py}`);
+  }
+  
+  return `<polyline points="${points.join(" ")}" fill="none" stroke="${color}" stroke-width="0.7"/>`;
+}
+
+
 function drawZigzag(x, y, radius) {
   beginShape();
   vertex(x - radius, y);
@@ -567,6 +869,17 @@ function drawZigzag(x, y, radius) {
   vertex(x + radius, y);
   endShape(CLOSE);
 }
+
+function getZigzagSVG(x, y, radius, color) {
+  return `<polyline points="
+              ${x - radius},${y} 
+              ${x - radius / 2},${y - radius / 2} 
+              ${x},${y} 
+              ${x + radius / 2},${y - radius / 2} 
+              ${x + radius},${y}" 
+              fill="none" stroke="${color}" />`;
+}
+
 
 function drawBackSlash(x, y, radius) {
   beginShape();
@@ -581,6 +894,20 @@ function drawCross(x, y, radius) {
   endShape(CLOSE);
 }
 
+function getCrossSVG(x, y, radius, color) {
+  return `<g>
+            <!-- Vertical Rectangle -->
+            <rect x="${x - radius / 4}" y="${y - radius * 1.5}" 
+                  width="${radius / 2}" height="${radius * 3}" 
+                  fill="none" stroke="${color}" stroke-width="1"/>
+
+            <!-- Horizontal Rectangle -->
+            <rect x="${x - radius * 1.5}" y="${y - radius / 4}" 
+                  width="${radius * 3}" height="${radius / 2}" 
+                  fill="none" stroke="${color}" stroke-width="1"/>
+          </g>`;
+}
+
 function drawRhombus(x, y, radius) {
   beginShape();
   vertex(x, y - radius);
@@ -588,6 +915,13 @@ function drawRhombus(x, y, radius) {
   vertex(x, y + radius);
   vertex(x - radius, y);
   endShape(CLOSE);
+}
+
+function getRhombusPoints(x, y, radius) {
+  return `${x},${y - radius} 
+          ${x + radius},${y} 
+          ${x},${y + radius} 
+          ${x - radius},${y}`;
 }
 
 function drawTShape(x, y, radius) {
@@ -623,6 +957,20 @@ function drawLightning(x, y, radius) {
   endShape(CLOSE);
 }
 
+function getLightningSVG(x, y, radius, color) {
+  return `<polygon points="
+          ${x - radius / 3},${y - radius} 
+          ${x},${y - radius / 3} 
+          ${x - radius / 3},${y} 
+          ${x},${y + radius / 3} 
+          ${x - radius / 3},${y + radius} 
+          ${x + radius / 3},${y + radius / 3} 
+          ${x},${y} 
+          ${x + radius / 3},${y - radius / 3} 
+          ${x - radius / 3},${y - radius}" 
+           fill="none" stroke="${color}"/>`;
+}
+
 function drawStarburst(x, y, radius) {
   beginShape();
   for (let i = 0; i < 12; i++) {
@@ -632,6 +980,17 @@ function drawStarburst(x, y, radius) {
     line(x, y, x1, y1);
   }
   endShape(CLOSE);
+}
+
+function getStarburstSVG(x, y, radius, color) {
+  let lines = [];
+  for (let i = 0; i < 12; i++) {
+      const angle = (Math.PI * 2 / 12) * i;
+      const x1 = x + radius * Math.cos(angle);
+      const y1 = y + radius * Math.sin(angle);
+      lines.push(`<line x1="${x}" y1="${y}" x2="${x1}" y2="${y1}" fill="none" stroke="${color}"/>`);
+  }
+  return `<g>${lines.join("\n")}</g>`;
 }
 
 function drawHexagon(x, y, radius, color) {
@@ -648,6 +1007,22 @@ function drawHexagon(x, y, radius, color) {
   }
   endShape(CLOSE);
 
+}
+
+function drawHexagonSVG(x, y, radius, color) {
+  let points = []
+  noFill();
+  stroke(color);
+  strokeWeight(0.9);
+
+  for (let i = 0; i < 6; i++) {
+    let angle = TWO_PI / 6 * i + PI / 6;
+    let vx = x + cos(angle) * radius;
+    let vy = y + sin(angle) * radius;
+    //vertex(vx, vy);
+    points.push(`${vx},${vy}`);
+  }
+  return `<polygon points="${points.join(" ")}"  fill="none" stroke="${color}"/>`;
 }
 
 function mouseWheel(event) {
