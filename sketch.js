@@ -1,6 +1,6 @@
 //© Heba Sailem, heba.sailem@kcl.ac.uk
-let canvasWidth = 800;
-let canvasHeight = 600;
+let canvasWidth = 790;
+let canvasHeight = 590;
 let spots = [];
 window.drawAtWill = false;
 let img;
