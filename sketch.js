@@ -428,7 +428,7 @@ function switchCaseCluster(scaledX, scaledY, shapeRadius, spot, colorValue) {
     }
   } else if (window.selectedClusterView === "numbers") {
     // Displaying the cluster number instead of a shape
-    drawClusterNumber(scaledX, scaledY, shapeRadius, spot.cluster);
+    drawClusterNumber(scaledX, scaledY, shapeRadius, spot.cluster, colorValue);
   }
 }
 
@@ -518,11 +518,13 @@ function drawClusterSVG(x, y, radius, spot, color) {
 }
 
 
-function drawClusterNumber(x, y, radius, clusterNumber) {
+function drawClusterNumber(x, y, radius, clusterNumber, color) {
   textAlign(CENTER, CENTER);
   textSize(radius * 3); 
   textStyle(NORMAL);
-  strokeWeight(0.3);
+  strokeWeight(0.2);
+  noStroke();
+  fill(color);
   text(clusterNumber, x, y);
 }
 
