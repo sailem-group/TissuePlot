@@ -250,16 +250,16 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
   let maxX = Math.max(...spots.map(spot => spot.x));
   let minY = Math.min(...spots.map(spot => spot.y));
   let maxY = Math.max(...spots.map(spot => spot.y));
-
+  let RESIZE_canvas = 1000;
   let dataWidth = maxX - minX;
   let dataHeight = maxY - minY;
-  let scaleFactor = Math.min(canvasWidth / dataWidth, canvasHeight / dataHeight);
+  let scaleFactor = Math.min(RESIZE_canvas / dataWidth, RESIZE_canvas / dataHeight);
 
-  let offsetX = (canvasWidth - dataWidth * scaleFactor) / 2;
-  let offsetY = (canvasHeight - dataHeight * scaleFactor) / 2;
+  let offsetX = (RESIZE_canvas - dataWidth * scaleFactor) / 2;
+  let offsetY = (RESIZE_canvas - dataHeight * scaleFactor) / 2;
 
-  let imgX = (minX - minX) * scaleFactor + offsetX - 110 ;
-  let imgY = (minY - minY) * scaleFactor + offsetY - 125 + 5;
+  let imgX = (minX - minX) * scaleFactor + offsetX - 110;
+  let imgY = (minY - minY) * scaleFactor + offsetY - 125;
   let imgWidth = dataWidth * scaleFactor + 225;
   let imgHeight = dataHeight * scaleFactor + 225;
 
