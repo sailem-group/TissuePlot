@@ -258,12 +258,10 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
   let offsetX = (canvasWidth - dataWidth * scaleFactor) / 2;
   let offsetY = (canvasHeight - dataHeight * scaleFactor) / 2;
 
-  //console.log(window.uploadedImage)
-  // Draw the image behind the hexagons
-  let imgX = (minX - minX) * scaleFactor + offsetX - 108;
-  let imgY = (minY - minY) * scaleFactor + offsetY - 119;
-  let imgWidth = dataWidth * scaleFactor + 220;
-  let imgHeight = dataHeight * scaleFactor + 220;
+  let imgX = (minX - minX) * scaleFactor + offsetX - 110 ;
+  let imgY = (minY - minY) * scaleFactor + offsetY - 125 + 5;
+  let imgWidth = dataWidth * scaleFactor + 225;
+  let imgHeight = dataHeight * scaleFactor + 225;
 
   if (img && window.showImage) {
     console.log(img.elt)
