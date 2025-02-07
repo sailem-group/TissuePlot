@@ -234,6 +234,7 @@ function transformFileData(fileData) {
 
 let currentEmbedding = null
 let currentClusters = []
+window.clusterInfo = null
 
 async function showUMAP() {
     try {
@@ -246,6 +247,7 @@ async function showUMAP() {
         const topExpressedGenes = transformFileData(genesData);
 
         const clusters = spotClusterMembership.map((row) => parseInt(row.Cluster, 10));
+        window.clusterInfo = clusters;
         const uniqueClusters = [...new Set(clusters)]; 
         const geneNames = Object.keys(topExpressedGenes[0]);
         const geneExpressionData = topExpressedGenes.map((row) =>
@@ -294,7 +296,8 @@ async function showUMAP() {
                         mode: 'markers',
                         marker: {
                             size: 8,
-                            color: 'grey'
+                            color: 'grey',
+                            opacity: 0.5,
                         },
                         text: clusters.map((cluster, index) => `Cluster: ${cluster}, Row: ${index}`),
                     };
@@ -391,7 +394,8 @@ function reGenerateUMAP(allClusters, selectedClusters) {
             mode: 'markers',
             marker: {
                 size: 8,
-                color: 'grey', 
+                color: 'grey',
+                opacity: 0.5,
             },
         };
 
@@ -454,6 +458,56 @@ function reGenerateUMAP(allClusters, selectedClusters) {
     umapPlotDiv.innerHTML = '';
     Plotly.newPlot('umap-plot', [trace], layout);
 }
+
+function highlightUMAPRow(allClusters, indexToHighlight) {
+    if (!currentEmbedding || !allClusters) {
+        console.error("UMAP data not found!");
+        return;
+    }
+
+    const umapPlotDiv = document.getElementById('umap-plot');
+    umapPlotDiv.innerHTML = '<p>Updating UMAP...</p>';
+
+    const allPointsTrace = {
+        x: currentEmbedding.filter((_, index) => index !== indexToHighlight).map((point) => point[0]),
+        y: currentEmbedding.filter((_, index) => index !== indexToHighlight).map((point) => point[1]),
+        mode: 'markers',
+        marker: {
+            size: 8,
+            color: 'gray',
+            opacity: 0.5,
+        },
+        text: allClusters.filter((_, index) => index !== indexToHighlight)
+                         .map((cluster, index) => `Cluster: ${cluster}, Row: ${index}`),
+        name: ''
+    };
+
+    const highlightedPointTrace = {
+        x: [currentEmbedding[indexToHighlight][0]],
+        y: [currentEmbedding[indexToHighlight][1]],
+        mode: 'markers',
+        marker: {
+            size: 14,
+            color: 'brown',
+            layer: 'above traces',
+        },
+        text: [`Cluster: ${allClusters[indexToHighlight]}, Row: ${indexToHighlight}`],
+        name: ''
+    };
+
+    const layout = {
+        xaxis: { title: 'UMAP Dimension 1' },
+        yaxis: { title: 'UMAP Dimension 2' },
+        height: 300,
+        width: 400,
+        margin: { t: 5, r: 5 },
+        showlegend: false,
+    };
+
+    umapPlotDiv.innerHTML = '';
+    Plotly.newPlot('umap-plot', [allPointsTrace, highlightedPointTrace], layout);
+}
+
 
 
 function showImageChanged(e) {
@@ -837,6 +891,12 @@ class Spot {
         //     summary += `<br/><b>Cluster</b><img width="95%" and height="95%" src="cluster-legend.png"/> <br/>`
 
         // }
+        if (document.getElementById("umapTab").classList.contains("active")){
+            if(document.getElementById("clusterDropdownContainer").style.display === "block"){
+                highlightUMAPRow(window.clusterInfo, this.index)
+            }
+        }
+
         return summary;
     }
 }
