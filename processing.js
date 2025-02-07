@@ -19,6 +19,8 @@ document.querySelectorAll(".nav-link").forEach(tab => {
     tab.addEventListener("click", showOrHideOptions);
 });
 
+window.numberOfClusters = [];
+
 window.onload = async function () {
     await showDemo()
     document.getElementById("showCluster").click()
@@ -150,6 +152,25 @@ dropdown.addEventListener("change", (event) => {
     }
 });
 
+function uniqueClusterCount (valuesRows) {
+    const headers = valuesRows[0].split(',');
+    console.log("headers")
+    console.log(headers)
+    const clusterIndex = headers.findIndex(header => header.trim() === 'Cluster');
+
+    if (clusterIndex === -1) {
+        console.error("Cluster column not found in CSV");
+    } else {
+        let clusters = valuesRows.slice(1) 
+            .map(row => row.split(',')[clusterIndex])
+            .map(value => parseInt(value, 10))
+            .filter(value => !isNaN(value));
+
+        let uniqueClusters = [...new Set(clusters)].sort((a, b) => a - b);
+        return uniqueClusters;
+    }
+}
+
 async function showDemo() {
     window.showDemoButton = "clicked"
     let positionsCsv = await fetch('./SpotPositions.csv')
@@ -164,6 +185,8 @@ async function showDemo() {
     console.log(valuesRes);
     const valuesText = valuesRes;
     const valuesRows = valuesText.split('\n');
+    window.numberOfClusters = uniqueClusterCount(valuesRows)
+    generateClusterLegend(window.numberOfClusters);
     valuesData = valuesRows.map(row => row.trim().split(','));
 
     let genesCsv = await fetch('./TopExpressedGenes.csv')
@@ -506,6 +529,8 @@ function valuesUploaded(e) {
         reader.onload = function (e) {
             const text = e.target.result;
             const rows = text.split('\n');
+            window.numberOfClusters = uniqueClusterCount(rows)
+            generateClusterLegend(window.numberOfClusters);
             valuesData = rows.map(row => row.trim().split(','));
             console.log(valuesData);
         };
@@ -806,16 +831,100 @@ class Spot {
             })
         }
 
-        if (this.cluster) {
-            //summary += `<i style="font-size: 16px" class="bi bi-${shapesToClusterMap[this.cluster]}"></i> <b>Cluster:</b> ${this.cluster} <br/>`
-            //summary += `<img width="95%" and height="95%" src="cluster-legend.png"/> <br/>`
-            summary += `<br/><b>Cluster</b><img width="95%" and height="95%" src="cluster-legend.png"/> <br/>`
+        // if (this.cluster) {
+        //     //summary += `<i style="font-size: 16px" class="bi bi-${shapesToClusterMap[this.cluster]}"></i> <b>Cluster:</b> ${this.cluster} <br/>`
+        //     //summary += `<img width="95%" and height="95%" src="cluster-legend.png"/> <br/>`
+        //     summary += `<br/><b>Cluster</b><img width="95%" and height="95%" src="cluster-legend.png"/> <br/>`
 
-        }
+        // }
         return summary;
     }
 }
 
+const shapeSVGs = {
+    1: `<svg width="20" height="20"><polygon points="${getTrianglePoints(10, 10, 8)}" stroke="black" fill="none"/></svg>`,
+    2: `<svg width="20" height="20">
+            <line x1="2" y1="2" x2="16" y2="16" stroke="black"/>
+            <line x1="2" y1="16" x2="16" y2="2" stroke="black"/>
+        </svg>`,
+    3: `<svg width="20" height="20"><circle cx="10" cy="10" r="8" stroke="black" fill="none"/></svg>`,
+    4: `<svg width="20" height="20">${getStarSVG(10, 10, 8, "black")}</svg>`,
+    5: `<svg width="20" height="20">${drawHexagonSVG(10, 10, 8, "black")}</svg>`,
+    6: `<svg width="20" height="20"><rect x="3" y="3" width="14" height="14" stroke="black" fill="none"/></svg>`,
+    7: `<svg width="20" height="20"><polygon points="${getDiamondPoints(10, 10, 8)}" stroke="black" fill="none"/></svg>`,
+    8: `<svg width="20" height="20">
+            <line x1="10" y1="2" x2="10" y2="18" stroke="black"/>
+            <line x1="2" y1="10" x2="18" y2="10" stroke="black"/>
+        </svg>`,
+    9: `<svg width="20" height="20"><line x1="2" y1="10" x2="18" y2="10" stroke="black"/></svg>`,
+    10: `<svg width="20" height="20"><line x1="2" y1="16" x2="16" y2="2" stroke="black"/></svg>`,
+    11: `<svg width="20" height="20"><polygon points="${getPentagonPoints(10, 10, 8)}" stroke="black" fill="none"/></svg>`,
+    12: `<svg width="20" height="20"><polygon points="${getArrowPoints(10, 10, 8)}" stroke="black" fill="none"/></svg>`,
+    13: `<svg width="20" height="20"><polygon points="${getChevronPoints(10, 10, 8)}" stroke="black" fill="none"/></svg>`,
+    14: `<svg width="20" height="20">${getHashSVG(10, 10, 8, "black")}</svg>`,
+    15: `<svg width="20" height="20">${getCrescentPath(10, 10, 6, "black")}</svg>`,
+    16: `<svg width="20" height="20"><ellipse cx="10" cy="10" rx="8" ry="5" stroke="black" fill="none"/></svg>`,
+    17: `<svg width="20" height="20">${getPieSlicePath(10, 10, 5, "black")}</svg>`,
+    18: `<svg width="20" height="20">${getInfinitySVG(10, 10, 6, "black")}</svg>`,
+    19: `<svg width="20" height="20">${getBowtieSVG(10, 10, 8, "black")}</svg>`,
+    20: `<svg width="20" height="20">
+            <circle cx="10" cy="10" r="8" stroke="black" fill="none"/>
+            <circle cx="10" cy="10" r="4" stroke="black" fill="none"/>
+        </svg>`,
+    21: `<svg width="20" height="20"><polygon points="${getTrapezoidPoints(10, 10, 8)}" stroke="black" fill="none"/></svg>`,
+    22: `<svg width="20" height="20">${getSpiralSVG(10, 10, 8, "black")}</svg>`,
+    23: `<svg width="20" height="20">${getZigzagSVG(10, 10, 8, "black")}</svg>`,
+    24: `<svg width="20" height="20"><line x1="2" y1="2" x2="16" y2="16" stroke="black"/></svg>`,
+    25: `<svg width="20" height="20">${getCrossSVG(10, 10, 6, "black")}</svg>`,
+    26: `<svg width="20" height="20"><polygon points="${getRhombusPoints(10, 10, 6)}" stroke="black" fill="none"/></svg>`,
+    27: `<svg width="20" height="20">
+            <rect x="5" y="3" width="10" height="4" stroke="black" fill="none"/>
+            <rect x="7" y="7" width="6" height="10" stroke="black" fill="none"/>
+        </svg>`,
+    28: `<svg width="20" height="20">
+            <line x1="3" y1="7" x2="17" y2="7" stroke="black"/>
+            <line x1="3" y1="13" x2="17" y2="13" stroke="black"/>
+        </svg>`,
+    29: `<svg width="20" height="20">${getLightningSVG(10, 10, 8, "black")}</svg>`,
+    30: `<svg width="20" height="20" stroke-weight="2">${getStarburstSVG(10, 10, 8, "black")}</svg>`, 
+};
+
+function generateClusterLegend(clusters) {
+    console.log("Clusters received:", clusters);
+    const legendContainer = document.getElementById("clusterLegendContainer");
+    legendContainer.innerHTML = "";
+
+    // Add Title
+    const title = document.createElement("h6");
+    title.innerText = "Cluster";
+    title.style.marginBottom = "5px";
+    title.style.marginLeft = "6px";
+    title.style.fontSize = "1rem"
+    legendContainer.appendChild(title);
+
+    clusters.sort((a, b) => a - b);
+
+    clusters.forEach(cluster => {
+        const shapeSVG = shapeSVGs[cluster] || "?"; 
+
+        const clusterItem = document.createElement("div");
+        clusterItem.classList.add("cluster-item");
+        clusterItem.style.display = "inline-block";
+        clusterItem.style.textAlign = "center";
+        clusterItem.style.margin = "5px";
+
+        const shapeElement = document.createElement("span");
+        shapeElement.innerHTML = shapeSVG;
+
+        const numberElement = document.createElement("span");
+        numberElement.innerText = cluster;
+        numberElement.style.display = "block";
+
+        clusterItem.appendChild(shapeElement);
+        clusterItem.appendChild(numberElement);
+        legendContainer.appendChild(clusterItem);
+    });
+}
 
 const heatMapColors = [
     "#238A8D",

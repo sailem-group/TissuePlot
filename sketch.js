@@ -536,10 +536,9 @@ function drawTriangle(x, y, r) {
 }
 
 function getTrianglePoints(x, y, r) {
-  let h = r * sqrt(3) / 2;
+  let h = r * Math.sqrt(3) / 2;
   return `${x},${y - r} ${x - h},${y + r / 2} ${x + h},${y + r / 2}`;
 }
-
 
 function drawX(x, y, r) {
   line(x - r, y - r, x + r, y + r);
@@ -566,16 +565,16 @@ function drawStar(x, y, r) {
 }
 
 function getStarSVG(x, y, r, color) {
-  let angle = TWO_PI / 5;
+  let angle = (2 * Math.PI) / 5;
   let halfAngle = angle / 2;
   let points = [];
 
-  for (let a = 0; a < TWO_PI; a += angle) {
-      let sx = x + cos(a) * r;
-      let sy = y + sin(a) * r;
+  for (let a = 0; a < (2 * Math.PI); a += angle) {
+      let sx = x + Math.cos(a) * r;
+      let sy = y + Math.sin(a) * r;
       points.push(`${sx},${sy}`);
-      sx = x + cos(a + halfAngle) * r / 2;
-      sy = y + sin(a + halfAngle) * r / 2;
+      sx = x + Math.cos(a + halfAngle) * r / 2;
+      sy = y + Math.sin(a + halfAngle) * r / 2;
       points.push(`${sx},${sy}`);
   }
 
@@ -795,13 +794,6 @@ function getBowtieSVG(x, y, radius, color) {
            fill="none" stroke="${color}" />`;
 }
 
-function getTrapezoidPoints(x, y, radius) {
-  return `${x - radius * 1.2},${y + radius * 0.6}
-          ${x - radius * 0.6},${y - radius * 0.6}
-          ${x + radius * 0.6},${y - radius * 0.6}
-          ${x + radius * 1.2},${y + radius * 0.6}`;
-}
-
 function drawDoubleCircle(x, y, radius) {
   beginShape();
   ellipse(x, y, radius * 2, radius * 2);
@@ -825,7 +817,6 @@ function getTrapezoidPoints(x, y, radius) {
           ${x + radius * 1.2},${y + radius * 0.6}`;
 }
 
-
 function drawSpiral(x, y, radius) {
   beginShape();
   const numLoops = 3;
@@ -846,13 +837,13 @@ function getSpiralSVG(x, y, radius, color) {
   let points = [];
   const numLoops = 3;
   const steps = 100;
-  const angleStep = (TWO_PI * numLoops) / steps;
+  const angleStep = ((2 * Math.PI) * numLoops) / steps;
   const maxRadius = radius;
   for (let i = 0; i <= steps; i++) {
     const angle = i * angleStep;
     const r = (maxRadius * i) / steps;
-    const px = x + r * cos(angle);
-    const py = y + r * sin(angle);
+    const px = x + r * Math.cos(angle);
+    const py = y + r * Math.sin(angle);
     points.push(`${px},${py}`);
   }
   
@@ -909,19 +900,24 @@ function getCrossSVG(x, y, radius, color) {
 }
 
 function drawRhombus(x, y, radius) {
+  let offsetX = radius * 0.6; 
+  let offsetY = radius * 0.5;
+
   beginShape();
-  vertex(x, y - radius);
-  vertex(x + radius, y);
-  vertex(x, y + radius);
-  vertex(x - radius, y);
+  vertex(x - radius + offsetX / 2, y - offsetY);
+  vertex(x + radius + offsetX / 2, y - offsetY);
+  vertex(x + radius - offsetX + offsetX / 2, y + offsetY);
+  vertex(x - radius - offsetX + offsetX / 2, y + offsetY);
   endShape(CLOSE);
 }
 
 function getRhombusPoints(x, y, radius) {
-  return `${x},${y - radius} 
-          ${x + radius},${y} 
-          ${x},${y + radius} 
-          ${x - radius},${y}`;
+  let offsetX = radius * 0.6;
+  let offsetY = radius * 0.5;
+  return `${x - radius + offsetX / 2},${y - offsetY} 
+          ${x + radius + offsetX / 2},${y - offsetY} 
+          ${x + radius - offsetX + offsetX / 2},${y + offsetY} 
+          ${x - radius - offsetX + offsetX / 2},${y + offsetY}`;
 }
 
 function drawTShape(x, y, radius) {
@@ -1011,18 +1007,14 @@ function drawHexagon(x, y, radius, color) {
 
 function drawHexagonSVG(x, y, radius, color) {
   let points = []
-  noFill();
-  stroke(color);
-  strokeWeight(0.9);
-
   for (let i = 0; i < 6; i++) {
-    let angle = TWO_PI / 6 * i + PI / 6;
-    let vx = x + cos(angle) * radius;
-    let vy = y + sin(angle) * radius;
+    let angle = (2 * Math.PI) / 6 * i + Math.PI / 6;
+    let vx = x + Math.cos(angle) * radius;
+    let vy = y + Math.sin(angle) * radius;
     //vertex(vx, vy);
     points.push(`${vx},${vy}`);
   }
-  return `<polygon points="${points.join(" ")}"  fill="none" stroke="${color}"/>`;
+  return `<polygon points="${points.join(" ")}"  fill="none" stroke="${color}" stoke-weight="0.9"/>`;
 }
 
 function mouseWheel(event) {
