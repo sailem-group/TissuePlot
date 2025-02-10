@@ -511,7 +511,7 @@ function drawClusterSVG(x, y, radius, spot, color) {
       }
   } else if (window.selectedClusterView === "numbers") {
 
-      return `<text x="${x}" y="${y}" font-size="${radius * 3}" font-family="Arial" stroke-width="0.3" text-anchor="middle" fill="none" stroke="${color}" dominant-baseline="middle">${spot.cluster}</text>`;
+      return `<text x="${x}" y="${y}" font-size="${radius * 3}" font-family="Arial" stroke="none" text-anchor="middle" fill="${color}" dominant-baseline="central">${spot.cluster}</text>`;
   }
 }
 
