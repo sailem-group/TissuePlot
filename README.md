@@ -5,7 +5,7 @@ TissuePlot is a web application designed for visualizing spatial datasets, inclu
 <p>
 If you use our tool please cite:
 <br/>
-Khawatmi M., and Sailem H., TissuePlot: A Multi-Scale Interactive Visualization Tool for Spatial Data. bioRxiv
+Khawatmi M., and Sailem H. (2024), TissuePlot: A Multi-Scale Interactive Visualization Tool for Spatial Data. bioRxiv 10.1101/2024.08.14.607906.
 </p>
 
 <p>
