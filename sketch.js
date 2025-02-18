@@ -154,15 +154,19 @@ function showBarChart(index, barcode, data, isCellComposition) {
     colors = Object.keys(clusterCounts).map(value => clusterColors[value]);
   }
 
+  const total = values.reduce((acc, val) => acc + val, 0);
+  const percentages = values.map(value => (value / total) * 100);
+  let maxPercentage = ((Math.ceil(Math.max(...percentages) / 10) * 10) + 10)  > 100 ? (Math.ceil(Math.max(...percentages) / 10) * 10) : (Math.ceil(Math.max(...percentages) / 10) * 10) + 10; // Round up to nearest 10
 
   const trace = {
     x: labels,
-    y: values,
+    y: percentages,
     type: "bar",
     marker: {
       color: colors,
     },
-    text: isCellComposition ? values.map((value, index) => `${labels[index]}: ${value.toFixed(2)}`) : values.map((value, index) => `${labels[index]}: ${value}`),
+    // text: isCellComposition ? values.map((value, index) => `${labels[index]}: ${value.toFixed(2)}`) : values.map((value, index) => `${labels[index]}: ${value}`),
+    text: percentages.map((value, index) => `${labels[index]}: ${Math.round(value)}%`),
     hoverinfo: "text",
     textposition: "none",
   };
@@ -172,8 +176,9 @@ function showBarChart(index, barcode, data, isCellComposition) {
       title: isCellComposition ? "Cell type" : "Clusters",
     },
     yaxis: {
-      title: "Values",
-      range: [0, Math.max(...values) + 0.1],
+      title: "Percentage (%)",
+      range: [0, maxPercentage], // Y-axis always ranges from 0 to 100
+      dtick: 10,
     },
     margin: {
       t: 5,
@@ -332,97 +337,108 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
 
 function switchCaseCluster(scaledX, scaledY, shapeRadius, spot, colorValue) {
   if (window.selectedClusterView === "shapes") {
-    switch (spot.cluster) {
-      case "1":
-        drawTriangle(scaledX, scaledY, shapeRadius)
-        break;
-      case "2":
-        drawX(scaledX, scaledY, shapeRadius)
-        break;
-      case "3":
-        drawCircle(scaledX, scaledY, shapeRadius)
-        break;
-      case "4":
-        drawStar(scaledX, scaledY, shapeRadius)
-        break;
-      case "5":
-        drawHexagon(scaledX, scaledY, shapeRadius, colorValue)
-        break;
-      case "6":
-        drawSquare(scaledX, scaledY, shapeRadius)
-        break;
-      case "7":
-        drawDiamond(scaledX, scaledY, shapeRadius)
-        break;
-      case "8":
-        drawPlus(scaledX, scaledY, shapeRadius)
-        break;
-      case "9":
-        drawMinus(scaledX, scaledY, shapeRadius)
-        break;
-      case "10":
-        drawSlash(scaledX, scaledY, shapeRadius)
-        break;
-      case "11":
-        drawPentagon(scaledX, scaledY, shapeRadius);
-        break;
-      case "12":
-        drawArrow(scaledX, scaledY, shapeRadius);
-        break;
-      case "13":
-        drawChevron(scaledX, scaledY, shapeRadius);
-        break;
-      case "14":
-        drawHash(scaledX, scaledY, shapeRadius);
-        break;
-      case "15":
-        drawCrescent(scaledX, scaledY, shapeRadius);
-        break;
-      case "16":
-        drawEllipse(scaledX, scaledY, shapeRadius);
-        break;
-      case "17":
-        drawPieSlice(scaledX, scaledY, shapeRadius);
-        break;
-      case "18":
-        drawInfinity(scaledX, scaledY, shapeRadius);
-        break;
-      case "19":
-        drawBowtie(scaledX, scaledY, shapeRadius);
-        break;
-      case "20":
-        drawDoubleCircle(scaledX, scaledY, shapeRadius);
-        break;
-      case "21":
-        drawTrapezoid(scaledX, scaledY, shapeRadius);
-        break;
-      case "22":
-        drawSpiral(scaledX, scaledY, shapeRadius);
-        break;
-      case "23":
-        drawZigzag(scaledX, scaledY, shapeRadius);
-        break;
-      case "24":
-        drawBackSlash(scaledX, scaledY, shapeRadius);
-        break;
-      case "25":
-        drawCross(scaledX, scaledY, shapeRadius);
-        break;
-      case "26":
-        drawRhombus(scaledX, scaledY, shapeRadius);
-        break;
-      case "27":
-        drawTShape(scaledX, scaledY, shapeRadius);
-        break;
-      case "28":
-        drawBracket(scaledX, scaledY, shapeRadius);
-        break;
-      case "29":
-        drawLightning(scaledX, scaledY, shapeRadius);
-        break;
-      case "30":
-        drawStarburst(scaledX, scaledY, shapeRadius);
-        break;
+    const clusterNumber = parseInt(spot.cluster, 10);
+    
+    // Define the range of clusters that have shapes
+    const maxShapeCluster = 30;
+    
+    if (clusterNumber >= 1 && clusterNumber <= maxShapeCluster) {
+      switch (spot.cluster) {
+        case "1":
+          drawTriangle(scaledX, scaledY, shapeRadius);
+          break;
+        case "2":
+          drawX(scaledX, scaledY, shapeRadius);
+          break;
+        case "3":
+          drawCircle(scaledX, scaledY, shapeRadius);
+          break;
+        case "4":
+          drawStar(scaledX, scaledY, shapeRadius);
+          break;
+        case "5":
+          drawHexagon(scaledX, scaledY, shapeRadius, colorValue);
+          break;
+        case "6":
+          drawSquare(scaledX, scaledY, shapeRadius);
+          break;
+        case "7":
+          drawDiamond(scaledX, scaledY, shapeRadius);
+          break;
+        case "8":
+          drawPlus(scaledX, scaledY, shapeRadius);
+          break;
+        case "9":
+          drawMinus(scaledX, scaledY, shapeRadius);
+          break;
+        case "10":
+          drawSlash(scaledX, scaledY, shapeRadius);
+          break;
+        case "11":
+          drawPentagon(scaledX, scaledY, shapeRadius);
+          break;
+        case "12":
+          drawArrow(scaledX, scaledY, shapeRadius);
+          break;
+        case "13":
+          drawChevron(scaledX, scaledY, shapeRadius);
+          break;
+        case "14":
+          drawHash(scaledX, scaledY, shapeRadius);
+          break;
+        case "15":
+          drawCrescent(scaledX, scaledY, shapeRadius);
+          break;
+        case "16":
+          drawEllipse(scaledX, scaledY, shapeRadius);
+          break;
+        case "17":
+          drawPieSlice(scaledX, scaledY, shapeRadius);
+          break;
+        case "18":
+          drawInfinity(scaledX, scaledY, shapeRadius);
+          break;
+        case "19":
+          drawBowtie(scaledX, scaledY, shapeRadius);
+          break;
+        case "20":
+          drawDoubleCircle(scaledX, scaledY, shapeRadius);
+          break;
+        case "21":
+          drawTrapezoid(scaledX, scaledY, shapeRadius);
+          break;
+        case "22":
+          drawSpiral(scaledX, scaledY, shapeRadius);
+          break;
+        case "23":
+          drawZigzag(scaledX, scaledY, shapeRadius);
+          break;
+        case "24":
+          drawBackSlash(scaledX, scaledY, shapeRadius);
+          break;
+        case "25":
+          drawCross(scaledX, scaledY, shapeRadius);
+          break;
+        case "26":
+          drawRhombus(scaledX, scaledY, shapeRadius);
+          break;
+        case "27":
+          drawTShape(scaledX, scaledY, shapeRadius);
+          break;
+        case "28":
+          drawBracket(scaledX, scaledY, shapeRadius);
+          break;
+        case "29":
+          drawLightning(scaledX, scaledY, shapeRadius);
+          break;
+        case "30":
+          drawStarburst(scaledX, scaledY, shapeRadius);
+          break;
+      }
+    } else {
+      // If cluster number is greater than 30, loop it back to numbers 1-30
+      const loopedClusterNumber = ((clusterNumber - 1) % maxShapeCluster) + 1;
+      drawClusterNumber(scaledX, scaledY, shapeRadius, loopedClusterNumber, colorValue);
     }
   } else if (window.selectedClusterView === "numbers") {
     // Displaying the cluster number instead of a shape
@@ -432,83 +448,92 @@ function switchCaseCluster(scaledX, scaledY, shapeRadius, spot, colorValue) {
 
 function drawClusterSVG(x, y, radius, spot, color) {
   if (window.selectedClusterView === "shapes") {
-    switch (spot.cluster) {
-        case "1":
-            return `<polygon points="${getTrianglePoints(x, y, radius)}"  fill="none" stroke="${color}" />`;
-        case "2":
-            return `<g>
-                        <line x1="${x - radius}" y1="${y - radius}" x2="${x + radius}" y2="${y + radius}" fill="none" stroke="${color}"/>
-                        <line x1="${x - radius}" y1="${y + radius}" x2="${x + radius}" y2="${y - radius}" fill="none" stroke="${color}"/>
-                    </g>`;
-        case "3":
-            return `<circle cx="${x}" cy="${y}" r="${radius}"  fill="none" stroke="${color}"/>`;
-        case "4":
-            return getStarSVG(x, y, radius, color);
-        case "5":
-            return drawHexagonSVG(x, y, radius, color);
-        case "6":
-            return `<rect x="${x - radius}" y="${y - radius}" width="${radius * 2}" height="${radius * 2}"  fill="none" stroke="${color}"/>`;
-        case "7":
-            return `<polygon points="${getDiamondPoints(x, y, radius)}"  fill="none" stroke="${color}"/>`;
-        case "8":
-            return `<g>
-                        <line x1="${x - radius}" y1="${y}" x2="${x + radius}" y2="${y}" fill="none" stroke="${color}"/>
-                        <line x1="${x}" y1="${y - radius}" x2="${x}" y2="${y + radius}" fill="none" stroke="${color}"/>
-                    </g>`;
-        case "9":
-            return `<line x1="${x - radius}" y1="${y}" x2="${x + radius}" y2="${y}" fill="none" stroke="${color}"/>`;
-        case "10":
-            return `<line x1="${x - radius}" y1="${y + radius}" x2="${x + radius}" y2="${y - radius}" fill="none" stroke="${color}"/>`;
-        case "11":
-            return `<polygon points="${getPentagonPoints(x, y, radius)}"  fill="none" stroke="${color}"/>`;
-        case "12":
-            return `<polygon points="${getArrowPoints(x, y, radius)}"  fill="none" stroke="${color}"/>`;
-        case "13":
-            return `<polygon points="${getChevronPoints(x, y, radius)}"  fill="none" stroke="${color}"/>`;
-        case "14":
-            return getHashSVG(x, y, radius, color);
-        case "15":
-            return getCrescentPath(x, y, radius, color)
-        case "16":
-            return `<ellipse cx="${x}" cy="${y}" rx="${radius * 1.25}" ry="${radius * 0.75}" fill="none" stroke="${color}" />`;
-        case "17":
-            return getPieSlicePath(x, y, radius, color);
-        case "18":
-            return getInfinitySVG(x, y, radius, color);
-        case "19":
-            return getBowtieSVG(x, y, radius, color);
-        case "20":
-            return `<g>
-                        <circle cx="${x}" cy="${y}" r="${radius}" fill="none" stroke="${color}" />
-                        <circle cx="${x}" cy="${y}" r="${radius * 0.5}" fill="none" stroke="${color}" />
-                    </g>`;
-        case "21":
-            return `<polygon points="${getTrapezoidPoints(x, y, radius)}" fill="none" stroke="${color}" />`;
-        case "22":
-            return getSpiralSVG(x, y, radius, color);
-        case "23":
-            return getZigzagSVG(x, y, radius, color);
-        case "24":
-            return `<line x1="${x - radius}" y1="${y - radius}" x2="${x + radius}" y2="${y + radius}" fill="none" stroke="${color}" />`;
-        case "25":
-            return getCrossSVG(x, y, radius, color);
-        case "26":
-            return `<polygon points="${getRhombusPoints(x, y, radius)}" fill="none" stroke="${color}" />`;
-        case "27":
-            return `<g>
-                        <rect x="${x - radius * 0.6}" y="${y - radius}" width="${radius * 1.2}" height="${radius * 0.4}" fill="none" stroke="${color}" />
-                        <rect x="${x - radius * 0.2}" y="${y - radius * 0.6}" width="${radius * 0.4}" height="${radius * 1.5}" fill="none" stroke="${color}" />
-                    </g>`;
-        case "28":
-            return `<g>
-                        <line x1="${x - radius}" y1="${y - radius / 3}" x2="${x + radius}" y2="${y - radius / 3}" fill="none" stroke="${color}" />
-                        <line x1="${x - radius}" y1="${y + radius / 3}" x2="${x + radius}" y2="${y + radius / 3}" fill="none" stroke="${color}" />
-                    </g>`;
-        case "29":
-            return getLightningSVG(x, y, radius, color);
-        case "30":
-            return getStarburstSVG(x, y, radius, color);
-      }
+    const clusterNumber = parseInt(spot.cluster, 10);
+    const maxShapeCluster = 30;
+
+    if (clusterNumber >= 1 && clusterNumber <= maxShapeCluster) {
+      switch (spot.cluster) {
+          case "1":
+              return `<polygon points="${getTrianglePoints(x, y, radius)}"  fill="none" stroke="${color}" />`;
+          case "2":
+              return `<g>
+                          <line x1="${x - radius}" y1="${y - radius}" x2="${x + radius}" y2="${y + radius}" fill="none" stroke="${color}"/>
+                          <line x1="${x - radius}" y1="${y + radius}" x2="${x + radius}" y2="${y - radius}" fill="none" stroke="${color}"/>
+                      </g>`;
+          case "3":
+              return `<circle cx="${x}" cy="${y}" r="${radius}"  fill="none" stroke="${color}"/>`;
+          case "4":
+              return getStarSVG(x, y, radius, color);
+          case "5":
+              return drawHexagonSVG(x, y, radius, color);
+          case "6":
+              return `<rect x="${x - radius}" y="${y - radius}" width="${radius * 2}" height="${radius * 2}"  fill="none" stroke="${color}"/>`;
+          case "7":
+              return `<polygon points="${getDiamondPoints(x, y, radius)}"  fill="none" stroke="${color}"/>`;
+          case "8":
+              return `<g>
+                          <line x1="${x - radius}" y1="${y}" x2="${x + radius}" y2="${y}" fill="none" stroke="${color}"/>
+                          <line x1="${x}" y1="${y - radius}" x2="${x}" y2="${y + radius}" fill="none" stroke="${color}"/>
+                      </g>`;
+          case "9":
+              return `<line x1="${x - radius}" y1="${y}" x2="${x + radius}" y2="${y}" fill="none" stroke="${color}"/>`;
+          case "10":
+              return `<line x1="${x - radius}" y1="${y + radius}" x2="${x + radius}" y2="${y - radius}" fill="none" stroke="${color}"/>`;
+          case "11":
+              return `<polygon points="${getPentagonPoints(x, y, radius)}"  fill="none" stroke="${color}"/>`;
+          case "12":
+              return `<polygon points="${getArrowPoints(x, y, radius)}"  fill="none" stroke="${color}"/>`;
+          case "13":
+              return `<polygon points="${getChevronPoints(x, y, radius)}"  fill="none" stroke="${color}"/>`;
+          case "14":
+              return getHashSVG(x, y, radius, color);
+          case "15":
+              return getCrescentPath(x, y, radius, color)
+          case "16":
+              return `<ellipse cx="${x}" cy="${y}" rx="${radius * 1.25}" ry="${radius * 0.75}" fill="none" stroke="${color}" />`;
+          case "17":
+              return getPieSlicePath(x, y, radius, color);
+          case "18":
+              return getInfinitySVG(x, y, radius, color);
+          case "19":
+              return getBowtieSVG(x, y, radius, color);
+          case "20":
+              return `<g>
+                          <circle cx="${x}" cy="${y}" r="${radius}" fill="none" stroke="${color}" />
+                          <circle cx="${x}" cy="${y}" r="${radius * 0.5}" fill="none" stroke="${color}" />
+                      </g>`;
+          case "21":
+              return `<polygon points="${getTrapezoidPoints(x, y, radius)}" fill="none" stroke="${color}" />`;
+          case "22":
+              return getSpiralSVG(x, y, radius, color);
+          case "23":
+              return getZigzagSVG(x, y, radius, color);
+          case "24":
+              return `<line x1="${x - radius}" y1="${y - radius}" x2="${x + radius}" y2="${y + radius}" fill="none" stroke="${color}" />`;
+          case "25":
+              return getCrossSVG(x, y, radius, color);
+          case "26":
+              return `<polygon points="${getRhombusPoints(x, y, radius)}" fill="none" stroke="${color}" />`;
+          case "27":
+              return `<g>
+                          <rect x="${x - radius * 0.6}" y="${y - radius}" width="${radius * 1.2}" height="${radius * 0.4}" fill="none" stroke="${color}" />
+                          <rect x="${x - radius * 0.2}" y="${y - radius * 0.6}" width="${radius * 0.4}" height="${radius * 1.5}" fill="none" stroke="${color}" />
+                      </g>`;
+          case "28":
+              return `<g>
+                          <line x1="${x - radius}" y1="${y - radius / 3}" x2="${x + radius}" y2="${y - radius / 3}" fill="none" stroke="${color}" />
+                          <line x1="${x - radius}" y1="${y + radius / 3}" x2="${x + radius}" y2="${y + radius / 3}" fill="none" stroke="${color}" />
+                      </g>`;
+          case "29":
+              return getLightningSVG(x, y, radius, color);
+          case "30":
+              return getStarburstSVG(x, y, radius, color);
+        }
+    } else {
+      // If cluster number is greater than 30, loop it back to numbers 1-30
+      const loopedClusterNumber = ((clusterNumber - 1) % maxShapeCluster) + 1;
+      return `<text x="${x}" y="${y}" font-size="${radius * 3}" font-family="Arial" stroke="none" text-anchor="middle" fill="${color}" dominant-baseline="central">${loopedClusterNumber}</text>`;
+    }
   } else if (window.selectedClusterView === "numbers") {
 
       return `<text x="${x}" y="${y}" font-size="${radius * 3}" font-family="Arial" stroke="none" text-anchor="middle" fill="${color}" dominant-baseline="central">${spot.cluster}</text>`;

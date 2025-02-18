@@ -141,7 +141,12 @@
                 <input type="file" class="form-control" id="image" accept="image/*" />
               </div>
 
-              <button id="plotbutton" class="btn btn-primary btn-lg my-2">
+              <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
+                <label for="umapUpload" class="form-label">Upload UMAP file</label>
+                <input type="file" class="form-control" id="umapUpload" accept=".csv" />
+              </div>
+
+              <button id="plotbutton" class="btn btn-primary btn-lg my-2" disabled="true">
                 Generate
               </button>
             </div>
@@ -241,7 +246,7 @@
             <div class="modal-dialog" style="max-width: 300px;">
               <div class="modal-content" style="padding: 0; border-radius: 8px;">
                 <div style="display: flex; justify-content: space-between; padding: 2px;">
-                  <h6 style="margin: 7px"> Distribution of cell type </h6>
+                  <h6 style="margin: 7px"> Distribution of cell types </h6>
                   <button type="button" class="btn-close" id="closeModal" style="width: 5px; height: 5px; margin-right: 5px; margin-top: 5px;"></button>
                 </div>
                 <div style="padding: 2px;">
