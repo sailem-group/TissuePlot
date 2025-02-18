@@ -545,7 +545,9 @@ function showClusterLevelsChanged(e) {
             radio.disabled = false;
         });
     } else {
-        showAllLevelsCheckbox.disabled = false;
+        if(!document.getElementById("showGenes").checked){
+            showAllLevelsCheckbox.disabled = false;
+        }
         // Disabling cluster view selection when checkbox is unchecked
         document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
             radio.disabled = true;
@@ -778,6 +780,13 @@ function showCompositionChanged(e) {
         document.getElementById("gene-specific").classList.add("hidden")
         document.getElementById("showGenes").checked = false
         modeChange("cellComposition")
+        if (window.showCluster) {
+            document.getElementById("showAllLevels").checked = false;
+            document.getElementById("showAllLevels").disabled = true;
+        } else {
+            // document.getElementById("showAllLevels").checked = false;
+            document.getElementById("showAllLevels").disabled = false;
+        }
     } else {
         document.getElementById("composition-specific").classList.add("hidden")
     }
@@ -787,6 +796,8 @@ function showGenesChanged(e) {
     if (e.target.checked) {
         document.getElementById("gene-specific").classList.remove("hidden")
         document.getElementById("composition-specific").classList.add("hidden")
+        document.getElementById("showAllLevels").checked = false;
+        document.getElementById("showAllLevels").disabled = true;
         document.getElementById("showComposition").checked = false
         modeChange("genes")
     } else {

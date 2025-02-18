@@ -293,13 +293,13 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
       let sortedSpotMembership = spotMembership.sort((a, b) => b.value - a.value);
       if (saveFlag) {
         svgElements.push(drawHexagonSVG(scaledX, scaledY, spot.scaledRadius, sortedSpotMembership[0].color));
-        if ((zoomFactor > 4.2 || window.showAllLevels) && !window.showCluster) {
+        if (window.showAllLevels) {
           svgElements.push(drawHexagonSVG(scaledX, scaledY, (spot.radius + 25) * scaleFactor, sortedSpotMembership[1].color));
           svgElements.push(drawHexagonSVG(scaledX, scaledY, (spot.radius + 10) * scaleFactor, sortedSpotMembership[2].color));
         }
       } else {
         drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, sortedSpotMembership[0].color);
-        if ((zoomFactor > 4.2 || window.showAllLevels) && !window.showCluster) {
+        if ( window.showAllLevels) {
           drawHexagon(scaledX, scaledY, (spot.radius + 25) * scaleFactor, sortedSpotMembership[1].color);
           drawHexagon(scaledX, scaledY, (spot.radius + 10) * scaleFactor, sortedSpotMembership[2].color);
         }
