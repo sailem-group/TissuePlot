@@ -1,16 +1,31 @@
 //© Heba Sailem, heba.sailem@kcl.ac.uk
-document.getElementById("positions").addEventListener("change", function(e){ positinosUploaded(e); checkFileUploads(); })
-document.getElementById("values").addEventListener("change", function(e){valuesUploaded(e), checkFileUploads();})
+document.getElementById("positions").addEventListener("change", function (e) {
+    positinosUploaded(e);
+    checkFileUploads();
+})
+document.getElementById("values").addEventListener("change", function (e) {
+    valuesUploaded(e), checkFileUploads();
+})
 document.getElementById("showImage").addEventListener("change", showImageChanged)
 document.getElementById("showAllLevels").addEventListener("change", showAllLevelsChanged)
 document.getElementById("showCluster").addEventListener("change", showClusterLevelsChanged)
-document.getElementById("genesUpload").addEventListener("change", function(e){genesUploaded(e); checkFileUploads();})
-document.getElementById("umapUpload").addEventListener("change", function(e){umapUploaded(e); checkFileUploads();})
+document.getElementById("genesUpload").addEventListener("change", function (e) {
+    genesUploaded(e);
+    checkFileUploads();
+})
+document.getElementById("umapUpload").addEventListener("change", function (e) {
+    umapUploaded(e);
+    checkFileUploads();
+})
 document.getElementById("selectGenes").addEventListener("change", geneSelected)
 document.getElementById("showComposition").addEventListener("change", showCompositionChanged)
 document.getElementById("showGenes").addEventListener("change", showGenesChanged)
 document.getElementById("uploadNewFilesButton").addEventListener("click", uploadNewFileClicked)
-document.getElementById("showDemoButton").addEventListener("click", showDemo)
+document.getElementById("demo1").addEventListener("click", () => showDemo('demo1'));
+document.getElementById("demo2").addEventListener("click", () => showDemo('demo2'));
+document.getElementById("demo3").addEventListener("click", () => showDemo('demo3'));
+document.getElementById("demo4").addEventListener("click", () => showDemo('demo4'));
+document.getElementById("demo5").addEventListener("click", () => showDemo('demo5'));
 document.getElementById("plotbutton").addEventListener("click", generteCanvasClicked)
 document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
     radio.addEventListener("change", clusterViewSelectionChanged);
@@ -20,16 +35,18 @@ document.querySelectorAll(".nav-link").forEach(tab => {
     tab.addEventListener("click", showOrHideOptions);
 });
 
+window.currentUMAPWorker = null;
 window.numberOfClusters = [];
 
 window.onload = async function () {
-    await showDemo()
+    await showDemo('demo1')
     document.getElementById("showCluster").click()
 }
 
 window.showUMAP = showUMAP;
 window.selectedClusterView = "shapes";
 window.showDemoButton = "clicked";
+window.whichDemo = 'demo1';
 
 function showOrHideOptions() {
     const optionsContainer = document.getElementById("optionsContainer");
@@ -42,19 +59,19 @@ function showOrHideOptions() {
 
     } else {
         if (plottingTab.classList.contains("active")) {
-            if (window.showDemoButton === "none"){
+            if (window.showDemoButton === "none") {
                 if (window.getComputedStyle(document.getElementById("fileInputSection")).display === "block") {
-                    optionsContainer.style.display = "none"; 
+                    optionsContainer.style.display = "none";
                 } else if (window.getComputedStyle(document.getElementById("uploadNewFilesButton")).display === "block") {
                     optionsContainer.style.display = "block";
                 }
-            }else{
+            } else {
                 optionsContainer.style.display = "none";
             }
 
         } else {
             console.log(window.showDemoButton)
-            if (window.showDemoButton === "clicked"){
+            if (window.showDemoButton === "clicked") {
                 optionsContainer.style.display = "block";
             } else {
                 optionsContainer.style.display = "none";
@@ -109,8 +126,7 @@ window.showImage = false;
 window.showAllLevels = false;
 window.showCluster = false;
 
-const colorScales = [
-    {
+const colorScales = [{
         name: "Color Scale 1",
         value: "ColorScale1",
         colors: ["#FF0000", "#FFA500", "#9DFF09", "#FBFB08", "#22FF9A", "#1297FF", "#0000FF", "#9700FF", "#FB009A"]
@@ -156,45 +172,103 @@ dropdown.addEventListener("change", (event) => {
     }
 });
 
-function uniqueClusterCount (valuesRows) {
-    const headers = valuesRows[0].split(',');
-    console.log("headers")
-    console.log(headers)
+// function uniqueClusterCount(valuesRows) {
+//     const headers = valuesRows[0].split(',');
+//     console.log("headers")
+//     console.log(headers)
+//     const clusterIndex = headers.findIndex(header => header.trim() === 'Cluster');
+
+//     if (clusterIndex === -1) {
+//         console.error("Cluster column not found in CSV");
+//     } else {
+//         let clusters = valuesRows.slice(1)
+//             .map(row => row.split(',')[clusterIndex])
+//             .map(value => parseInt(value, 10))
+//             .filter(value => !isNaN(value));
+
+//         let uniqueClusters = [...new Set(clusters)].sort((a, b) => a - b);
+//         if (uniqueClusters[0] === 0) {
+//             uniqueClusters = uniqueClusters.map(value => value + 1);
+//         }
+//         return uniqueClusters;
+//     }
+// }
+
+function uniqueClusterCount(valuesRows) {
+    const headers = valuesRows[0]; // no split needed
+    console.log("headers");
+    console.log(headers);
+
     const clusterIndex = headers.findIndex(header => header.trim() === 'Cluster');
 
     if (clusterIndex === -1) {
         console.error("Cluster column not found in CSV");
-    } else {
-        let clusters = valuesRows.slice(1) 
-            .map(row => row.split(',')[clusterIndex])
-            .map(value => parseInt(value, 10))
-            .filter(value => !isNaN(value));
-
-        let uniqueClusters = [...new Set(clusters)].sort((a, b) => a - b);
-        return uniqueClusters;
+        return [];
     }
+
+    let clusters = valuesRows.slice(1)
+        .map(row => row[clusterIndex])
+        .map(value => parseInt(value, 10))
+        .filter(value => !isNaN(value));
+
+    let uniqueClusters = [...new Set(clusters)].sort((a, b) => a - b);
+    if (uniqueClusters[0] === 0) {
+        uniqueClusters = uniqueClusters.map(value => value + 1);
+    }
+    return uniqueClusters;
 }
 
-async function showDemo() {
+async function showDemo(demoValue = 'demo1') {
+    document.getElementById("loadingOverlay").style.display = "flex";
+
+    window.whichDemo = demoValue;
+    loadImageForDemo(demoValue);
     document.getElementById("umapTab").classList.remove("d-none");
     window.showDemoButton = "clicked"
-    let positionsCsv = await fetch('./SpotPositions.csv')
+
+    let positionsFile, valuesFile, genesFile;
+
+    if (demoValue === 'demo1') {
+        positionsFile = './SpotPositions.csv';
+        valuesFile = './SpotClusterMembership.csv';
+        genesFile = './TopExpressedGenes.csv';
+    } else if (demoValue === 'demo2') {
+        positionsFile = './exampleData/p5/SpotPositions_Transformed_SP5.csv';
+        valuesFile = './exampleData/p5/SpotClusterMembership_SP5.csv';
+        genesFile = './exampleData/p5/TopExpressedGenes_SP5.csv';
+    } else if (demoValue === 'demo3') {
+        positionsFile = './exampleData/p6/SpotPositions_SP6_matched.csv';
+        valuesFile = './exampleData/p6/SpotClusterMembership_SP6.csv';
+        genesFile = './exampleData/p6/TopExpressedGenes_SP6.csv';
+    } else if (demoValue === 'demo4') {
+        positionsFile = './exampleData/p7/SpotPositions_SP7_matched.csv';
+        valuesFile = './exampleData/p7/SpotClusterMembership_SP7.csv';
+        genesFile = './exampleData/p7/TopExpressedGenes_SP7.csv';
+    } else if (demoValue === 'demo5') {
+        positionsFile = './exampleData/p8/SpotPositions_SP8_matched.csv';
+        valuesFile = './exampleData/p8/SpotClusterMembership_SP8.csv';
+        genesFile = './exampleData/p8/TopExpressedGenes_SP8.csv';
+    }
+
+    let positionsCsv = await fetch(positionsFile)
     let positionsRes = await positionsCsv.text()
     console.log(positionsRes);
     const positionsText = positionsRes;
     const positionsRows = positionsText.split('\n');
     positionsData = positionsRows.map(row => row.split(','));
 
-    let valuesCsv = await fetch('./SpotClusterMembership.csv')
-    let valuesRes = await valuesCsv.text()
-    console.log(valuesRes);
-    const valuesText = valuesRes;
-    const valuesRows = valuesText.split('\n');
-    window.numberOfClusters = uniqueClusterCount(valuesRows)
+    let valuesCsv = await fetch(valuesFile);
+    let valuesRes = await valuesCsv.text();
+    const parsed = Papa.parse(valuesRes.trim(), {
+        header: false,
+        skipEmptyLines: true,
+    });
+    const valuesRows = parsed.data;
+    window.numberOfClusters = uniqueClusterCount(valuesRows);
     generateClusterLegend(window.numberOfClusters);
-    valuesData = valuesRows.map(row => row.trim().split(','));
+    valuesData = valuesRows;
 
-    let genesCsv = await fetch('./TopExpressedGenes.csv')
+    let genesCsv = await fetch(genesFile)
     let genesRes = await genesCsv.text()
     const genesText = genesRes;
     const genesRows = genesText.split('\n');
@@ -203,6 +277,8 @@ async function showDemo() {
     document.getElementById("optionsContainer").style.display = "block";
 
     generateVis()
+
+    document.getElementById("loadingOverlay").style.display = "none";
 
     //triggering showUMAP in the background
     setTimeout(() => {
@@ -241,23 +317,28 @@ let currentEmbedding = null
 let currentClusters = []
 window.clusterInfo = null
 
-async function showUMAP(showdemoCall=0) {
+async function showUMAP(showdemoCall = 0) {
     try {
+        if (window.currentUMAPWorker) {
+            console.log("Terminating previous UMAP worker...");
+            window.currentUMAPWorker.terminate();
+            window.currentUMAPWorker = null;
+        }
+
         const umapPlotDiv = document.getElementById('umap-plot');
         const clusterDropdownContainer = document.getElementById('clusterDropdownContainer');
         umapPlotDiv.innerHTML = '<p>UMAP is loading...</p>';
         umapPlotDiv.style.textAlign = 'center';
         const spotClusterMembership = transformFileData(valuesData);
         let topExpressedGenes = [];
-        if (showdemoCall){
+        if (showdemoCall) {
             topExpressedGenes = transformFileData(genesData);
-        }
-        else{
+        } else {
             topExpressedGenes = transformFileData(umapData);
         }
         const clusters = spotClusterMembership.map((row) => parseInt(row.Cluster, 10));
         window.clusterInfo = clusters;
-        const uniqueClusters = [...new Set(clusters)]; 
+        const uniqueClusters = [...new Set(clusters)];
         const geneNames = Object.keys(topExpressedGenes[0]);
         const geneExpressionData = topExpressedGenes.map((row) =>
             geneNames.map((gene) => parseFloat(row[gene])).filter((value) => !isNaN(value))
@@ -270,13 +351,15 @@ async function showUMAP(showdemoCall=0) {
         if (geneExpressionData.length !== clusters.length) {
             throw new Error('Mismatch between gene expression rows and cluster labels.');
         }
-        
+
         const clusterDropdownMenu = document.getElementById('cluster-dropdown-menu');
+        clusterDropdownMenu.innerHTML = '';
         let selectedClusters = [];
-        const MAX_SELECTIONS = 5; 
+        const MAX_SELECTIONS = 5;
 
         // Use a Web Worker for UMAP computation
         const worker = new Worker('umapWorker.js');
+        window.currentUMAPWorker = worker; // store reference globally
 
         return new Promise((resolve, reject) => {
             worker.postMessage({
@@ -336,39 +419,39 @@ async function showUMAP(showdemoCall=0) {
                         checkbox.value = i;
                         checkbox.classList.add('form-check-input');
                         checkbox.style.marginRight = '5px';
-            
+
                         const label = document.createElement('label');
                         label.htmlFor = `cluster-${i}`;
                         label.textContent = `${i}`;
                         label.classList.add('form-check-label')
-            
+
                         const wrapperDiv = document.createElement('div');
                         wrapperDiv.classList.add('form-check', 'dropdown-item', 'ms-4');
                         wrapperDiv.style.cursor = 'pointer';
                         wrapperDiv.appendChild(checkbox);
                         wrapperDiv.appendChild(label);
                         listItem.appendChild(wrapperDiv);
-            
+
                         clusterDropdownMenu.appendChild(listItem);
-            
+
                         checkbox.addEventListener('change', (event) => {
                             if (event.target.checked) {
-                              if (selectedClusters.length >= MAX_SELECTIONS) {
-                                event.target.checked = false;
-                                alert(`You can select up to ${MAX_SELECTIONS} clusters at a time.`);
-                                return;
-                              }
-                              selectedClusters.push(parseInt(event.target.value));
+                                if (selectedClusters.length >= MAX_SELECTIONS) {
+                                    event.target.checked = false;
+                                    alert(`You can select up to ${MAX_SELECTIONS} clusters at a time.`);
+                                    return;
+                                }
+                                selectedClusters.push(parseInt(event.target.value));
                             } else {
-                              selectedClusters = selectedClusters.filter(cluster => cluster !== parseInt(event.target.value));
+                                selectedClusters = selectedClusters.filter(cluster => cluster !== parseInt(event.target.value));
                             }
-                        
+
                             reGenerateUMAP(clusters, selectedClusters);
-                          });
+                        });
                     }
 
                     clusterDropdownContainer.style.display = 'block'
-                    
+
                     resolve();
 
                 } else {
@@ -377,6 +460,7 @@ async function showUMAP(showdemoCall=0) {
                 }
 
                 worker.terminate(); // Terminating the worker after completion
+                window.currentUMAPWorker = null;
             };
 
             // Handling worker errors
@@ -384,6 +468,7 @@ async function showUMAP(showdemoCall=0) {
                 umapPlotDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
                 reject(error.message);
                 worker.terminate();
+                window.currentUMAPWorker = null;
             };
         });
     } catch (error) {
@@ -423,14 +508,14 @@ function reGenerateUMAP(allClusters, selectedClusters) {
             },
         };
         Plotly.newPlot('umap-plot', [originalTrace], originalLayout);
-        return; 
+        return;
     }
 
     const umapPlotDiv = document.getElementById('umap-plot');
     umapPlotDiv.innerHTML = '';
     umapPlotDiv.innerHTML = '<p>Re-generating UMAP...</p>';
 
-    const colors = ['red', 'green', 'yellow', 'orange', 'purple']; 
+    const colors = ['red', 'green', 'yellow', 'orange', 'purple'];
 
     const trace = {
         x: currentEmbedding.map((point) => point[0]),
@@ -440,7 +525,7 @@ function reGenerateUMAP(allClusters, selectedClusters) {
             size: 8,
             color: allClusters.map((cluster) => {
                 const index = selectedClusters.indexOf(cluster);
-                return index !== -1 ? colors[index % colors.length] : 'gray'; 
+                return index !== -1 ? colors[index % colors.length] : 'gray';
             }),
         },
         text: allClusters.map((cluster, index) => {
@@ -487,7 +572,7 @@ function highlightUMAPRow(allClusters, indexToHighlight) {
             opacity: 0.5,
         },
         text: allClusters.filter((_, index) => index !== indexToHighlight)
-                         .map((cluster, index) => `Cluster: ${cluster}, Row: ${index}`),
+            .map((cluster, index) => `Cluster: ${cluster}, Row: ${index}`),
         name: ''
     };
 
@@ -505,11 +590,18 @@ function highlightUMAPRow(allClusters, indexToHighlight) {
     };
 
     const layout = {
-        xaxis: { title: 'UMAP Dimension 1' },
-        yaxis: { title: 'UMAP Dimension 2' },
+        xaxis: {
+            title: 'UMAP Dimension 1'
+        },
+        yaxis: {
+            title: 'UMAP Dimension 2'
+        },
         height: 300,
         width: 400,
-        margin: { t: 5, r: 5 },
+        margin: {
+            t: 5,
+            r: 5
+        },
         showlegend: false,
     };
 
@@ -545,7 +637,7 @@ function showClusterLevelsChanged(e) {
             radio.disabled = false;
         });
     } else {
-        if(!document.getElementById("showGenes").checked){
+        if (!document.getElementById("showGenes").checked) {
             showAllLevelsCheckbox.disabled = false;
         }
         // Disabling cluster view selection when checkbox is unchecked
@@ -674,7 +766,7 @@ function resetGeneSelection() {
         showGenesLabel.style.display = "none";
     }
     // document.getElementById("gene-specific").classList.add("hidden");
-    document.getElementById("selectGenes").innerHTML = ""; 
+    document.getElementById("selectGenes").innerHTML = "";
 }
 
 
@@ -974,8 +1066,8 @@ class Spot {
         //     summary += `<br/><b>Cluster</b><img width="95%" and height="95%" src="cluster-legend.png"/> <br/>`
 
         // }
-        if (document.getElementById("umapTab").classList.contains("active")){
-            if(document.getElementById("clusterDropdownContainer").style.display === "block"){
+        if (document.getElementById("umapTab").classList.contains("active")) {
+            if (document.getElementById("clusterDropdownContainer").style.display === "block") {
                 highlightUMAPRow(window.clusterInfo, this.index)
             }
         }
@@ -1029,7 +1121,7 @@ const shapeSVGs = {
             <line x1="3" y1="13" x2="17" y2="13" stroke="black"/>
         </svg>`,
     29: `<svg width="20" height="20">${getLightningSVG(10, 10, 8, "black")}</svg>`,
-    30: `<svg width="20" height="20" stroke-weight="2">${getStarburstSVG(10, 10, 8, "black")}</svg>`, 
+    30: `<svg width="20" height="20" stroke-weight="2">${getStarburstSVG(10, 10, 8, "black")}</svg>`,
 };
 
 function generateClusterLegend(clusters) {
