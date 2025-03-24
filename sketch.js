@@ -325,6 +325,12 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
   }
 
   spots.forEach(spot => {
+    if (
+      window.selectedClusterInLegend !== null &&
+      parseInt(spot.cluster) !== window.selectedClusterInLegend
+    ) {
+      return;
+    }
     let scaledX = (spot.x - minX) * scaleFactor + offsetX;
     let scaledY = (spot.y - minY) * scaleFactor + offsetY;
     spot.scaledX = scaledX

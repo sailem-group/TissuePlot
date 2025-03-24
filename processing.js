@@ -35,8 +35,10 @@ document.querySelectorAll(".nav-link").forEach(tab => {
     tab.addEventListener("click", showOrHideOptions);
 });
 
+window.selectedClusterInLegend = null;
 window.currentUMAPWorker = null;
 window.numberOfClusters = [];
+window.clusterMap = [];
 
 window.onload = async function () {
     await showDemo('demo1')
@@ -167,8 +169,8 @@ dropdown.addEventListener("change", (event) => {
     const selectedScale = colorScales.find(scale => scale.value === event.target.value);
     if (selectedScale) {
         console.log("Selected scale:", selectedScale);
-        dataColors = selectedScale.colors
-        showDemo()
+        dataColors = selectedScale.colors;
+        showDemo(window.whichDemo);
     }
 });
 
@@ -212,13 +214,41 @@ function uniqueClusterCount(valuesRows) {
         .filter(value => !isNaN(value));
 
     let uniqueClusters = [...new Set(clusters)].sort((a, b) => a - b);
-    if (uniqueClusters[0] === 0) {
-        uniqueClusters = uniqueClusters.map(value => value + 1);
-    }
-    return uniqueClusters;
+    // if (uniqueClusters[0] === 0) {
+    //     uniqueClusters = uniqueClusters.map(value => value + 1);
+    // }
+    // return uniqueClusters;
+    const clusterMap = {};
+    uniqueClusters.forEach((clusterValue, index) => {
+        clusterMap[clusterValue] = index + 1; // Start from 1
+    });
+
+    console.log("Cluster Map:", clusterMap);
+
+    return Object.values(clusterMap); // Returns [1, 2, 3, ...]
+    // const clusterMap = {};
+    // uniqueClusters.forEach((val, index) => {
+    //     clusterMap[val] = index + 1;
+    // });
+
+    // // Apply remapping to valuesRows
+    // for (let i = 1; i < valuesRows.length; i++) {
+    //     const row = valuesRows[i];
+    //     const original = parseInt(row[clusterIndex], 10);
+    //     if (!isNaN(original)) {
+    //         row[clusterIndex] = clusterMap[original];
+    //     }
+    // }
+
+    // return {
+    //     mappedClusters: Object.values(clusterMap),
+    //     clusterMap
+    // };
 }
 
 async function showDemo(demoValue = 'demo1') {
+    infoBox.innerHTML = ''
+    window.selectedClusterInLegend = null;
     document.getElementById("loadingOverlay").style.display = "flex";
 
     window.whichDemo = demoValue;
@@ -264,6 +294,9 @@ async function showDemo(demoValue = 'demo1') {
         skipEmptyLines: true,
     });
     const valuesRows = parsed.data;
+    // const { mappedClusters, clusterMap } = uniqueClusterCount(valuesRows);
+    // window.numberOfClusters = mappedClusters;
+    // window.clusterMap = clusterMap;
     window.numberOfClusters = uniqueClusterCount(valuesRows);
     generateClusterLegend(window.numberOfClusters);
     valuesData = valuesRows;
@@ -685,10 +718,16 @@ function valuesUploaded(e) {
 
         reader.onload = function (e) {
             const text = e.target.result;
-            const rows = text.split('\n');
-            window.numberOfClusters = uniqueClusterCount(rows)
+            // Parse using PapaParse like the fetch version
+            const parsed = Papa.parse(text.trim(), {
+                header: false,
+                skipEmptyLines: true,
+            });
+
+            const valuesRows = parsed.data;
+            window.numberOfClusters = uniqueClusterCount(valuesRows);
             generateClusterLegend(window.numberOfClusters);
-            valuesData = rows.map(row => row.trim().split(','));
+            valuesData = valuesRows;
             console.log(valuesData);
         };
 
@@ -807,7 +846,7 @@ window.generateVis = function () {
 
             const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues)
             if (hasClusters) {
-                newSpot.cluster = valuesData[i].at(-1)
+                newSpot.cluster = valuesData[i].at(-1);
             }
             dataSpots.push(newSpot)
         }
@@ -886,14 +925,15 @@ function showCompositionChanged(e) {
 
 function showGenesChanged(e) {
     if (e.target.checked) {
-        document.getElementById("gene-specific").classList.remove("hidden")
-        document.getElementById("composition-specific").classList.add("hidden")
+        window.selectedClusterInLegend = null;
+        document.getElementById("gene-specific").classList.remove("hidden");
+        document.getElementById("composition-specific").classList.add("hidden");
         document.getElementById("showAllLevels").checked = false;
         document.getElementById("showAllLevels").disabled = true;
         document.getElementById("showComposition").checked = false
         modeChange("genes")
     } else {
-        document.getElementById("gene-specific").classList.add("hidden")
+        document.getElementById("gene-specific").classList.add("hidden");
     }
 }
 
@@ -1175,10 +1215,28 @@ function generateClusterLegend(clusters) {
         clusterItem.appendChild(shapeElement);
         clusterItem.appendChild(numberElement);
         legendContainer.appendChild(clusterItem);
+
+        clusterItem.dataset.cluster = clusterNumber; // store cluster number
+        clusterItem.style.cursor = 'pointer';
+
+        clusterItem.addEventListener('click', (e) => {
+            const selectedCluster = parseInt(e.currentTarget.dataset.cluster, 10);
+            highlightClusterOnCanvas(selectedCluster);
+        });
     });
 }
 
+function highlightClusterOnCanvas(clusterNumber) {
+    // Toggle off if same cluster is clicked again
+    if (window.selectedClusterInLegend === clusterNumber) {
+        window.selectedClusterInLegend = null;
+    } else {
+        window.selectedClusterInLegend = clusterNumber;
+    }
 
+    // Redraw canvas
+    setupCanvas(Math.floor(window.innerWidth * 0.74), window.innerHeight, dataSpots);
+}
 
 const heatMapColors = [
     "#238A8D",
