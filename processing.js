@@ -174,30 +174,8 @@ dropdown.addEventListener("change", (event) => {
     }
 });
 
-// function uniqueClusterCount(valuesRows) {
-//     const headers = valuesRows[0].split(',');
-//     console.log("headers")
-//     console.log(headers)
-//     const clusterIndex = headers.findIndex(header => header.trim() === 'Cluster');
-
-//     if (clusterIndex === -1) {
-//         console.error("Cluster column not found in CSV");
-//     } else {
-//         let clusters = valuesRows.slice(1)
-//             .map(row => row.split(',')[clusterIndex])
-//             .map(value => parseInt(value, 10))
-//             .filter(value => !isNaN(value));
-
-//         let uniqueClusters = [...new Set(clusters)].sort((a, b) => a - b);
-//         if (uniqueClusters[0] === 0) {
-//             uniqueClusters = uniqueClusters.map(value => value + 1);
-//         }
-//         return uniqueClusters;
-//     }
-// }
-
 function uniqueClusterCount(valuesRows) {
-    const headers = valuesRows[0]; // no split needed
+    const headers = valuesRows[0];
     console.log("headers");
     console.log(headers);
 
@@ -214,10 +192,6 @@ function uniqueClusterCount(valuesRows) {
         .filter(value => !isNaN(value));
 
     let uniqueClusters = [...new Set(clusters)].sort((a, b) => a - b);
-    // if (uniqueClusters[0] === 0) {
-    //     uniqueClusters = uniqueClusters.map(value => value + 1);
-    // }
-    // return uniqueClusters;
     const clusterMap = {};
     uniqueClusters.forEach((clusterValue, index) => {
         clusterMap[clusterValue] = index + 1; // Start from 1
@@ -225,25 +199,7 @@ function uniqueClusterCount(valuesRows) {
 
     console.log("Cluster Map:", clusterMap);
 
-    return Object.values(clusterMap); // Returns [1, 2, 3, ...]
-    // const clusterMap = {};
-    // uniqueClusters.forEach((val, index) => {
-    //     clusterMap[val] = index + 1;
-    // });
-
-    // // Apply remapping to valuesRows
-    // for (let i = 1; i < valuesRows.length; i++) {
-    //     const row = valuesRows[i];
-    //     const original = parseInt(row[clusterIndex], 10);
-    //     if (!isNaN(original)) {
-    //         row[clusterIndex] = clusterMap[original];
-    //     }
-    // }
-
-    // return {
-    //     mappedClusters: Object.values(clusterMap),
-    //     clusterMap
-    // };
+    return Object.values(clusterMap);
 }
 
 async function showDemo(demoValue = 'demo1') {
