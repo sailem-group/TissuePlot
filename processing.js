@@ -250,9 +250,6 @@ async function showDemo(demoValue = 'demo1') {
         skipEmptyLines: true,
     });
     const valuesRows = parsed.data;
-    // const { mappedClusters, clusterMap } = uniqueClusterCount(valuesRows);
-    // window.numberOfClusters = mappedClusters;
-    // window.clusterMap = clusterMap;
     window.numberOfClusters = uniqueClusterCount(valuesRows);
     generateClusterLegend(window.numberOfClusters);
     valuesData = valuesRows;
