@@ -31,7 +31,7 @@ function imageUploaded(event) {
 
 }
 
-// // Zoom and pan variables
+// Zoom and pan variables
 let zoomFactor = 1;
 let panX = 0;
 let panY = 0;
@@ -45,39 +45,21 @@ function saveSVG() {
 function loadImageForDemo(demoName) {
   if (demoName === 'demo1') {
     img = loadImage("./image.png", () => {
-      // redraw(); // optional: only if you use noLoop()
     });
   } else if (demoName === 'demo2') {
     img = loadImage("exampleData/p5/tissue_image.png", () => {
-      // redraw();
     });
   } else if (demoName === 'demo3') {
     img = loadImage("exampleData/p6/tissue_image.png", () => {
-      // redraw();
     });
   } else if (demoName === 'demo4') {
     img = loadImage("exampleData/p7/tissue_image.png", () => {
-      // redraw();
     });
   } else if (demoName === 'demo5') {
     img = loadImage("exampleData/p8/tissue_image.png", () => {
-      // redraw();
     });
   }
 }
-
-// function setup() {
-//   console.log(window.whichDemo);
-//   if (window.whichDemo === 'demo1') {
-//     img = loadImage("./image.png");
-//   } else {
-//     img = loadImage("exampleData/tissue_image.png");
-//   }
-//   let myCanvas = createCanvas(canvasWidth, canvasHeight);
-//   myCanvas.parent("canvasContainer")
-
-//   setupCanvas(canvasWidth, canvasHeight, []);
-// }
 
 function setup() {
   let myCanvas = createCanvas(canvasWidth, canvasHeight);
@@ -86,7 +68,6 @@ function setup() {
   loadImageForDemo(window.whichDemo); // works because it's global
   setupCanvas(canvasWidth, canvasHeight, []);
 }
-
 
 function draw() {
   if (!window.drawAtWill) {
@@ -171,10 +152,13 @@ function showBarChart(index, barcode, data, isCellComposition) {
     chartContainer.innerHTML = "";
   };
 
+  let labels, values, colors, originalName;
+  
   if (isCellComposition) {
     labels = data.map(item => item.label);
     values = data.map(item => item.value);
     colors = data.map(item => item.color);
+    originalName = data.map(item => item.originalLabel);
   } else {
     const clusterCounts = {};
     const clusterColors = {};
@@ -207,7 +191,7 @@ function showBarChart(index, barcode, data, isCellComposition) {
       color: colors,
     },
     // text: isCellComposition ? values.map((value, index) => `${labels[index]}: ${value.toFixed(2)}`) : values.map((value, index) => `${labels[index]}: ${value}`),
-    text: percentages.map((value, index) => `${labels[index]}: ${Math.round(value)}%`),
+    text: percentages.map((value, index) => `${originalName[index]}: ${Math.round(value)}%`),
     hoverinfo: "text",
     textposition: "none",
   };
@@ -215,6 +199,7 @@ function showBarChart(index, barcode, data, isCellComposition) {
   const layout = {
     xaxis: {
       title: isCellComposition ? "Cell type" : "Clusters",
+      type: 'category',
     },
     yaxis: {
       title: "Percentage (%)",
@@ -272,11 +257,13 @@ function setupCanvas(width, height, newSpots) {
     const clickedHex = getHoveredHexagon(adjustedMouseX, adjustedMouseY);
 
     if (clickedHex) {
-
+      console.log(clickedHex)
       const barChartData = clickedHex.values.map((value, index) => ({
-        label: `X${index + 1}`,
+        // label: `X${index + 1}`,
+        label: value.label && value.label.length <= 3 ? value.label : `${index + 1}`,
         value: parseFloat(value.value) || 0,
         color: value.color,
+        originalLabel : value.label,
       }));
 
       if (window.mode == "cellComposition") {

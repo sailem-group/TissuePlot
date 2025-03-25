@@ -175,7 +175,7 @@ dropdown.addEventListener("change", (event) => {
 });
 
 function uniqueClusterCount(valuesRows) {
-    const headers = valuesRows[0];
+    const headers = valuesRows[0]; // no split needed
     console.log("headers");
     console.log(headers);
 
@@ -192,14 +192,10 @@ function uniqueClusterCount(valuesRows) {
         .filter(value => !isNaN(value));
 
     let uniqueClusters = [...new Set(clusters)].sort((a, b) => a - b);
-    const clusterMap = {};
-    uniqueClusters.forEach((clusterValue, index) => {
-        clusterMap[clusterValue] = index + 1; // Start from 1
-    });
-
-    console.log("Cluster Map:", clusterMap);
-
-    return Object.values(clusterMap);
+    if (uniqueClusters[0] === 0) {
+        uniqueClusters = uniqueClusters.map(value => value + 1);
+    }
+    return uniqueClusters;
 }
 
 async function showDemo(demoValue = 'demo1') {
@@ -792,6 +788,7 @@ window.generateVis = function () {
             let spotCoords = positionsData[i];
             let spotValues = valuesData[i].slice(1, valuesData[i].length - sliceFactor).map((value, i) => {
                 return {
+                    label: dataHeaders[i],
                     value: value,
                     color: dataColors[i]
                 }
@@ -822,6 +819,7 @@ window.generateVis = function () {
             let spotCoords = positionsData[i];
             let spotValues = genesData[i].map((value, i) => {
                 return {
+                    label: dataHeaders[i],
                     value: value,
                     color: heatMapColors[parseInt(value)]
                 }
