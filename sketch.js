@@ -10,7 +10,10 @@ window.clickedHex = null;
 let mouseOverCanvas = false;
 let infoBox = document.getElementById("infoBox")
 
-document.getElementById("image").addEventListener("change", imageUploaded)
+document.getElementById("image").addEventListener("change", function (e) {
+  imageUploaded(e);
+  checkFileUploads();
+})
 
 function imageUploaded(event) {
   const file = event.target.files[0];
@@ -20,8 +23,11 @@ function imageUploaded(event) {
 
     reader.onload = function (e) {
       // Create an image element using p5.js
-      img = createImg(e.target.result, '');
-      img.hide();
+      // img = createImg(e.target.result, '');
+      // img.hide();
+      loadImage(e.target.result, (loadedImg) => {
+        img = loadedImg;
+      });
     };
 
     reader.readAsDataURL(file);
@@ -257,7 +263,6 @@ function setupCanvas(width, height, newSpots) {
     const clickedHex = getHoveredHexagon(adjustedMouseX, adjustedMouseY);
 
     if (clickedHex) {
-      console.log(clickedHex)
       const barChartData = clickedHex.values.map((value, index) => ({
         // label: `X${index + 1}`,
         label: value.label && value.label.length <= 3 ? value.label : `${index + 1}`,
@@ -298,7 +303,7 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
   let imgHeight = dataHeight * scaleFactor + 225;
 
   if (img && window.showImage) {
-    console.log(img.elt)
+    //console.log(img.elt)
     if (saveFlag) {
       if (img) {
         let imgDataURL = img.canvas.toDataURL("image/png");

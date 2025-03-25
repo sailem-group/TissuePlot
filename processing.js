@@ -199,6 +199,21 @@ function uniqueClusterCount(valuesRows) {
 }
 
 async function showDemo(demoValue = 'demo1') {
+    const showGenesCheckbox = document.getElementById("showGenes");
+    const showGenesLabel = document.querySelector("label[for='showGenes']");
+    showGenesCheckbox.disabled = false;
+    showGenesCheckbox.style.display = "inline-block";
+    showGenesLabel.style.display = "inline-block";
+
+    const showImageContainer = document.getElementById("showImageContainer");
+    const showImageCheckbox = document.getElementById("showImage");
+    const showImageLabel = document.querySelector("label[for='showImage']");
+    showImageContainer.style.display = "flex";
+    showImageCheckbox.disabled = false;
+    showImageCheckbox.style.display = "inline-block";
+    showImageLabel.style.display = "inline-block";
+
+
     infoBox.innerHTML = ''
     window.selectedClusterInLegend = null;
     document.getElementById("loadingOverlay").style.display = "flex";
@@ -718,22 +733,48 @@ function umapUploaded(e) {
     }
 }
 
-function checkFileUploads() {
+window.checkFileUploads = function () {
     const positionsUploaded = document.getElementById("positions").files.length > 0;
     const valuesUploaded = document.getElementById("values").files.length > 0;
-
+    const geneFileUploaded = document.getElementById("genesUpload").files.length > 0;
+    
     // Enable/Disable the "Generate" button based on file uploads
     document.getElementById("plotbutton").disabled = !(positionsUploaded && valuesUploaded);
 
     // Reset and disable gene-related UI if no gene file is uploaded
-    if (!document.getElementById("genesUpload").files.length) {
+    if (geneFileUploaded) {
+        checkGeneFile();
+    } else {
         resetGeneSelection();
     }
+    
     if (document.getElementById("umapUpload").files.length) {
         document.getElementById("umapTab").classList.remove("d-none");
         document.getElementById("canvasContainer").style.pointerEvents = "auto";
     } else {
         document.getElementById("umapTab").classList.add("d-none");
+    }
+    const imageUploaded = document.getElementById("image").files.length > 0;
+    const showImageContainer = document.getElementById("showImageContainer");
+    const showImageCheckbox = document.getElementById("showImage");
+    const showImageLabel = document.querySelector("label[for='showImage']");
+    
+    if (imageUploaded) {
+        showImageContainer.style.display = "flex";
+        showImageCheckbox.disabled = false;
+        showImageCheckbox.style.display = imageUploaded ? "inline-block" : "none";
+        if (showImageLabel) {
+            showImageLabel.style.display = imageUploaded ? "inline-block" : "none";
+        }
+    } else {
+        showImageCheckbox.checked = false;
+        showImageCheckbox.disabled = true;
+        showImageCheckbox.style.display = "none";
+        if (showImageLabel) {
+            showImageLabel.style.display = "none";
+        }
+        showImageContainer.style.display = "none";
+        window.showImage = false;
     }
 }
 
@@ -741,6 +782,15 @@ function checkGeneFile() {
     const geneFileUploaded = document.getElementById("genesUpload").files.length > 0;
     document.getElementById("showGenes").disabled = !geneFileUploaded;
     // document.getElementById("gene-specific").classList.toggle("hidden", !geneFileUploaded);
+    const showGenesCheckbox = document.getElementById("showGenes");
+    const showGenesLabel = document.querySelector("label[for='showGenes']");
+
+    showGenesCheckbox.disabled = !geneFileUploaded;
+    showGenesCheckbox.style.display = geneFileUploaded ? "inline-block" : "none";
+
+    if (showGenesLabel) {
+        showGenesLabel.style.display = geneFileUploaded ? "inline-block" : "none";
+    }
 }
 
 function resetGeneSelection() {
@@ -839,7 +889,12 @@ window.generateVis = function () {
 }
 
 function generateRandomColor() {
-    return `#${Math.floor(Math.random() * 16777215).toString(16)}`
+    // return `#${Math.floor(Math.random() * 16777215).toString(16)}`
+    let color;
+    do {
+        color = `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`;
+    } while (color.toUpperCase() === "#FFFFFF" || color.toUpperCase() === "#FFF" || color.toLowerCase() === "#ffffff"); // Avoid white
+    return color;
 }
 
 function geneSelected(e) {
@@ -1059,6 +1114,12 @@ class Spot {
         // }
         if (document.getElementById("umapTab").classList.contains("active")) {
             if (document.getElementById("clusterDropdownContainer").style.display === "block") {
+                const checkboxes = document.querySelectorAll("#cluster-dropdown-menu input[type='checkbox']");
+                const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+
+                if (anyChecked) {
+                    checkboxes.forEach(cb => cb.checked = false);
+                }
                 highlightUMAPRow(window.clusterInfo, this.index)
             }
         }
