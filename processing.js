@@ -1,22 +1,7 @@
 //© Heba Sailem, heba.sailem@kcl.ac.uk
-document.getElementById("positions").addEventListener("change", function (e) {
-    positinosUploaded(e);
-    checkFileUploads();
-})
-document.getElementById("values").addEventListener("change", function (e) {
-    valuesUploaded(e), checkFileUploads();
-})
 document.getElementById("showImage").addEventListener("change", showImageChanged)
 document.getElementById("showAllLevels").addEventListener("change", showAllLevelsChanged)
 document.getElementById("showCluster").addEventListener("change", showClusterLevelsChanged)
-document.getElementById("genesUpload").addEventListener("change", function (e) {
-    genesUploaded(e);
-    checkFileUploads();
-})
-document.getElementById("umapUpload").addEventListener("change", function (e) {
-    umapUploaded(e);
-    checkFileUploads();
-})
 document.getElementById("selectGenes").addEventListener("change", geneSelected)
 document.getElementById("showComposition").addEventListener("change", showCompositionChanged)
 document.getElementById("showGenes").addEventListener("change", showGenesChanged)
@@ -34,6 +19,25 @@ document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
 document.querySelectorAll(".nav-link").forEach(tab => {
     tab.addEventListener("click", showOrHideOptions);
 });
+
+function registerFileUpload(inputId, uploadHandler) {
+    document.getElementById(inputId).addEventListener("change", function (e) {
+        uploadHandler(e);
+        checkFileUploads();
+    });
+}
+registerFileUpload("positions", positinosUploaded);
+registerFileUpload("values", valuesUploaded);
+registerFileUpload("genesUpload", genesUploaded);
+registerFileUpload("umapUpload", umapUploaded);
+
+function toggleCheckboxVisibility(checkboxId, show) {
+    const checkbox = document.getElementById(checkboxId);
+    const label = document.querySelector(`label[for='${checkboxId}']`);
+    checkbox.disabled = !show;
+    checkbox.style.display = show ? "inline-block" : "none";
+    if (label) label.style.display = show ? "inline-block" : "none";
+}
 
 window.selectedClusterInLegend = null;
 window.currentUMAPWorker = null;
@@ -128,6 +132,10 @@ window.showImage = false;
 window.showAllLevels = false;
 window.showCluster = false;
 
+let currentEmbedding = null
+let currentClusters = []
+window.clusterInfo = null
+
 const colorScales = [{
         name: "Color Scale 1",
         value: "ColorScale1",
@@ -199,20 +207,8 @@ function uniqueClusterCount(valuesRows) {
 }
 
 async function showDemo(demoValue = 'demo1') {
-    const showGenesCheckbox = document.getElementById("showGenes");
-    const showGenesLabel = document.querySelector("label[for='showGenes']");
-    showGenesCheckbox.disabled = false;
-    showGenesCheckbox.style.display = "inline-block";
-    showGenesLabel.style.display = "inline-block";
-
-    const showImageContainer = document.getElementById("showImageContainer");
-    const showImageCheckbox = document.getElementById("showImage");
-    const showImageLabel = document.querySelector("label[for='showImage']");
-    showImageContainer.style.display = "flex";
-    showImageCheckbox.disabled = false;
-    showImageCheckbox.style.display = "inline-block";
-    showImageLabel.style.display = "inline-block";
-
+    toggleCheckboxVisibility("showGenes", document.getElementById("showGenes"));
+    toggleCheckboxVisibility("showImage", document.getElementById("showImage"));
 
     infoBox.innerHTML = ''
     window.selectedClusterInLegend = null;
@@ -310,9 +306,16 @@ function transformFileData(fileData) {
     );
 }
 
-let currentEmbedding = null
-let currentClusters = []
-window.clusterInfo = null
+function getUMAPLayout() {
+    return {
+        xaxis: { title: 'UMAP Dimension 1' },
+        yaxis: { title: 'UMAP Dimension 2' },
+        height: 300,
+        width: 400,
+        margin: { t: 5, r: 5 },
+        showlegend: false,
+    };
+}
 
 async function showUMAP(showdemoCall = 0) {
     try {
@@ -391,22 +394,7 @@ async function showUMAP(showdemoCall = 0) {
                         text: clusters.map((cluster, index) => `Cluster: ${cluster}, Row: ${index}`),
                     };
 
-                    const layout = {
-                        xaxis: {
-                            title: 'UMAP Dimension 1'
-                        },
-                        yaxis: {
-                            title: 'UMAP Dimension 2'
-                        },
-                        height: 300,
-                        width: 400,
-                        margin: {
-                            t: 5,
-                            r: 5,
-                        },
-                    };
-
-                    Plotly.newPlot('umap-plot', [trace], layout);
+                    Plotly.newPlot('umap-plot', [trace], getUMAPLayout());
 
                     for (let i = 1; i <= uniqueClusters.length; i++) {
                         const listItem = document.createElement('li');
@@ -490,21 +478,7 @@ function reGenerateUMAP(allClusters, selectedClusters) {
             },
         };
 
-        const originalLayout = {
-            xaxis: {
-                title: 'UMAP Dimension 1'
-            },
-            yaxis: {
-                title: 'UMAP Dimension 2'
-            },
-            height: 300,
-            width: 400,
-            margin: {
-                t: 5,
-                r: 5,
-            },
-        };
-        Plotly.newPlot('umap-plot', [originalTrace], originalLayout);
+        Plotly.newPlot('umap-plot', [originalTrace], getUMAPLayout());
         return;
     }
 
@@ -531,23 +505,8 @@ function reGenerateUMAP(allClusters, selectedClusters) {
         }),
     };
 
-    const layout = {
-        xaxis: {
-            title: 'UMAP Dimension 1'
-        },
-        yaxis: {
-            title: 'UMAP Dimension 2'
-        },
-        height: 300,
-        width: 400,
-        margin: {
-            t: 5,
-            r: 5,
-        },
-    };
-
     umapPlotDiv.innerHTML = '';
-    Plotly.newPlot('umap-plot', [trace], layout);
+    Plotly.newPlot('umap-plot', [trace], getUMAPLayout());
 }
 
 function highlightUMAPRow(allClusters, indexToHighlight) {
@@ -586,24 +545,8 @@ function highlightUMAPRow(allClusters, indexToHighlight) {
         name: ''
     };
 
-    const layout = {
-        xaxis: {
-            title: 'UMAP Dimension 1'
-        },
-        yaxis: {
-            title: 'UMAP Dimension 2'
-        },
-        height: 300,
-        width: 400,
-        margin: {
-            t: 5,
-            r: 5
-        },
-        showlegend: false,
-    };
-
     umapPlotDiv.innerHTML = '';
-    Plotly.newPlot('umap-plot', [allPointsTrace, highlightedPointTrace], layout);
+    Plotly.newPlot('umap-plot', [allPointsTrace, highlightedPointTrace], getUMAPLayout());
 }
 
 
@@ -1049,20 +992,6 @@ function scaleData(matrix) {
 
     return scaledMatrix;
 }
-
-const shapesToClusterMap = {
-    "1": "triangle",
-    "2": "x",
-    "3": "circle",
-    "4": "star",
-    "5": "hexagon",
-    "6": "square",
-    "7": "diamond",
-    "8": "plus",
-    "9": "dash",
-    "10": "slash-lg",
-}
-
 class Spot {
     constructor(index, barcode, x, y, radius, values, cluster) {
         this.barcode = barcode;
@@ -1078,22 +1007,6 @@ class Spot {
     }
 
     getSummary() {
-        /*        
-        let summary = `<table border="1"><tr>`;
-        if (mode == "cellComposition") {
-            this.values.forEach((value, i) => {
-                summary += `<td>${dataHeaders[i]}</td>`
-            })
-            summary += `</tr><tr>`
-            this.values.forEach((value, i) => {
-                summary += `<td class="legendColor" style="background-color:${value.color}">   </td>`
-            })
-            summary += `</tr><tr>`
-            this.values.forEach((value, i) => {
-                summary += `<td>${Number(value.value).toFixed(2)}</td>`
-            })
-           summary += `</tr>`
-         */
         let summary = ``;
         if (mode == "cellComposition") {
             this.values.forEach((value, i) => {
@@ -1106,12 +1019,6 @@ class Spot {
             })
         }
 
-        // if (this.cluster) {
-        //     //summary += `<i style="font-size: 16px" class="bi bi-${shapesToClusterMap[this.cluster]}"></i> <b>Cluster:</b> ${this.cluster} <br/>`
-        //     //summary += `<img width="95%" and height="95%" src="cluster-legend.png"/> <br/>`
-        //     summary += `<br/><b>Cluster</b><img width="95%" and height="95%" src="cluster-legend.png"/> <br/>`
-
-        // }
         if (document.getElementById("umapTab").classList.contains("active")) {
             if (document.getElementById("clusterDropdownContainer").style.display === "block") {
                 const checkboxes = document.querySelectorAll("#cluster-dropdown-menu input[type='checkbox']");
@@ -1123,7 +1030,6 @@ class Spot {
                 highlightUMAPRow(window.clusterInfo, this.index)
             }
         }
-
         return summary;
     }
 }
