@@ -149,7 +149,7 @@ const colorScales = [{
     {
         name: "Color Scale 3",
         value: "ColorScale3",
-        colors: ["#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#F4A582"]
+        colors: ["#636363", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#F4A582"]
     },
     {
         name: "Color Scale 4",
@@ -831,14 +831,35 @@ window.generateVis = function () {
     setupCanvas(Math.floor(window.innerWidth * 0.74), window.innerHeight, dataSpots)
 }
 
+// function generateRandomColor() {
+//     // return `#${Math.floor(Math.random() * 16777215).toString(16)}`
+//     let color;
+//     do {
+//         color = `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`;
+//     } while (color.toUpperCase() === "#FFFFFF" || color.toUpperCase() === "#FFF" || color.toLowerCase() === "#ffffff"); // Avoid white
+//     return color;
+// }
+
 function generateRandomColor() {
-    // return `#${Math.floor(Math.random() * 16777215).toString(16)}`
     let color;
     do {
-        color = `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`;
-    } while (color.toUpperCase() === "#FFFFFF" || color.toUpperCase() === "#FFF" || color.toLowerCase() === "#ffffff"); // Avoid white
+      // Generate R, G, B values with a minimum brightness (e.g., 50)
+      const minBrightness = 50;
+      const r = Math.floor(Math.random() * (256 - minBrightness) + minBrightness);
+      const g = Math.floor(Math.random() * (256 - minBrightness) + minBrightness);
+      const b = Math.floor(Math.random() * (256 - minBrightness) + minBrightness);
+  
+      color = `#${((1 << 24) + (r << 16) + (g << 8) + b)
+        .toString(16)
+        .slice(1)}`;
+    } while (
+      color.toUpperCase() === "#FFFFFF" ||
+      color.toLowerCase() === "#ffffff" ||
+      color.toLowerCase() === "#fff"
+    );
+  
     return color;
-}
+  }
 
 function geneSelected(e) {
     console.log(e.target.value)
