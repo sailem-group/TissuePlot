@@ -206,6 +206,10 @@ function showBarChart(index, barcode, data, isCellComposition) {
     xaxis: {
       title: isCellComposition ? "Cell type" : "Clusters",
       type: 'category',
+      tickangle: -45,
+      tickfont: {
+        size: 10,
+      },
     },
     yaxis: {
       title: "Percentage (%)",
@@ -216,7 +220,7 @@ function showBarChart(index, barcode, data, isCellComposition) {
       t: 5,
       l: 50,
       r: 20,
-      b: 40,
+      b: 70,
     },
     hovermode: "closest",
     responsive: true,
@@ -264,8 +268,7 @@ function setupCanvas(width, height, newSpots) {
 
     if (clickedHex) {
       const barChartData = clickedHex.values.map((value, index) => ({
-        // label: `X${index + 1}`,
-        label: value.label && value.label.length <= 3 ? value.label : `${index + 1}`,
+        label: value.label && value.label.length > 3 ? value.label.substring(0, 10) : value.label,
         value: parseFloat(value.value) || 0,
         color: value.color,
         originalLabel : value.label,
