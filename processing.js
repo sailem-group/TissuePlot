@@ -95,8 +95,12 @@ window.cellTypeToEmojiMap = {
 
 window.onload = async function () {
     loadFontFile();
+    document.getElementById("showEmojiView").click()
+    document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
+        radio.checked = false;
+    });
     await showDemo('demo5')
-    document.getElementById("showCluster").click()
+    // document.getElementById("showCluster").click()
 }
 
 window.showUMAP = showUMAP;
@@ -398,6 +402,17 @@ async function showDemo(demoValue = 'demo1') {
     window.showDemoButton = "clicked"
     window.uploadedEmojiFile == false;
 
+    if (window.whichDemo !== 'demo1'){
+        preloadMappedEmojiSVGs();
+        if (!window.showCluster) {
+            document.getElementById("showEmojiView").disabled = false;
+        }
+    } else {
+        document.getElementById("showEmojiView").disabled = true;
+        document.getElementById("showEmojiView").checked = false;
+        window.showEmojiView = false;
+    }
+
     let positionsFile, valuesFile, genesFile;
 
     if (demoValue === 'demo1') {
@@ -446,17 +461,6 @@ async function showDemo(demoValue = 'demo1') {
     const genesText = genesRes;
     const genesRows = genesText.split('\n');
     genesData = scaleData(genesRows.map(row => row.trim().split(',')));
-
-    if (window.whichDemo !== 'demo1'){
-        preloadMappedEmojiSVGs();
-        if (!window.showCluster) {
-            document.getElementById("showEmojiView").disabled = false;
-        }
-    } else {
-        document.getElementById("showEmojiView").disabled = true;
-        document.getElementById("showEmojiView").checked = false;
-        window.showEmojiView = false;
-    }
 
     document.getElementById("optionsContainer").style.display = "block";
 
@@ -943,6 +947,9 @@ function showEmojiViewChanged(e) {
     // console.log(e.target.checked)
     window.showEmojiView = e.target.checked;
     window.showAllLevels = !e.target.checked;
+    document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
+        radio.disabled = true;
+    });
 }
 
 function showClusterLevelsChanged(e) {
@@ -964,6 +971,15 @@ function showClusterLevelsChanged(e) {
         document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
             radio.disabled = false;
         });
+        const radios = document.querySelectorAll("input[name='clusterType']");
+        // Check if any radio is currently selected
+        const anySelected = Array.from(radios).some(radio => radio.checked);
+        // If none selected, select the first one
+        if (!anySelected && radios.length > 0) {
+            radios[0].checked = true;
+        }
+        const selectedClusterView = document.querySelector("input[name='clusterType']:checked").value;
+        window.selectedClusterView = selectedClusterView;
     } else {
         if (!document.getElementById("showGenes").checked) {
             showAllLevelsCheckbox.disabled = false;
