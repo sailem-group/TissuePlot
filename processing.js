@@ -1262,11 +1262,13 @@ function handleGeneFileUI() {
 }
 
 function setDefaultGeneModeIfNeeded() {
+    console.log("hey i am here");
     const geneFileUploaded = document.getElementById("genesUpload").files.length > 0;
     const imageFileUploaded = document.getElementById("image").files.length > 0;
     if (!geneFileUploaded) {
         window.mode = "cellComposition";
-
+        console.log("hey i am here in cell compsotion");
+        console.log("geneupload value"+ geneFileUploaded);
         const showClusterCheckbox = document.getElementById('showCluster');
         if (!showClusterCheckbox.checked && window.showCluster === false) {
             showClusterCheckbox.checked = true;
@@ -1281,6 +1283,15 @@ function setDefaultGeneModeIfNeeded() {
                 window.showEmojiView = false;
             }
             document.getElementById('showEmojiView').disabled = true;
+            const radios = document.querySelectorAll("input[name='clusterType']");
+            // Check if any radio is currently selected
+            const anySelected = Array.from(radios).some(radio => radio.checked);
+            // If none selected, select the first one
+            if (!anySelected && radios.length > 0) {
+                radios[0].checked = true;
+            }
+            const selectedClusterView = document.querySelector("input[name='clusterType']:checked").value;
+            window.selectedClusterView = selectedClusterView;
         }
 
         document.getElementById('showComposition').checked = true;
@@ -1288,6 +1299,12 @@ function setDefaultGeneModeIfNeeded() {
     }
     if(!imageFileUploaded) {
         handleImageUploadUI();
+    }
+    if(window.uploadedEmojiFile == false){
+        console.log("As uplode emoji file is false so i am here....");
+        window.showEmojiView = false;
+        document.getElementById('showEmojiView').checked = false;
+        document.getElementById('showEmojiView').disabled = true;
     }
 }
 
@@ -1532,7 +1549,7 @@ function generteCanvasClicked() {
     document.getElementById('uploadNewFilesButton').style.display = 'block';
     
     generateVis();
-    // console.log("Generated new canvas.")
+    console.log("Generated new canvas.")
     window.showDemoButton = "none"
 
     if (document.getElementById("umapUpload").files.length) {
