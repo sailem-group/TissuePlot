@@ -605,6 +605,20 @@ async function showUMAP(showdemoCall = 0) {
         window.spotClusterMembership = transformFileData(valuesData);
         const clusters = window.spotClusterMembership.map((row) => parseInt(row.Cluster, 10));
         window.clusterInfo = clusters;
+        window.top3CellTypeTexts = window.spotClusterMembership.map((spot, index) => {
+            const cluster = clusters[index];
+            const top3 = Object.entries(spot)
+                .filter(([key]) => key !== "Cluster" && key !== "barcode")
+                .map(([key, val]) => ({ key, val: parseFloat(val) }))
+                .sort((a, b) => b.val - a.val)
+                .slice(0, 3);
+        
+            const cellTypesText = top3
+                .map(cell => `${cell.key}: ${parseFloat(cell.val * 100).toFixed(2)}%`)
+                .join('<br>');
+        
+            return `Cluster: ${cluster}<br><b>Top Cell Types:</b><br>${cellTypesText}`;
+        });
         // const uniqueClusters = [...new Set(clusters)];
         const geneNames = Object.keys(topExpressedGenes[0]);
         const geneExpressionData = topExpressedGenes.map((row) =>
@@ -659,22 +673,7 @@ async function showUMAP(showdemoCall = 0) {
                             opacity: 0.5,
                         },
                         hoverinfo: 'text',
-                        // text: clusters.map((cluster, index) => `Cluster: ${cluster}, Row: ${index}`),
-                        text: window.spotClusterMembership.map((spot, index) => {
-                            const cluster = clusters[index];
-                            
-                            const top3 = Object.entries(spot)
-                                .filter(([key, val]) => key !== "Cluster" && key !== "barcode")
-                                .map(([key, val]) => ({ key, val: parseFloat(val) }))
-                                .sort((a, b) => b.val - a.val)
-                                .slice(0, 3);
-                        
-                            const cellTypesText = top3
-                                .map(cell => `${cell.key}: ${parseFloat(cell.val * 100).toFixed(2)}%`)
-                                .join('<br>');
-                        
-                            return `Cluster: ${cluster}<br><b>Top Cell Types:</b><br>${cellTypesText}`;
-                        }),            
+                        text: window.top3CellTypeTexts         
                     };
 
                     Plotly.newPlot('umap-plot', [trace], getUMAPLayout());
@@ -791,20 +790,7 @@ function reGenerateUMAP(allClusters, selectedClusters) {
                 opacity: 0.5,
             },
             hoverinfo: 'text',
-            text: window.spotClusterMembership.map((spot, index) => {
-                const cluster = allClusters[index];
-                const top3 = Object.entries(spot)
-                    .filter(([key]) => key !== "Cluster" && key !== "barcode")
-                    .map(([key, val]) => ({ key, val: parseFloat(val) }))
-                    .sort((a, b) => b.val - a.val)
-                    .slice(0, 3);
-    
-                const cellTypesText = top3
-                    .map(cell => `${cell.key}: ${parseFloat(cell.val * 100).toFixed(2)}%`)
-                    .join('<br>');
-    
-                return `Cluster: ${cluster}<br><b>Top Cell Types:</b><br>${cellTypesText}`;
-            })
+            text: window.top3CellTypeTexts
         };
     
         Plotly.newPlot('umap-plot', [originalTrace], getUMAPLayout());
@@ -812,7 +798,7 @@ function reGenerateUMAP(allClusters, selectedClusters) {
     }    
 
     const umapPlotDiv = document.getElementById('umap-plot');
-    umapPlotDiv.innerHTML = '';
+    // umapPlotDiv.innerHTML = '';
     umapPlotDiv.innerHTML = '<p>Re-generating UMAP...</p>';
 
     const colors = ['red', 'green', 'yellow', 'orange', 'purple'];
@@ -829,23 +815,9 @@ function reGenerateUMAP(allClusters, selectedClusters) {
             }),
         },
         hoverinfo: 'text',
-        text: window.spotClusterMembership.map((spot, index) => {
-            const cluster = allClusters[index];
-            const selected = selectedClusters.includes(cluster);
-            if (!selected) return '';
-        
-            const top3 = Object.entries(spot)
-                .filter(([key]) => key !== "Cluster" && key !== "barcode")
-                .map(([key, val]) => ({ key, val: parseFloat(val) }))
-                .sort((a, b) => b.val - a.val)
-                .slice(0, 3);
-        
-            const cellTypesText = top3
-                .map(cell => `${cell.key}: ${parseFloat(cell.val * 100).toFixed(2)}%`)
-                .join('<br>');
-        
-            return `Cluster: ${cluster}<br><b>Top Cell Types:</b><br>${cellTypesText}`;
-        })        
+        text: window.top3CellTypeTexts.map((text, i) =>
+            selectedClusters.includes(allClusters[i]) ? text : ''
+        )
     };
 
     umapPlotDiv.innerHTML = '';
@@ -871,22 +843,7 @@ function highlightUMAPRow(allClusters, indexToHighlight) {
             opacity: 0.5,
         },
         hoverinfo: 'text',
-        text: window.spotClusterMembership
-            .filter((_, index) => index !== indexToHighlight)
-            .map((spot, idx) => {
-                const cluster = allClusters[idx];
-                const top3 = Object.entries(spot)
-                    .filter(([key]) => key !== "Cluster" && key !== "barcode")
-                    .map(([key, val]) => ({ key, val: parseFloat(val) }))
-                    .sort((a, b) => b.val - a.val)
-                    .slice(0, 3);
-
-                const cellTypesText = top3
-                    .map(cell => `${cell.key}: ${parseFloat(cell.val * 100).toFixed(2)}%`)
-                    .join('<br>');
-
-                return `Cluster: ${cluster}<br><b>Top Cell Types:</b><br>${cellTypesText}`;
-            }),
+        text: window.top3CellTypeTexts.filter((_, index) => index !== indexToHighlight),
         name: ''
     };
 
@@ -900,21 +857,7 @@ function highlightUMAPRow(allClusters, indexToHighlight) {
             layer: 'above traces',
         },
         hoverinfo: 'text',
-        text: (() => {
-            const cluster = allClusters[indexToHighlight];
-            const spot = window.spotClusterMembership[indexToHighlight];
-            const top3 = Object.entries(spot)
-                .filter(([key]) => key !== "Cluster" && key !== "barcode")
-                .map(([key, val]) => ({ key, val: parseFloat(val) }))
-                .sort((a, b) => b.val - a.val)
-                .slice(0, 3);
-
-            const cellTypesText = top3
-                .map(cell => `${cell.key}: ${parseFloat(cell.val * 100).toFixed(2)}%`)
-                .join('<br>');
-
-            return [`Cluster: ${cluster}<br><b>Top Cell Types:</b><br>${cellTypesText}`];
-        })(),
+        text: [window.top3CellTypeTexts[indexToHighlight]],
         name: ''
     };
 
@@ -1478,6 +1421,7 @@ function modeChange(mode) {
 
 function showCompositionChanged(e) {
     if (e.target.checked) {
+        document.getElementById("infoBox").innerHTML = '';
         document.getElementById("composition-specific").classList.remove("hidden")
         document.getElementById("gene-specific").classList.add("hidden")
         document.getElementById("showGenes").checked = false
@@ -1503,6 +1447,7 @@ function showCompositionChanged(e) {
             }
         }
     } else {
+        document.getElementById("infoBox").innerHTML = '';
         document.getElementById("composition-specific").classList.add("hidden")
     }
 }

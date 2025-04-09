@@ -86,8 +86,12 @@ function draw() {
   drawHexagonGrid(spots);
   let adjustedMouseX = (mouseX - panX) / zoomFactor;
   let adjustedMouseY = (mouseY - panY) / zoomFactor;
-  if (mouseOverCanvas) {
+  const isDemoTab = document.getElementById("demoTab").classList.contains("active");
+  const isUMAPTab = document.getElementById("umapTab").classList.contains("active");
+  if (mouseOverCanvas && (isUMAPTab || (isDemoTab && window.mode === "cellComposition"))) {
     hoveredHex = getHoveredHexagon(adjustedMouseX, adjustedMouseY);
+  } else {
+    hoveredHex = null;
   }
   if (hoveredHex) {
     infoBox.innerHTML = `
