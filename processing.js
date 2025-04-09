@@ -387,7 +387,7 @@ function uniqueClusterCount(valuesRows) {
     return uniqueClusters;
 }
 
-async function showDemo(demoValue = 'demo1') {
+async function showDemo(demoValue = 'demo5') {
     clearAllUploadInputs();
     toggleCheckboxVisibility("showGenes", document.getElementById("showGenes"));
     toggleCheckboxVisibility("showImage", document.getElementById("showImage"));
@@ -463,7 +463,16 @@ async function showDemo(demoValue = 'demo1') {
     genesData = scaleData(genesRows.map(row => row.trim().split(',')));
 
     document.getElementById("optionsContainer").style.display = "block";
+    let defaultScaleValue = 'ColorScale1';
+    if (['demo2', 'demo3', 'demo4', 'demo5'].includes(demoValue)) {
+        defaultScaleValue = 'ColorScale4';
+    }
 
+    dropdown.value = defaultScaleValue; // updates UI
+    const selectedScale = colorScales.find(scale => scale.value === defaultScaleValue);
+    if (selectedScale) {
+        dataColors = selectedScale.colors;
+    }
     generateVis();
 
     document.getElementById("loadingOverlay").style.display = "none";
