@@ -1196,13 +1196,10 @@ function handleGeneFileUI() {
 }
 
 function setDefaultGeneModeIfNeeded() {
-    console.log("hey i am here");
     const geneFileUploaded = document.getElementById("genesUpload").files.length > 0;
     const imageFileUploaded = document.getElementById("image").files.length > 0;
     if (!geneFileUploaded) {
         window.mode = "cellComposition";
-        console.log("hey i am here in cell compsotion");
-        console.log("geneupload value"+ geneFileUploaded);
         const showClusterCheckbox = document.getElementById('showCluster');
         if (!showClusterCheckbox.checked && window.showCluster === false) {
             showClusterCheckbox.checked = true;
@@ -1238,7 +1235,6 @@ function setDefaultGeneModeIfNeeded() {
         handleImageUploadUI();
     }
     if(window.uploadedEmojiFile == false){
-        console.log("As uplode emoji file is false so i am here....");
         window.showEmojiView = false;
         document.getElementById('showEmojiView').checked = false;
         document.getElementById('showEmojiView').disabled = true;
@@ -1258,6 +1254,7 @@ function handleUMAPUI() {
 }
 
 window.handleImageUploadUI = function() {
+    const container = document.getElementById('imageOpacityContainer');
     const imageUploaded = document.getElementById("image").files.length > 0;
     const showImageContainer = document.getElementById("showImageContainer");
     const showImageCheckbox = document.getElementById("showImage");
@@ -1268,6 +1265,10 @@ window.handleImageUploadUI = function() {
         showImageCheckbox.disabled = false;
         showImageCheckbox.style.display = "inline-block";
         if (showImageLabel) showImageLabel.style.display = "inline-block";
+        if (container) {
+            container.style.display = 'block';
+        }
+
     } else {
         showImageCheckbox.checked = false;
         showImageCheckbox.disabled = true;
@@ -1275,6 +1276,9 @@ window.handleImageUploadUI = function() {
         if (showImageLabel) showImageLabel.style.display = "none";
         showImageContainer.style.display = "none";
         window.showImage = false;
+        if (container) {
+            container.style.display = 'none';
+        }
     }
 }
 
