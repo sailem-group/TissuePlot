@@ -404,13 +404,58 @@ async function showDemo(demoValue = 'demo5') {
 
     if (window.whichDemo !== 'demo1'){
         preloadMappedEmojiSVGs();
-        if (!window.showCluster) {
+        if(window.mode === 'genes'){
+            if(!window.showCluster) {
+                document.getElementById("showEmojiView").checked = false;
+                document.getElementById("showEmojiView").disabled = true;
+                document.getElementById("showAllLevels").checked = false;
+                document.getElementById("showAllLevels").disabled = true;
+                document.getElementById("showComposition").checked = false;
+            }
+        } else if (!window.showCluster) {
             document.getElementById("showEmojiView").disabled = false;
+            document.getElementById("showAllLevels").disabled = false;
+        } else if(window.showCluster){
+            window.showCluster = false;
+            window.showEmojiView = true;
+            document.getElementById("showEmojiView").checked = true;
+            document.getElementById("showEmojiView").disabled = false;
+            document.getElementById("showAllLevels").disabled = false;
+            document.getElementById('showCluster').checked = false;
+            document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
+                radio.disabled = true;
+                radio.checked = false;
+            });
         }
     } else {
-        document.getElementById("showEmojiView").disabled = true;
-        document.getElementById("showEmojiView").checked = false;
-        window.showEmojiView = false;
+        if (window.mode !== 'genes') {
+            if(window.showEmojiView){
+                document.getElementById("showEmojiView").disabled = true;
+                document.getElementById("showAllLevels").disabled = true;
+                document.getElementById("showEmojiView").checked = false;
+                document.getElementById("showAllLevels").checked = false;
+                window.showEmojiView = false;
+                window.showAllLevels = false;
+                window.showCluster = true;
+                document.getElementById('showCluster').checked = true;
+                document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
+                    radio.disabled = false;
+                });
+                const radios = document.querySelectorAll("input[name='clusterType']");
+                // Check if any radio is currently selected
+                const anySelected = Array.from(radios).some(radio => radio.checked);
+                // If none selected, select the first one
+                if (!anySelected && radios.length > 0) {
+                    radios[0].checked = true;
+                }
+                const selectedClusterView = document.querySelector("input[name='clusterType']:checked").value;
+                window.selectedClusterView = selectedClusterView;
+            } else if (window.showAllLevels){
+                document.getElementById("showEmojiView").checked = false;
+                document.getElementById("showEmojiView").disabled = true;
+            }
+        }
+        
     }
 
     let positionsFile, valuesFile, genesFile;
@@ -454,7 +499,6 @@ async function showDemo(demoValue = 'demo5') {
     window.numberOfClusters = uniqueClusterCount(valuesRows);
     generateClusterLegend(window.numberOfClusters);
     valuesData = valuesRows;
-    window.spotClusterMembership = transformFileData(valuesData);
 
     let genesCsv = await fetch(genesFile)
     let genesRes = await genesCsv.text()
@@ -558,6 +602,7 @@ async function showUMAP(showdemoCall = 0) {
         } else {
             topExpressedGenes = transformFileData(umapData);
         }
+        window.spotClusterMembership = transformFileData(valuesData);
         const clusters = window.spotClusterMembership.map((row) => parseInt(row.Cluster, 10));
         window.clusterInfo = clusters;
         // const uniqueClusters = [...new Set(clusters)];
@@ -735,24 +780,6 @@ async function showUMAP(showdemoCall = 0) {
 }
 
 function reGenerateUMAP(allClusters, selectedClusters) {
-
-    // if (selectedClusters.length === 0) {
-    //     // Recreating the original UMAP plot
-    //     const originalTrace = {
-    //         x: currentEmbedding.map((point) => point[0]),
-    //         y: currentEmbedding.map((point) => point[1]),
-    //         mode: 'markers',
-    //         marker: {
-    //             size: 8,
-    //             color: 'grey',
-    //             opacity: 0.5,
-    //         },
-    //     };
-
-    //     Plotly.newPlot('umap-plot', [originalTrace], getUMAPLayout());
-    //     return;
-    // }
-
     if (selectedClusters.length === 0) {
         const originalTrace = {
             x: currentEmbedding.map((point) => point[0]),
@@ -801,10 +828,6 @@ function reGenerateUMAP(allClusters, selectedClusters) {
                 return index !== -1 ? colors[index % colors.length] : 'gray';
             }),
         },
-        // text: allClusters.map((cluster, index) => {
-        //     const selectedIndex = selectedClusters.indexOf(cluster)
-        //     return selectedIndex !== -1 ? `Cluster: ${cluster}, Row: ${index}` : '';
-        // }),
         hoverinfo: 'text',
         text: window.spotClusterMembership.map((spot, index) => {
             const cluster = allClusters[index];
@@ -828,46 +851,6 @@ function reGenerateUMAP(allClusters, selectedClusters) {
     umapPlotDiv.innerHTML = '';
     Plotly.newPlot('umap-plot', [trace], getUMAPLayout());
 }
-
-// function highlightUMAPRow(allClusters, indexToHighlight) {
-//     if (!currentEmbedding || !allClusters) {
-//         console.error("UMAP data not found!");
-//         return;
-//     }
-
-//     const umapPlotDiv = document.getElementById('umap-plot');
-//     umapPlotDiv.innerHTML = '<p>Updating UMAP...</p>';
-
-//     const allPointsTrace = {
-//         x: currentEmbedding.filter((_, index) => index !== indexToHighlight).map((point) => point[0]),
-//         y: currentEmbedding.filter((_, index) => index !== indexToHighlight).map((point) => point[1]),
-//         mode: 'markers',
-//         marker: {
-//             size: 8,
-//             color: 'gray',
-//             opacity: 0.5,
-//         },
-//         text: allClusters.filter((_, index) => index !== indexToHighlight)
-//             .map((cluster, index) => `Cluster: ${cluster}, Row: ${index}`),
-//         name: ''
-//     };
-
-//     const highlightedPointTrace = {
-//         x: [currentEmbedding[indexToHighlight][0]],
-//         y: [currentEmbedding[indexToHighlight][1]],
-//         mode: 'markers',
-//         marker: {
-//             size: 14,
-//             color: 'brown',
-//             layer: 'above traces',
-//         },
-//         text: [`Cluster: ${allClusters[indexToHighlight]}, Row: ${indexToHighlight}`],
-//         name: ''
-//     };
-
-//     umapPlotDiv.innerHTML = '';
-//     Plotly.newPlot('umap-plot', [allPointsTrace, highlightedPointTrace], getUMAPLayout());
-// }
 
 function highlightUMAPRow(allClusters, indexToHighlight) {
     if (!currentEmbedding || !allClusters) {
@@ -1194,7 +1177,6 @@ function valuesUploaded(e) {
         reader.readAsText(file);
         checkRequiredUploads();
         handleGeneFileUI();
-        window.spotClusterMembership = transformFileData(valuesData);
     }
 }
 
@@ -1292,6 +1274,9 @@ function setDefaultGeneModeIfNeeded() {
                 window.showEmojiView = false;
             }
             document.getElementById('showEmojiView').disabled = true;
+            document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
+                radio.disabled = false;
+            });
             const radios = document.querySelectorAll("input[name='clusterType']");
             // Check if any radio is currently selected
             const anySelected = Array.from(radios).some(radio => radio.checked);
@@ -1507,6 +1492,7 @@ function showCompositionChanged(e) {
             document.getElementById("showAllLevels").disabled = false;
             if (window.whichDemo !== 'demo1'){
                 document.getElementById("showEmojiView").disabled = false;
+                window.showEmojiView = false;
             } else {
                 document.getElementById("showEmojiView").disabled = true;
             }
