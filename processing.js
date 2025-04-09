@@ -1,11 +1,13 @@
 //© Heba Sailem, heba.sailem@kcl.ac.uk
 document.getElementById("showImage").addEventListener("change", showImageChanged)
 document.getElementById("showAllLevels").addEventListener("change", showAllLevelsChanged)
+document.getElementById("showEmojiView").addEventListener("change", showEmojiViewChanged)
 document.getElementById("showCluster").addEventListener("change", showClusterLevelsChanged)
 document.getElementById("selectGenes").addEventListener("change", geneSelected)
 document.getElementById("showComposition").addEventListener("change", showCompositionChanged)
 document.getElementById("showGenes").addEventListener("change", showGenesChanged)
 document.getElementById("uploadNewFilesButton").addEventListener("click", uploadNewFileClicked)
+document.getElementById("input-2").addEventListener("change", uploadCellTypeImages);
 document.getElementById("demo1").addEventListener("click", () => showDemo('demo1'));
 document.getElementById("demo2").addEventListener("click", () => showDemo('demo2'));
 document.getElementById("demo3").addEventListener("click", () => showDemo('demo3'));
@@ -19,11 +21,24 @@ document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
 document.querySelectorAll(".nav-link").forEach(tab => {
     tab.addEventListener("click", showOrHideOptions);
 });
+const opacitySlider = document.getElementById("imageOpacity");
+const opacityValueDisplay = document.getElementById("opacityValue");
+opacitySlider.addEventListener("input", () => {
+    const value = parseInt(opacitySlider.value);
+    opacityValueDisplay.textContent = `${value}`;
+  });
+
+document.addEventListener("DOMContentLoaded", function () {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
 
 function registerFileUpload(inputId, uploadHandler) {
     document.getElementById(inputId).addEventListener("change", function (e) {
         uploadHandler(e);
-        checkFileUploads();
+        // checkFileUploads();
     });
 }
 registerFileUpload("positions", positinosUploaded);
@@ -39,27 +54,115 @@ function toggleCheckboxVisibility(checkboxId, show) {
     if (label) label.style.display = show ? "inline-block" : "none";
 }
 
+function clearAllUploadInputs() {
+    const fileInputs = document.querySelectorAll('#fileInputSection input[type="file"]');
+    fileInputs.forEach(input => {
+      input.value = ""; // reset file input
+    });
+  
+    // Also clear uploaded SVG tracking if needed
+    if (typeof uploadedSVGFiles !== "undefined") {
+      uploadedSVGFiles = {};
+    }
+  
+    // Clear display (e.g., uploaded file names)
+    const svgList = document.getElementById("svg-file-list");
+    if (svgList) svgList.textContent = "";
+  }
+
 window.selectedClusterInLegend = null;
+window.selectedUMAPClusters = [];
 window.currentUMAPWorker = null;
 window.numberOfClusters = [];
 window.clusterMap = [];
+window.cellTypeVectors = {};
+window.spotClusterMembership = 'none';
+
+window.cellTypeToEmojiMap = {
+    "B/Plasma cells": "Plasma.svg",
+    "Endothelial cells": "Endothelial_cell.svg",
+    "Fibro1 (EIF4A3, STAR)": "fibroblast1.svg",
+    "Fibro2 (RBP1, DCN)": "fibroblast2.svg",
+    "Fibro3 (RAMP1, CFD)": "fibroblast3.svg",
+    "Fibro4 (CCL2)": "fibroblast4.svg",
+    "Fibro5 (FN1, COL3A1)": "fibroblast5.svg",
+    "Macrophages": "Macrophage.svg",
+    "Mesothelial cells": "Mesothelial_cell.svg",
+    "Myofibroblasts": "Myofibroblast.svg",
+    "T cells": "t-cell.svg",
+    "Tumour cells": "Cancer_cell.svg"
+};
 
 window.onload = async function () {
-    await showDemo('demo1')
+    loadFontFile();
+    await showDemo('demo5')
     document.getElementById("showCluster").click()
 }
 
 window.showUMAP = showUMAP;
 window.selectedClusterView = "shapes";
 window.showDemoButton = "clicked";
-window.whichDemo = 'demo1';
+window.whichDemo = 'demo5';
+window.uploadedEmojiFile = false;
+
+let uploadedSVGFiles = {};
+let expectedCellTypes = [];
+
+function updateUploadedFileListUI() {
+    const listContainer = document.getElementById("svg-file-list");
+    listContainer.innerHTML = "";
+
+    const uploadedNames = Object.values(uploadedSVGFiles).map(file => file.name.replace(/:/g, "/")); // full original names
+
+    listContainer.textContent = uploadedNames.join(", ");
+}
+
+function uploadCellTypeImages(e) {
+    const files = e.target.files;
+
+    for (let file of files) {
+        const originalName = file.name.replace(".svg", "");
+        const normalizedName = normalizeName(originalName);
+
+        // Skip if already uploaded
+        if (uploadedSVGFiles[normalizedName]) {
+            alert(`File "${file.name}" is already uploaded.`);
+            continue;
+        }
+
+        // Restrict upload count to expectedCellTypes.length
+        const remainingSlots = expectedCellTypes.length - Object.keys(uploadedSVGFiles).length;
+        if (remainingSlots <= 0) {
+            alert(`You can only upload ${expectedCellTypes.length} SVG files as only ${expectedCellTypes.length} cell types are available.`);
+            break;
+        }
+
+        // Check if normalized name matches any expected cell type (also normalized)
+        const match = expectedCellTypes.find(expected =>
+            normalizeName(expected) === normalizedName
+        );
+
+        if (!match) {
+            alert(`"${file.name}" does not match any expected cell type.`);
+            continue;
+        }
+
+        uploadedSVGFiles[normalizedName] = file;
+        updateUploadedFileListUI();
+    }
+
+    e.target.value = "";
+
+    if (Object.keys(uploadedSVGFiles).length === expectedCellTypes.length) {
+        validateSVGFiles();
+    }
+}
 
 function showOrHideOptions() {
     const optionsContainer = document.getElementById("optionsContainer");
     const umapTab = document.getElementById("umapTab");
     const plottingTab = document.getElementById("plottingTab");
     const canvasContainerID = document.getElementById("canvasContainer");
-    print
     if (umapTab.classList.contains("active") && document.getElementById("umapUpload").files.length) {
         optionsContainer.style.display = "block";
 
@@ -76,7 +179,7 @@ function showOrHideOptions() {
             }
 
         } else {
-            console.log(window.showDemoButton)
+            // console.log(window.showDemoButton)
             if (window.showDemoButton === "clicked") {
                 optionsContainer.style.display = "block";
             } else {
@@ -91,6 +194,69 @@ function showOrHideOptions() {
     } else {
         canvasContainerID.style.pointerEvents = "auto";
     }
+}
+
+function preloadMappedEmojiSVGs() {
+    if (!window.cellTypeVectors) window.cellTypeVectors = {};
+  
+    Object.entries(window.cellTypeToEmojiMap).forEach(([cellType, fileName]) => {
+      fetch(`./smoothsvg/${fileName}`)
+        .then(res => res.text())
+        .then(svgText => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(svgText, "image/svg+xml");
+  
+          const svgElement = doc.querySelector("svg");
+          if (!svgElement) return;
+
+          svgElement.style.position = "absolute";
+          svgElement.style.visibility = "hidden";
+          svgElement.style.pointerEvents = "none";
+          document.body.appendChild(svgElement);
+  
+          const viewBox = svgElement.getAttribute("viewBox") || "0 0 100 100";
+          const [, , w, h] = viewBox.split(" ").map(parseFloat);
+          const viewBoxSize = Math.max(w || 100, h || 100);
+  
+          const elements = Array.from(svgElement.querySelectorAll("path, text"));
+          const vectorPaths = elements.map(el => {
+            const tag = el.tagName.toLowerCase();
+            const computed = window.getComputedStyle(el);
+  
+            if (tag === "path") {
+              return {
+                type: "path",
+                d: el.getAttribute("d"),
+                stroke: "black",
+                fill: el.getAttribute("fill") || computed.fill || "none",
+                strokeWidth: el.getAttribute("stroke-width") || computed.strokeWidth || "1",
+                linecap: el.getAttribute("stroke-linecap") || computed.strokeLinecap || "butt",
+              };
+            } else if (tag === "text") {
+              return {
+                type: "text",
+                text: el.textContent,
+                x: parseFloat(el.getAttribute("x")) || 0,
+                y: parseFloat(el.getAttribute("y")) || 0,
+                fontSize: parseFloat(computed.fontSize) || 16,
+                fontFamily: computed.fontFamily || "sans-serif",
+                fill: "black",
+              };
+            } 
+            return null;
+          }).filter(Boolean);
+  
+          svgElement.remove();
+  
+          window.cellTypeVectors[cellType] = {
+            viewBoxSize,
+            shapes: vectorPaths
+          };
+        })
+        .catch(err => {
+          console.warn(`Error loading vector: ${cellType} → ${fileName}`, err);
+        });
+    });
 }
 
 function createGeneHeatmapGradient() {
@@ -130,6 +296,7 @@ window.sketchOptions = {
 window.mode = "cellComposition" //cellComposition or genes
 window.showImage = false;
 window.showAllLevels = false;
+window.showEmojiView = false;
 window.showCluster = false;
 
 let currentEmbedding = null
@@ -139,32 +306,36 @@ window.clusterInfo = null
 const colorScales = [{
         name: "Color Scale 1",
         value: "ColorScale1",
-        colors: ["#FF0000", "#FFA500", "#9DFF09", "#FBFB08", "#22FF9A", "#1297FF", "#0000FF", "#9700FF", "#FB009A"]
+        colors: ["#FF0000", "#FFA500", "#9DFF09", "#FBFB08", "#22FF9A", "#1297FF", "#0000FF", "#9700FF", "#FB009A", "#FF6EC7", "#00FFEA", "#FF4500", "#00BFFF", "#FFD700", "#8A2BE2"]
     },
     {
         name: "Color Scale 2",
         value: "ColorScale2",
-        colors: ["#117733", "#88CCEE", "#882255", "#44AA99", "#999933", "#332288", "#DDCC77", "#AA4499", "#E41A1C"]
+        colors: ["#117733", "#661100", "#882255", "#44AA99", "#999933", "#332288", "#DDCC77", "#AA4499", "#E41A1C", "#3F88C5", "#C8553D", "#6A4C93", "#A2C523", "#E4572E", "#1A8FE3"]
+
     },
     {
         name: "Color Scale 3",
         value: "ColorScale3",
-        colors: ["#636363", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#F4A582"]
+        colors: ["#636363", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#F4A582", "#999999", "#00CC99", "#B76E79", "#4D4DFF", "#FFA07A", "#33A02C"]
     },
     {
         name: "Color Scale 4",
         value: "ColorScale4",
-        colors: ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#882255", "#88CCEE"]
+        colors: ["#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#882255", "#B07AA1", "#0F4C81", "#FF6F61", "#28AFB0", "#5F0F40", "#7CB518", "#DC6BAD"]
+
     },
     {
         name: "Color Scale 5",
         value: "ColorScale5",
-        colors: ["#44AA99", "#332288", "#117733", "#88CCEE", "#999933", "#AA4499", "#DDCC77", "#E41A1C", "#F0E442"]
+        colors: ["#44AA99", "#332288", "#117733", "#999933", "#9999DD", "#E41A1C", "#F0E442", "#C94C4C", "#3D348B", "#F6AE2D", "#33658A", "#7DCE82", "#ED6A5A", "#D90368", "#00A676"]
+
     },
     {
         name: "Color Scale 6",
         value: "ColorScale6",
-        colors: ["#CC79A7", "#0072B2", "#D55E00", "#E69F00", "#56B4E9", "#009E73", "#F4A582", "#88CCEE", "#882255"]
+        colors: ["#CC79A7", "#0072B2", "#D55E00", "#E69F00", "#56B4E9", "#009E73", "#F4A582", "#882255", "#004488", "#A6761D", "#0A9396", "#F28482", "#5C3C92", "#6B4226", "#CE4257"]
+
     },
 ];
 
@@ -176,16 +347,22 @@ dropdown.value = colorScales[0].value;
 dropdown.addEventListener("change", (event) => {
     const selectedScale = colorScales.find(scale => scale.value === event.target.value);
     if (selectedScale) {
-        console.log("Selected scale:", selectedScale);
+        // console.log("Selected scale:", selectedScale);
         dataColors = selectedScale.colors;
-        showDemo(window.whichDemo);
+        if (document.getElementById("demoTab").classList.contains("active")){
+            showDemo(window.whichDemo);
+        } else if (document.getElementById("plottingTab").classList.contains("active")){
+            generateVis();
+        } else {
+            generateVis();
+        }
     }
 });
 
 function uniqueClusterCount(valuesRows) {
     const headers = valuesRows[0]; // no split needed
-    console.log("headers");
-    console.log(headers);
+    // console.log("headers");
+    // console.log(headers);
 
     const clusterIndex = headers.findIndex(header => header.trim() === 'Cluster');
 
@@ -207,6 +384,7 @@ function uniqueClusterCount(valuesRows) {
 }
 
 async function showDemo(demoValue = 'demo1') {
+    clearAllUploadInputs();
     toggleCheckboxVisibility("showGenes", document.getElementById("showGenes"));
     toggleCheckboxVisibility("showImage", document.getElementById("showImage"));
 
@@ -218,6 +396,7 @@ async function showDemo(demoValue = 'demo1') {
     loadImageForDemo(demoValue);
     document.getElementById("umapTab").classList.remove("d-none");
     window.showDemoButton = "clicked"
+    window.uploadedEmojiFile == false;
 
     let positionsFile, valuesFile, genesFile;
 
@@ -245,7 +424,7 @@ async function showDemo(demoValue = 'demo1') {
 
     let positionsCsv = await fetch(positionsFile)
     let positionsRes = await positionsCsv.text()
-    console.log(positionsRes);
+    // console.log(positionsRes);
     const positionsText = positionsRes;
     const positionsRows = positionsText.split('\n');
     positionsData = positionsRows.map(row => row.split(','));
@@ -260,6 +439,7 @@ async function showDemo(demoValue = 'demo1') {
     window.numberOfClusters = uniqueClusterCount(valuesRows);
     generateClusterLegend(window.numberOfClusters);
     valuesData = valuesRows;
+    window.spotClusterMembership = transformFileData(valuesData);
 
     let genesCsv = await fetch(genesFile)
     let genesRes = await genesCsv.text()
@@ -267,11 +447,24 @@ async function showDemo(demoValue = 'demo1') {
     const genesRows = genesText.split('\n');
     genesData = scaleData(genesRows.map(row => row.trim().split(',')));
 
+    if (window.whichDemo !== 'demo1'){
+        preloadMappedEmojiSVGs();
+        if (!window.showCluster) {
+            document.getElementById("showEmojiView").disabled = false;
+        }
+    } else {
+        document.getElementById("showEmojiView").disabled = true;
+        document.getElementById("showEmojiView").checked = false;
+        window.showEmojiView = false;
+    }
+
     document.getElementById("optionsContainer").style.display = "block";
 
-    generateVis()
+    generateVis();
 
     document.getElementById("loadingOverlay").style.display = "none";
+
+    showOrHideOptions();
 
     //triggering showUMAP in the background
     setTimeout(() => {
@@ -317,6 +510,22 @@ function getUMAPLayout() {
     };
 }
 
+function updateCheckboxStates() {
+    const allCheckboxes = document.querySelectorAll('#cluster-dropdown-menu input[type="checkbox"]');
+
+    if (selectedClusters.length >= MAX_SELECTIONS) {
+        allCheckboxes.forEach(checkbox => {
+            if (!checkbox.checked) {
+                checkbox.disabled = true;
+            }
+        });
+    } else {
+        allCheckboxes.forEach(checkbox => {
+            checkbox.disabled = false;
+        });
+    }
+}
+
 async function showUMAP(showdemoCall = 0) {
     try {
         if (window.currentUMAPWorker) {
@@ -329,16 +538,16 @@ async function showUMAP(showdemoCall = 0) {
         const clusterDropdownContainer = document.getElementById('clusterDropdownContainer');
         umapPlotDiv.innerHTML = '<p>UMAP is loading...</p>';
         umapPlotDiv.style.textAlign = 'center';
-        const spotClusterMembership = transformFileData(valuesData);
+        // const spotClusterMembership = transformFileData(valuesData);
         let topExpressedGenes = [];
         if (showdemoCall) {
             topExpressedGenes = transformFileData(genesData);
         } else {
             topExpressedGenes = transformFileData(umapData);
         }
-        const clusters = spotClusterMembership.map((row) => parseInt(row.Cluster, 10));
+        const clusters = window.spotClusterMembership.map((row) => parseInt(row.Cluster, 10));
         window.clusterInfo = clusters;
-        const uniqueClusters = [...new Set(clusters)];
+        // const uniqueClusters = [...new Set(clusters)];
         const geneNames = Object.keys(topExpressedGenes[0]);
         const geneExpressionData = topExpressedGenes.map((row) =>
             geneNames.map((gene) => parseFloat(row[gene])).filter((value) => !isNaN(value))
@@ -391,24 +600,64 @@ async function showUMAP(showdemoCall = 0) {
                             color: 'grey',
                             opacity: 0.5,
                         },
-                        text: clusters.map((cluster, index) => `Cluster: ${cluster}, Row: ${index}`),
+                        hoverinfo: 'text',
+                        // text: clusters.map((cluster, index) => `Cluster: ${cluster}, Row: ${index}`),
+                        text: window.spotClusterMembership.map((spot, index) => {
+                            const cluster = clusters[index];
+                            
+                            const top3 = Object.entries(spot)
+                                .filter(([key, val]) => key !== "Cluster" && key !== "barcode")
+                                .map(([key, val]) => ({ key, val: parseFloat(val) }))
+                                .sort((a, b) => b.val - a.val)
+                                .slice(0, 3);
+                        
+                            const cellTypesText = top3
+                                .map(cell => `${cell.key}: ${parseFloat(cell.val * 100).toFixed(2)}%`)
+                                .join('<br>');
+                        
+                            return `Cluster: ${cluster}<br><b>Top Cell Types:</b><br>${cellTypesText}`;
+                        }),            
                     };
 
                     Plotly.newPlot('umap-plot', [trace], getUMAPLayout());
+                    const uniqueClusters = [...new Set(clusters)].sort((a, b) => a - b);
+                    const deselectItem = document.createElement('li');
+                    const deselectAllBtn = document.createElement('div');
+                    deselectAllBtn.textContent = 'Deselect All';
+                    deselectAllBtn.style.cursor = 'pointer';
+                    deselectAllBtn.classList.add('dropdown-item', 'text-danger', 'fw-bold');
+                    deselectAllBtn.addEventListener('click', () => {
+                        const allCheckboxes = clusterDropdownMenu.querySelectorAll('input[type="checkbox"]');
+                        const isAnySelected = Array.from(allCheckboxes).some(cb => cb.checked);
+                    
+                        if (!isAnySelected) return; // Nothing to do if none are selected
+                    
+                        selectedClusters = [];
+                    
+                        allCheckboxes.forEach(cb => {
+                            cb.checked = false;
+                            cb.disabled = false;
+                        });
+                    
+                        reGenerateUMAP(clusters, selectedClusters);
+                        highlightClustersOnCanvasUMAP(selectedClusters);
+                    });
 
-                    for (let i = 1; i <= uniqueClusters.length; i++) {
+                    deselectItem.appendChild(deselectAllBtn);
+                    clusterDropdownMenu.appendChild(deselectItem);
+                    for (const clusterId of uniqueClusters) {
                         const listItem = document.createElement('li');
                         const checkbox = document.createElement('input');
                         checkbox.type = 'checkbox';
-                        checkbox.id = `cluster-${i}`;
-                        checkbox.value = i;
+                        checkbox.id = `cluster-${clusterId}`;
+                        checkbox.value = clusterId;
                         checkbox.classList.add('form-check-input');
                         checkbox.style.marginRight = '5px';
 
                         const label = document.createElement('label');
-                        label.htmlFor = `cluster-${i}`;
-                        label.textContent = `${i}`;
-                        label.classList.add('form-check-label')
+                        label.htmlFor = `cluster-${clusterId}`;
+                        label.textContent = `${clusterId}`;
+                        label.classList.add('form-check-label');
 
                         const wrapperDiv = document.createElement('div');
                         wrapperDiv.classList.add('form-check', 'dropdown-item', 'ms-4');
@@ -420,18 +669,27 @@ async function showUMAP(showdemoCall = 0) {
                         clusterDropdownMenu.appendChild(listItem);
 
                         checkbox.addEventListener('change', (event) => {
+                            const selectedValue = parseInt(event.target.value);
+                    
                             if (event.target.checked) {
-                                if (selectedClusters.length >= MAX_SELECTIONS) {
-                                    event.target.checked = false;
-                                    alert(`You can select up to ${MAX_SELECTIONS} clusters at a time.`);
-                                    return;
-                                }
-                                selectedClusters.push(parseInt(event.target.value));
+                                selectedClusters.push(selectedValue);
                             } else {
-                                selectedClusters = selectedClusters.filter(cluster => cluster !== parseInt(event.target.value));
+                                selectedClusters = selectedClusters.filter(cluster => cluster !== selectedValue);
                             }
-
+                    
+                            // Update all checkboxes based on MAX_SELECTIONS
+                            const allCheckboxes = clusterDropdownMenu.querySelectorAll('input[type="checkbox"]');
+                            allCheckboxes.forEach(cb => {
+                                if (!cb.checked) {
+                                    cb.disabled = selectedClusters.length >= MAX_SELECTIONS;
+                                }
+                            });
+                    
+                            // Update UMAP plot
                             reGenerateUMAP(clusters, selectedClusters);
+                    
+                            // Update canvas highlight
+                            highlightClustersOnCanvasUMAP(selectedClusters);
                         });
                     }
 
@@ -465,8 +723,24 @@ async function showUMAP(showdemoCall = 0) {
 
 function reGenerateUMAP(allClusters, selectedClusters) {
 
+    // if (selectedClusters.length === 0) {
+    //     // Recreating the original UMAP plot
+    //     const originalTrace = {
+    //         x: currentEmbedding.map((point) => point[0]),
+    //         y: currentEmbedding.map((point) => point[1]),
+    //         mode: 'markers',
+    //         marker: {
+    //             size: 8,
+    //             color: 'grey',
+    //             opacity: 0.5,
+    //         },
+    //     };
+
+    //     Plotly.newPlot('umap-plot', [originalTrace], getUMAPLayout());
+    //     return;
+    // }
+
     if (selectedClusters.length === 0) {
-        // Recreating the original UMAP plot
         const originalTrace = {
             x: currentEmbedding.map((point) => point[0]),
             y: currentEmbedding.map((point) => point[1]),
@@ -476,11 +750,26 @@ function reGenerateUMAP(allClusters, selectedClusters) {
                 color: 'grey',
                 opacity: 0.5,
             },
+            hoverinfo: 'text',
+            text: window.spotClusterMembership.map((spot, index) => {
+                const cluster = allClusters[index];
+                const top3 = Object.entries(spot)
+                    .filter(([key]) => key !== "Cluster" && key !== "barcode")
+                    .map(([key, val]) => ({ key, val: parseFloat(val) }))
+                    .sort((a, b) => b.val - a.val)
+                    .slice(0, 3);
+    
+                const cellTypesText = top3
+                    .map(cell => `${cell.key}: ${parseFloat(cell.val * 100).toFixed(2)}%`)
+                    .join('<br>');
+    
+                return `Cluster: ${cluster}<br><b>Top Cell Types:</b><br>${cellTypesText}`;
+            })
         };
-
+    
         Plotly.newPlot('umap-plot', [originalTrace], getUMAPLayout());
         return;
-    }
+    }    
 
     const umapPlotDiv = document.getElementById('umap-plot');
     umapPlotDiv.innerHTML = '';
@@ -499,15 +788,73 @@ function reGenerateUMAP(allClusters, selectedClusters) {
                 return index !== -1 ? colors[index % colors.length] : 'gray';
             }),
         },
-        text: allClusters.map((cluster, index) => {
-            const selectedIndex = selectedClusters.indexOf(cluster)
-            return selectedIndex !== -1 ? `Cluster: ${cluster}, Row: ${index}` : '';
-        }),
+        // text: allClusters.map((cluster, index) => {
+        //     const selectedIndex = selectedClusters.indexOf(cluster)
+        //     return selectedIndex !== -1 ? `Cluster: ${cluster}, Row: ${index}` : '';
+        // }),
+        hoverinfo: 'text',
+        text: window.spotClusterMembership.map((spot, index) => {
+            const cluster = allClusters[index];
+            const selected = selectedClusters.includes(cluster);
+            if (!selected) return '';
+        
+            const top3 = Object.entries(spot)
+                .filter(([key]) => key !== "Cluster" && key !== "barcode")
+                .map(([key, val]) => ({ key, val: parseFloat(val) }))
+                .sort((a, b) => b.val - a.val)
+                .slice(0, 3);
+        
+            const cellTypesText = top3
+                .map(cell => `${cell.key}: ${parseFloat(cell.val * 100).toFixed(2)}%`)
+                .join('<br>');
+        
+            return `Cluster: ${cluster}<br><b>Top Cell Types:</b><br>${cellTypesText}`;
+        })        
     };
 
     umapPlotDiv.innerHTML = '';
     Plotly.newPlot('umap-plot', [trace], getUMAPLayout());
 }
+
+// function highlightUMAPRow(allClusters, indexToHighlight) {
+//     if (!currentEmbedding || !allClusters) {
+//         console.error("UMAP data not found!");
+//         return;
+//     }
+
+//     const umapPlotDiv = document.getElementById('umap-plot');
+//     umapPlotDiv.innerHTML = '<p>Updating UMAP...</p>';
+
+//     const allPointsTrace = {
+//         x: currentEmbedding.filter((_, index) => index !== indexToHighlight).map((point) => point[0]),
+//         y: currentEmbedding.filter((_, index) => index !== indexToHighlight).map((point) => point[1]),
+//         mode: 'markers',
+//         marker: {
+//             size: 8,
+//             color: 'gray',
+//             opacity: 0.5,
+//         },
+//         text: allClusters.filter((_, index) => index !== indexToHighlight)
+//             .map((cluster, index) => `Cluster: ${cluster}, Row: ${index}`),
+//         name: ''
+//     };
+
+//     const highlightedPointTrace = {
+//         x: [currentEmbedding[indexToHighlight][0]],
+//         y: [currentEmbedding[indexToHighlight][1]],
+//         mode: 'markers',
+//         marker: {
+//             size: 14,
+//             color: 'brown',
+//             layer: 'above traces',
+//         },
+//         text: [`Cluster: ${allClusters[indexToHighlight]}, Row: ${indexToHighlight}`],
+//         name: ''
+//     };
+
+//     umapPlotDiv.innerHTML = '';
+//     Plotly.newPlot('umap-plot', [allPointsTrace, highlightedPointTrace], getUMAPLayout());
+// }
 
 function highlightUMAPRow(allClusters, indexToHighlight) {
     if (!currentEmbedding || !allClusters) {
@@ -527,8 +874,23 @@ function highlightUMAPRow(allClusters, indexToHighlight) {
             color: 'gray',
             opacity: 0.5,
         },
-        text: allClusters.filter((_, index) => index !== indexToHighlight)
-            .map((cluster, index) => `Cluster: ${cluster}, Row: ${index}`),
+        hoverinfo: 'text',
+        text: window.spotClusterMembership
+            .filter((_, index) => index !== indexToHighlight)
+            .map((spot, idx) => {
+                const cluster = allClusters[idx];
+                const top3 = Object.entries(spot)
+                    .filter(([key]) => key !== "Cluster" && key !== "barcode")
+                    .map(([key, val]) => ({ key, val: parseFloat(val) }))
+                    .sort((a, b) => b.val - a.val)
+                    .slice(0, 3);
+
+                const cellTypesText = top3
+                    .map(cell => `${cell.key}: ${parseFloat(cell.val * 100).toFixed(2)}%`)
+                    .join('<br>');
+
+                return `Cluster: ${cluster}<br><b>Top Cell Types:</b><br>${cellTypesText}`;
+            }),
         name: ''
     };
 
@@ -541,7 +903,22 @@ function highlightUMAPRow(allClusters, indexToHighlight) {
             color: 'brown',
             layer: 'above traces',
         },
-        text: [`Cluster: ${allClusters[indexToHighlight]}, Row: ${indexToHighlight}`],
+        hoverinfo: 'text',
+        text: (() => {
+            const cluster = allClusters[indexToHighlight];
+            const spot = window.spotClusterMembership[indexToHighlight];
+            const top3 = Object.entries(spot)
+                .filter(([key]) => key !== "Cluster" && key !== "barcode")
+                .map(([key, val]) => ({ key, val: parseFloat(val) }))
+                .sort((a, b) => b.val - a.val)
+                .slice(0, 3);
+
+            const cellTypesText = top3
+                .map(cell => `${cell.key}: ${parseFloat(cell.val * 100).toFixed(2)}%`)
+                .join('<br>');
+
+            return [`Cluster: ${cluster}<br><b>Top Cell Types:</b><br>${cellTypesText}`];
+        })(),
         name: ''
     };
 
@@ -550,15 +927,22 @@ function highlightUMAPRow(allClusters, indexToHighlight) {
 }
 
 
-
 function showImageChanged(e) {
-    console.log(e.target.checked)
+    // console.log(e.target.checked)
     window.showImage = e.target.checked;
+    document.getElementById("imageOpacityContainer").style.display = window.showImage ? "block" : "none";
 }
 
 function showAllLevelsChanged(e) {
-    console.log(e.target.checked)
+    // console.log(e.target.checked)
     window.showAllLevels = e.target.checked;
+    window.showEmojiView = !e.target.checked;
+}
+
+function showEmojiViewChanged(e) {
+    // console.log(e.target.checked)
+    window.showEmojiView = e.target.checked;
+    window.showAllLevels = !e.target.checked;
 }
 
 function showClusterLevelsChanged(e) {
@@ -566,12 +950,16 @@ function showClusterLevelsChanged(e) {
         alert("No Cluster column exists in the dataset")
         return;
     }
-    console.log(e.target.checked)
+    // console.log(e.target.checked)
     const showAllLevelsCheckbox = document.getElementById("showAllLevels")
+    const showEmojiViewCheckbox = document.getElementById("showEmojiView")
     if (e.target.checked) {
         window.showAllLevels = false;
+        window.showEmojiView = false;
         showAllLevelsCheckbox.checked = false;
         showAllLevelsCheckbox.disabled = true;
+        showEmojiViewCheckbox.disabled = true;
+        showEmojiViewCheckbox.checked = false;
         // Enabling cluster view selection when checkbox is checked
         document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
             radio.disabled = false;
@@ -579,11 +967,25 @@ function showClusterLevelsChanged(e) {
     } else {
         if (!document.getElementById("showGenes").checked) {
             showAllLevelsCheckbox.disabled = false;
+            showEmojiViewCheckbox.disabled = false;
         }
         // Disabling cluster view selection when checkbox is unchecked
         document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
             radio.disabled = true;
         });
+        if (window.whichDemo !== 'demo2' && window.whichDemo !== 'demo3' && window.whichDemo !== 'demo4' && window.whichDemo !== 'demo5'){
+            showEmojiViewCheckbox.disabled = true;
+        }
+        if (document.getElementById("plottingTab").classList.contains("active") && window.uploadedEmojiFile == false){
+            window.showEmojiView = false;
+            showEmojiViewCheckbox.disabled = true;
+        } else if (document.getElementById("plottingTab").classList.contains("active") && window.uploadedEmojiFile == true){
+            if (document.getElementById("showGenes").checked) {
+                showEmojiViewCheckbox.disabled = true;
+            } else {
+                showEmojiViewCheckbox.disabled = false;
+            }
+        }
     }
     window.showCluster = e.target.checked;
 
@@ -593,12 +995,127 @@ function clusterViewSelectionChanged() {
     const selectedClusterView = document.querySelector("input[name='clusterType']:checked").value;
     // Storing the selected cluster view type globally
     window.selectedClusterView = selectedClusterView;
+}
 
-    generateVis()
+function normalizeName(str) {
+    return str
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "")
+        .trim();
+}
+
+function validateSVGFiles() {
+    const missing = [];
+    const filesToParse = [];
+
+    expectedCellTypes.forEach(cellType => {
+        const normalizedCellType = normalizeName(cellType);
+        
+        // Match against normalized file names
+        const matchKey = Object.keys(uploadedSVGFiles).find(fileKey =>
+            normalizeName(fileKey) === normalizedCellType
+        );
+    
+        if (!matchKey) {
+            missing.push(cellType);
+        } else {
+            filesToParse.push({ cellType, file: uploadedSVGFiles[matchKey] });
+        }
+    });
+
+    if (missing.length > 0) {
+        alert("Missing SVG files for: " + missing.join(", "));
+        console.warn("Missing SVG files:", missing);
+        // Reset file input
+        const input = document.getElementById("input-2");
+        if (input) input.value = "";
+
+        // Clear stored files too
+        uploadedSVGFiles = {};
+        return; // stop here
+    }
+    filesToParse.forEach(({ cellType, file }) => {
+        parseSVGFile(file, cellType);
+    });
+}
+
+function parseSVGFile(file, cellType) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const svgText = e.target.result;
+        const convertedSVGString = convertSVGShapesToPaths(svgText);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(convertedSVGString, "image/svg+xml");
+        const svgElement = doc.querySelector("svg");
+
+        if (!svgElement) return;
+
+        svgElement.style.position = "absolute";
+        svgElement.style.visibility = "hidden";
+        svgElement.style.pointerEvents = "none";
+        document.body.appendChild(svgElement);
+
+        const viewBox = svgElement.getAttribute("viewBox") || "0 0 100 100";
+        const [, , w, h] = viewBox.split(" ").map(parseFloat);
+        const viewBoxSize = Math.max(w || 100, h || 100);
+
+        const elements = Array.from(svgElement.querySelectorAll("path, text"));
+        const vectorPaths = elements.map(el => {
+            const tag = el.tagName.toLowerCase();
+            const computed = window.getComputedStyle(el);
+
+            if (tag === "path") {
+                return {
+                    type: "path",
+                    d: el.getAttribute("d"),
+                    stroke: el.getAttribute("stroke") || "black",
+                    fill: el.getAttribute("fill") || computed.fill || "none",
+                    strokeWidth: el.getAttribute("stroke-width") || computed.strokeWidth || "1",
+                    linecap: el.getAttribute("stroke-linecap") || computed.strokeLinecap || "butt",
+                };
+            } else if (tag === "text") {
+                return {
+                    type: "text",
+                    text: el.textContent,
+                    x: parseFloat(el.getAttribute("x")) || 0,
+                    y: parseFloat(el.getAttribute("y")) || 0,
+                    fontSize: parseFloat(computed.fontSize) || 16,
+                    fontFamily: computed.fontFamily || "sans-serif",
+                    fill: el.getAttribute("fill") || "black",
+                };
+            }
+            return null;
+        }).filter(Boolean);
+
+        svgElement.remove();
+
+        window.cellTypeVectors[cellType] = {
+            viewBoxSize,
+            shapes: vectorPaths
+        };
+    };
+    window.uploadedEmojiFile = true;
+    reader.readAsText(file);
+}
+
+function getCellTypesFromCSV(valuesRows) {
+    if (!Array.isArray(valuesRows) || valuesRows.length === 0) {
+        console.warn("CSV data is empty or invalid");
+        return [];
+    }
+
+    const headerRow = valuesRows[0];
+
+    // Remove "Barcode" and "Cluster" (case-insensitive match)
+    return headerRow.filter(col =>
+        col.toLowerCase() !== "barcode" && col.toLowerCase() !== "cluster"
+    );
 }
 
 function positinosUploaded(e) {
-    console.log(e)
+    // console.log(e)
     const file = e.target.files[0];
 
     if (file) {
@@ -609,15 +1126,17 @@ function positinosUploaded(e) {
             const rows = text.split('\n');
             positionsData = rows.map(row => row.split(','));
 
-            console.log(positionsData);
+            // console.log(positionsData);
         };
 
         reader.readAsText(file);
+        checkRequiredUploads();
+        handleGeneFileUI();
     }
 }
 
 function valuesUploaded(e) {
-    console.log(e)
+    // console.log(e)
     const file = e.target.files[0];
 
     if (file) {
@@ -632,18 +1151,30 @@ function valuesUploaded(e) {
             });
 
             const valuesRows = parsed.data;
+            expectedCellTypes = getCellTypesFromCSV(valuesRows);
+            // console.log("Expected Cell Types:", expectedCellTypes);
+            if (expectedCellTypes.length !== 0){
+                document.getElementById("input-2").disabled = false;
+            }
+
+            // if (Object.keys(uploadedSVGFiles).length > 0) {
+            //     validateSVGFiles();
+            // }
             window.numberOfClusters = uniqueClusterCount(valuesRows);
             generateClusterLegend(window.numberOfClusters);
             valuesData = valuesRows;
-            console.log(valuesData);
+            // console.log(valuesData);
         };
 
         reader.readAsText(file);
+        checkRequiredUploads();
+        handleGeneFileUI();
+        window.spotClusterMembership = transformFileData(valuesData);
     }
 }
 
 function genesUploaded(e) {
-    console.log(e)
+    // console.log(e)
     const file = e.target.files[0];
 
     if (file) {
@@ -653,15 +1184,16 @@ function genesUploaded(e) {
             const text = e.target.result;
             const rows = text.split('\n');
             genesData = scaleData(rows.map(row => row.trim().split(',')));
-            console.log(genesData);
+            // console.log(genesData);
         };
 
         reader.readAsText(file);
+        handleGeneFileUI();
     }
 }
 
 function umapUploaded(e) {
-    console.log(e)
+    // console.log(e)
     const file = e.target.files[0];
     if (file) {
         const reader = new FileReader();
@@ -670,61 +1202,22 @@ function umapUploaded(e) {
             const text = e.target.result;
             const rows = text.split('\n');
             umapData = scaleData(rows.map(row => row.trim().split(',')));
-            console.log(umapData);
+            // console.log(umapData);
         };
         reader.readAsText(file);
+        handleUMAPUI();
     }
 }
 
-window.checkFileUploads = function () {
+function checkRequiredUploads() {
     const positionsUploaded = document.getElementById("positions").files.length > 0;
     const valuesUploaded = document.getElementById("values").files.length > 0;
-    const geneFileUploaded = document.getElementById("genesUpload").files.length > 0;
-    
-    // Enable/Disable the "Generate" button based on file uploads
-    document.getElementById("plotbutton").disabled = !(positionsUploaded && valuesUploaded);
 
-    // Reset and disable gene-related UI if no gene file is uploaded
-    if (geneFileUploaded) {
-        checkGeneFile();
-    } else {
-        resetGeneSelection();
-    }
-    
-    if (document.getElementById("umapUpload").files.length) {
-        document.getElementById("umapTab").classList.remove("d-none");
-        document.getElementById("canvasContainer").style.pointerEvents = "auto";
-    } else {
-        document.getElementById("umapTab").classList.add("d-none");
-    }
-    const imageUploaded = document.getElementById("image").files.length > 0;
-    const showImageContainer = document.getElementById("showImageContainer");
-    const showImageCheckbox = document.getElementById("showImage");
-    const showImageLabel = document.querySelector("label[for='showImage']");
-    
-    if (imageUploaded) {
-        showImageContainer.style.display = "flex";
-        showImageCheckbox.disabled = false;
-        showImageCheckbox.style.display = imageUploaded ? "inline-block" : "none";
-        if (showImageLabel) {
-            showImageLabel.style.display = imageUploaded ? "inline-block" : "none";
-        }
-    } else {
-        showImageCheckbox.checked = false;
-        showImageCheckbox.disabled = true;
-        showImageCheckbox.style.display = "none";
-        if (showImageLabel) {
-            showImageLabel.style.display = "none";
-        }
-        showImageContainer.style.display = "none";
-        window.showImage = false;
-    }
+    document.getElementById("plotbutton").disabled = !(positionsUploaded && valuesUploaded);
 }
 
-function checkGeneFile() {
+function handleGeneFileUI() {
     const geneFileUploaded = document.getElementById("genesUpload").files.length > 0;
-    document.getElementById("showGenes").disabled = !geneFileUploaded;
-    // document.getElementById("gene-specific").classList.toggle("hidden", !geneFileUploaded);
     const showGenesCheckbox = document.getElementById("showGenes");
     const showGenesLabel = document.querySelector("label[for='showGenes']");
 
@@ -734,22 +1227,91 @@ function checkGeneFile() {
     if (showGenesLabel) {
         showGenesLabel.style.display = geneFileUploaded ? "inline-block" : "none";
     }
-}
 
-function resetGeneSelection() {
-    showOrHideOptions()
-    const showGenesCheckbox = document.getElementById("showGenes");
-    const showGenesLabel = document.querySelector("label[for='showGenes']");
-    showGenesCheckbox.checked = false;
-    showGenesCheckbox.disabled = true;
-    showGenesCheckbox.style.display = "none";
-    if (showGenesLabel) {
-        showGenesLabel.style.display = "none";
+    if (geneFileUploaded) {
+        // Respect current checkbox state; do not force anything
+        if (showGenesCheckbox.checked) {
+            document.getElementById("gene-specific").classList.remove("hidden");
+            document.getElementById("composition-specific").classList.add("hidden");
+        } else {
+            document.getElementById("gene-specific").classList.add("hidden");
+            document.getElementById("composition-specific").classList.remove("hidden");
+        }
+    } else {
+        // If no gene file is uploaded, hide gene-specific and show composition
+        document.getElementById("gene-specific").classList.add("hidden");
+        document.getElementById("composition-specific").classList.remove("hidden");
     }
-    // document.getElementById("gene-specific").classList.add("hidden");
-    document.getElementById("selectGenes").innerHTML = "";
+    handleUMAPUI();
 }
 
+function setDefaultGeneModeIfNeeded() {
+    const geneFileUploaded = document.getElementById("genesUpload").files.length > 0;
+    const imageFileUploaded = document.getElementById("image").files.length > 0;
+    if (!geneFileUploaded) {
+        window.mode = "cellComposition";
+
+        const showClusterCheckbox = document.getElementById('showCluster');
+        if (!showClusterCheckbox.checked && window.showCluster === false) {
+            showClusterCheckbox.checked = true;
+            window.showCluster = true;
+            if(document.getElementById('showAllLevels').checked){
+                document.getElementById('showAllLevels').checked = false;
+                window.showAllLevels = false;
+            }
+            document.getElementById('showAllLevels').disabled = true;
+            if(document.getElementById('showEmojiView').checked){
+                document.getElementById('showEmojiView').checked = false;
+                window.showEmojiView = false;
+            }
+            document.getElementById('showEmojiView').disabled = true;
+        }
+
+        document.getElementById('showComposition').checked = true;
+        document.getElementById('showGenes').checked = false;
+    }
+    if(!imageFileUploaded) {
+        handleImageUploadUI();
+    }
+}
+
+function handleUMAPUI() {
+    const umapUploaded = document.getElementById("umapUpload").files.length > 0;
+    const umapTab = document.getElementById("umapTab");
+
+    if (umapUploaded) {
+        umapTab.classList.remove("d-none");
+        document.getElementById("canvasContainer").style.pointerEvents = "auto";
+    } else {
+        umapTab.classList.add("d-none");
+    }
+}
+
+window.handleImageUploadUI = function() {
+    const imageUploaded = document.getElementById("image").files.length > 0;
+    const showImageContainer = document.getElementById("showImageContainer");
+    const showImageCheckbox = document.getElementById("showImage");
+    const showImageLabel = document.querySelector("label[for='showImage']");
+
+    if (imageUploaded) {
+        showImageContainer.style.display = "flex";
+        showImageCheckbox.disabled = false;
+        showImageCheckbox.style.display = "inline-block";
+        if (showImageLabel) showImageLabel.style.display = "inline-block";
+    } else {
+        showImageCheckbox.checked = false;
+        showImageCheckbox.disabled = true;
+        showImageCheckbox.style.display = "none";
+        if (showImageLabel) showImageLabel.style.display = "none";
+        showImageContainer.style.display = "none";
+        window.showImage = false;
+    }
+}
+
+function getFreshColorArray(scaleName) {
+    const scale = colorScales.find(scale => scale.value === scaleName);
+    return [...scale.colors]; // shallow copy
+}
 
 window.generateVis = function () {
     dataSpots = []
@@ -757,14 +1319,18 @@ window.generateVis = function () {
         alert("Position Data missing")
         return;
     }
+
     if (mode == "cellComposition") {
+        const selectedScaleName = dropdown.value;
+        dataColors = getFreshColorArray(selectedScaleName);
+
         if (!valuesData || valuesData.length == 0) {
             alert("Membership Data missing")
             haltProcess()
             return;
         }
         dataHeaders = valuesData[0].slice(1)
-        console.log(dataHeaders)
+        // console.log(dataHeaders)
         let sliceFactor = 0
         hasClusters = false
 
@@ -773,9 +1339,23 @@ window.generateVis = function () {
             sliceFactor = 1
             hasClusters = true
         }
-        while (dataHeaders.length - sliceFactor > dataColors.length) {
-            //we have the basic data colors in the array on top, when they are not enough we generate random colors and add them to the array to be used
-            dataColors.push(generateRandomColor());
+        
+        let extraColorsNeeded = (dataHeaders.length - sliceFactor) - dataColors.length;
+
+        if (extraColorsNeeded > 0) {
+            const baseSeed = {
+                "ColorScale1": 42,
+                "ColorScale2": 43,
+                "ColorScale3": 44,
+                "ColorScale4": 45,
+                "ColorScale5": 46,
+                "ColorScale6": 47
+            }[selectedScaleName] || 50;
+
+            for (let i = 0; i < extraColorsNeeded; i++) {
+                // Use baseSeed + i to ensure unique color
+                dataColors.push(generateRandomColor(baseSeed + i));
+            }
         }
         for (let i = 1; i < positionsData.length - 1; i++) {
             let spotCoords = positionsData[i];
@@ -800,7 +1380,7 @@ window.generateVis = function () {
             return;
         }
         dataHeaders = genesData[0]
-        console.log(dataHeaders)
+        // console.log(dataHeaders)
 
         //populate gene selection with gene headers
         let geneOptions = ``
@@ -826,32 +1406,27 @@ window.generateVis = function () {
         }
     }
 
-    console.log(dataSpots)
+    // console.log(dataSpots)
     window.drawAtWill = true
     setupCanvas(Math.floor(window.innerWidth * 0.74), window.innerHeight, dataSpots)
 }
 
-// function generateRandomColor() {
-//     // return `#${Math.floor(Math.random() * 16777215).toString(16)}`
-//     let color;
-//     do {
-//         color = `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`;
-//     } while (color.toUpperCase() === "#FFFFFF" || color.toUpperCase() === "#FFF" || color.toLowerCase() === "#ffffff"); // Avoid white
-//     return color;
-// }
+function seededRandom(seed) {
+    let x = Math.sin(seed++) * 10000;
+    return x - Math.floor(x);
+}
 
-function generateRandomColor() {
+function generateRandomColor(seed) {
     let color;
+    let currentSeed = seed;
     do {
-      // Generate R, G, B values with a minimum brightness (e.g., 50)
-      const minBrightness = 50;
-      const r = Math.floor(Math.random() * (256 - minBrightness) + minBrightness);
-      const g = Math.floor(Math.random() * (256 - minBrightness) + minBrightness);
-      const b = Math.floor(Math.random() * (256 - minBrightness) + minBrightness);
-  
-      color = `#${((1 << 24) + (r << 16) + (g << 8) + b)
-        .toString(16)
-        .slice(1)}`;
+        const minBrightness = 50;
+        const r = Math.floor(seededRandom(currentSeed++) * (256 - minBrightness) + minBrightness);
+        const g = Math.floor(seededRandom(currentSeed++) * (256 - minBrightness) + minBrightness);
+        const b = Math.floor(seededRandom(currentSeed++) * (256 - minBrightness) + minBrightness);
+        color = `#${((1 << 24) + (r << 16) + (g << 8) + b)
+            .toString(16)
+            .slice(1)}`;
     } while (
       color.toUpperCase() === "#FFFFFF" ||
       color.toLowerCase() === "#ffffff" ||
@@ -859,10 +1434,10 @@ function generateRandomColor() {
     );
   
     return color;
-  }
+}
 
 function geneSelected(e) {
-    console.log(e.target.value)
+    // console.log(e.target.value)
     window.sketchOptions.selectedGene = e.target.value;
 }
 
@@ -872,7 +1447,6 @@ function modeChange(mode) {
     }
     window.mode = mode
     generateVis()
-    //resetAll()
 }
 
 function showCompositionChanged(e) {
@@ -884,9 +1458,21 @@ function showCompositionChanged(e) {
         if (window.showCluster) {
             document.getElementById("showAllLevels").checked = false;
             document.getElementById("showAllLevels").disabled = true;
+            document.getElementById("showEmojiView").checked = false;
+            document.getElementById("showEmojiView").disabled = true;
         } else {
             // document.getElementById("showAllLevels").checked = false;
             document.getElementById("showAllLevels").disabled = false;
+            if (window.whichDemo !== 'demo1'){
+                document.getElementById("showEmojiView").disabled = false;
+            } else {
+                document.getElementById("showEmojiView").disabled = true;
+            }
+
+            if (document.getElementById("plottingTab").classList.contains("active") && window.uploadedEmojiFile == false){
+                window.showEmojiView = false;
+                document.getElementById("showEmojiView").disabled = true;
+            }
         }
     } else {
         document.getElementById("composition-specific").classList.add("hidden")
@@ -900,6 +1486,8 @@ function showGenesChanged(e) {
         document.getElementById("composition-specific").classList.add("hidden");
         document.getElementById("showAllLevels").checked = false;
         document.getElementById("showAllLevels").disabled = true;
+        document.getElementById("showEmojiView").checked = false;
+        document.getElementById("showEmojiView").disabled = true;
         document.getElementById("showComposition").checked = false
         modeChange("genes")
     } else {
@@ -907,32 +1495,28 @@ function showGenesChanged(e) {
     }
 }
 
-function resetOptionsToDefault() {
-    // Reset checkboxes
-    document.getElementById("showImage").checked = false;
-    document.getElementById("showCluster").checked = true;
-    document.getElementById("showAllLevels").checked = false;
-
-    // Reset radio buttons
-    document.getElementById("shapeView").checked = true; // Set default to Shape view
-    document.getElementById("numberView").checked = false;
-    document.getElementById("showComposition").checked = true; // Default to Cell Proportions
-    document.getElementById("showGenes").checked = false;
-}
-
 function generteCanvasClicked() {
+    if(expectedCellTypes.length > Object.keys(uploadedSVGFiles).length && Object.keys(uploadedSVGFiles).length !== 0){
+        const cellCount = expectedCellTypes.length - Object.keys(uploadedSVGFiles).length;
+        alert(`Expected "${cellCount}" more number of cell type SVG file${cellCount > 1 ? 's' : ''}.`);
+        return;
+    }
+    document.getElementById('plotbutton').disabled = true;
+    document.getElementById('input-2').disabled = true;
+    document.getElementById('svg-file-list').textContent = "";
+
     const canvasContainerID = document.getElementById("canvasContainer");
     if (canvasContainerID) {
         canvasContainerID.style.pointerEvents = "auto";
     }
-    window.mode = "cellComposition"
-    resetOptionsToDefault()
+
+    setDefaultGeneModeIfNeeded();
     document.getElementById("optionsContainer").style.display = "block";
     document.getElementById('fileInputSection').style.display = 'none';
     document.getElementById('uploadNewFilesButton').style.display = 'block';
-
-    generateVis()
-    console.log("Generated new canvas.")
+    
+    generateVis();
+    // console.log("Generated new canvas.")
     window.showDemoButton = "none"
 
     if (document.getElementById("umapUpload").files.length) {
@@ -953,7 +1537,6 @@ function uploadNewFileClicked() {
         input.value = '';
     });
 }
-
 
 function resetAll() {
     window.drawAtWill = false;
@@ -1009,7 +1592,7 @@ function scaleData(matrix) {
 
     scaledMatrix.unshift(headers)
 
-    console.log(scaledMatrix)
+    // console.log(scaledMatrix)
 
     return scaledMatrix;
 }
@@ -1042,12 +1625,12 @@ class Spot {
 
         if (document.getElementById("umapTab").classList.contains("active")) {
             if (document.getElementById("clusterDropdownContainer").style.display === "block") {
-                const checkboxes = document.querySelectorAll("#cluster-dropdown-menu input[type='checkbox']");
-                const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+                // const checkboxes = document.querySelectorAll("#cluster-dropdown-menu input[type='checkbox']");
+                // const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
 
-                if (anyChecked) {
-                    checkboxes.forEach(cb => cb.checked = false);
-                }
+                // if (anyChecked) {
+                //     checkboxes.forEach(cb => cb.checked = false);
+                // }
                 highlightUMAPRow(window.clusterInfo, this.index)
             }
         }
@@ -1104,7 +1687,7 @@ const shapeSVGs = {
 };
 
 function generateClusterLegend(clusters) {
-    console.log("Clusters received:", clusters);
+    // console.log("Clusters received:", clusters);
     const legendContainer = document.getElementById("clusterLegendContainer");
     legendContainer.innerHTML = "";
 
@@ -1160,7 +1743,9 @@ function generateClusterLegend(clusters) {
 
         clusterItem.addEventListener('click', (e) => {
             const selectedCluster = parseInt(e.currentTarget.dataset.cluster, 10);
-            highlightClusterOnCanvas(selectedCluster);
+            if(!document.getElementById("umapTab").classList.contains("active")){
+                highlightClusterOnCanvas(selectedCluster);
+            }
         });
     });
 }
@@ -1172,9 +1757,17 @@ function highlightClusterOnCanvas(clusterNumber) {
     } else {
         window.selectedClusterInLegend = clusterNumber;
     }
+}
 
-    // Redraw canvas
-    setupCanvas(Math.floor(window.innerWidth * 0.74), window.innerHeight, dataSpots);
+function highlightClustersOnCanvasUMAP(clusterArray) {
+    if (!Array.isArray(clusterArray)) return;
+
+    // If all clusters are selected or none, clear filter
+    if (clusterArray.length === 0) {
+        window.selectedUMAPClusters = [];
+    } else {
+        window.selectedUMAPClusters = clusterArray.map(Number);
+    }
 }
 
 const heatMapColors = [

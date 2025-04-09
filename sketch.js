@@ -12,7 +12,8 @@ let infoBox = document.getElementById("infoBox")
 
 document.getElementById("image").addEventListener("change", function (e) {
   imageUploaded(e);
-  checkFileUploads();
+  // checkFileUploads();
+  handleImageUploadUI();
 })
 
 function imageUploaded(event) {
@@ -85,7 +86,7 @@ function draw() {
   drawHexagonGrid(spots);
   let adjustedMouseX = (mouseX - panX) / zoomFactor;
   let adjustedMouseY = (mouseY - panY) / zoomFactor;
-  if (mouseOverCanvas && window.mode == "cellComposition") {
+  if (mouseOverCanvas) {
     hoveredHex = getHoveredHexagon(adjustedMouseX, adjustedMouseY);
   }
   if (hoveredHex) {
@@ -339,16 +340,24 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
         svgElements.push(`<image href="${imgDataURL}" x="${imgX}" y="${imgY}" width="${imgWidth}" height="${imgHeight}" preserveAspectRatio="none"/>`);
       }
     } else {
+      // image(img, imgX, imgY, imgWidth, imgHeight);
+      const opacityPercent = parseInt(document.getElementById("imageOpacity").value); // 0–100
+      const alpha = Math.round((opacityPercent / 100) * 255); // Convert to 0–255
+      tint(255, alpha);
       image(img, imgX, imgY, imgWidth, imgHeight);
+      noTint();
     }
   }
 
   spots.forEach(spot => {
+    const isLegendFilterActive = window.selectedClusterInLegend !== null;
+    const isUMAPFilterActive = Array.isArray(window.selectedUMAPClusters) && window.selectedUMAPClusters.length > 0;
+
     if (
-      window.selectedClusterInLegend !== null &&
-      parseInt(spot.cluster) !== window.selectedClusterInLegend
+      (isLegendFilterActive && parseInt(spot.cluster) !== window.selectedClusterInLegend) ||
+      (isUMAPFilterActive && !window.selectedUMAPClusters.includes(parseInt(spot.cluster)))
     ) {
-      return;
+      return; // Skip spot based on legend OR UMAP selection
     }
     let scaledX = (spot.x - minX) * scaleFactor + offsetX;
     let scaledY = (spot.y - minY) * scaleFactor + offsetY;
@@ -363,13 +372,40 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
         if (window.showAllLevels) {
           svgElements.push(drawHexagonSVG(scaledX, scaledY, (spot.radius + 25) * scaleFactor, sortedSpotMembership[1].color));
           svgElements.push(drawHexagonSVG(scaledX, scaledY, (spot.radius + 10) * scaleFactor, sortedSpotMembership[2].color));
+        } else if (window.showEmojiView){
+          const topCellType = sortedSpotMembership[0].label;
+          const emojiImage = window.cellTypeVectors[topCellType];
+          if (emojiImage) {
+              svgElements.push(drawCellTypeVectorSVG(emojiImage, scaledX, scaledY, spot.scaledRadius * 1.5));
+          } 
+          // else {
+          //     // fallback if no image is found
+          //     // fill("black");
+          //     textAlign(CENTER, CENTER);
+          //     textSize(10);
+          //     text("?", scaledX, scaledY);
+          // }
         }
       } else {
         drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, sortedSpotMembership[0].color);
         if (window.showAllLevels) {
           drawHexagon(scaledX, scaledY, (spot.radius + 25) * scaleFactor, sortedSpotMembership[1].color);
           drawHexagon(scaledX, scaledY, (spot.radius + 10) * scaleFactor, sortedSpotMembership[2].color);
+        } else if (window.showEmojiView){
+          const topCellType = sortedSpotMembership[0].label;
+          const emojiImage = window.cellTypeVectors[topCellType];
+          if (emojiImage) {
+              drawCellTypeVectors(emojiImage, scaledX, scaledY, spot.scaledRadius * 1.5);
+          } 
+          // else {
+          //     // fallback if no image is found
+          //     // fill("black");
+          //     textAlign(CENTER, CENTER);
+          //     textSize(10);
+          //     text("?", scaledX, scaledY);
+          // }
         }
+      
       }
       if (window.showCluster) {
         const shapeRadius = (spot.radius - 30) * scaleFactor;
@@ -512,6 +548,81 @@ function switchCaseCluster(scaledX, scaledY, shapeRadius, spot, colorValue) {
     drawClusterNumber(scaledX, scaledY, shapeRadius, spot.cluster, colorValue);
   }
 }
+
+function drawCellTypeVectors(vectorData, x, y, size) {
+  const { shapes, viewBoxSize } = vectorData;
+  push();
+  translate(x - size / 2, y - size / 2);
+  scale(size / viewBoxSize);
+  shapes.forEach(shape => {
+    if (!shape || !shape.type) return;
+    try {
+      const hasTransform = !!shape.transform;
+      if (hasTransform) drawingContext.save();
+
+      if (shape.type === "path" && shape.d) {
+        if (!shape._cachedPath2D) {
+          shape._cachedPath2D = new Path2D(shape.d);
+        }
+        if (shape.fill && shape.fill !== "none") {
+          drawingContext.fillStyle = shape.fill;
+          drawingContext.fill(shape._cachedPath2D);
+        }
+        drawingContext.strokeStyle = shape.stroke || "grey";
+        drawingContext.lineWidth = parseFloat(shape.strokeWidth || 1);
+        drawingContext.stroke(shape._cachedPath2D);
+      } else if (shape.type === "text" && shape.text) {
+        drawingContext.fillStyle = "grey";
+        drawingContext.font = `${shape.fontSize || 16}px ${shape.fontFamily || "sans-serif"}`;
+        drawingContext.textAlign = "left";
+        drawingContext.textBaseline = "alphabetic";
+        drawingContext.fillText(shape.text, shape.x || 0, shape.y || 0);
+      }
+      if (hasTransform) drawingContext.restore();
+    } catch (err) {
+      console.warn("Error rendering shape:", err);
+    }
+  });
+
+  pop();
+}
+
+function drawCellTypeVectorSVG(vectorData, x, y, size) {
+  const { shapes, viewBoxSize } = vectorData;
+  const scale = size / viewBoxSize;
+  const offsetX = x - size / 2;
+  const offsetY = y - size / 2;
+
+  const svgElements = shapes.map(shape => {
+    if (!shape || !shape.type) return "";
+
+    try {
+      if (shape.type === "path" && shape.d) {
+        const fill = shape.fill && shape.fill !== "none" ? `fill="${shape.fill}"` : `fill="none"`;
+        const stroke = `stroke="${shape.stroke || "grey"}"`;
+        const strokeWidth = `stroke-width="${shape.strokeWidth || 1}"`;
+
+        // return `<path d="${shape.d}" ${fill} ${stroke} ${strokeWidth}" transform="translate(${offsetX},${offsetY}) scale(${scale})" />`;
+        return `<path d="${shape.d}" ${fill} ${stroke} ${strokeWidth} transform="translate(${offsetX},${offsetY}) scale(${scale})"/>`;
+
+      } else if (shape.type === "text" && shape.text) {
+        const xPos = (shape.x || 0) * scale + offsetX;
+        const yPos = (shape.y || 0) * scale + offsetY;
+        const fontSize = (shape.fontSize || 16) * scale;
+        const fontFamily = shape.fontFamily || "sans-serif";
+
+        return `<text x="${xPos}" y="${yPos}" font-size="${fontSize}" font-family="${fontFamily}" fill="${shape.fill || "grey"}">${shape.text}</text>`;
+      }
+    } catch (err) {
+      console.warn("Error generating SVG shape:", err);
+    }
+
+    return "";
+  });
+
+  return `<g>${svgElements.join("\n")}</g>`;
+}
+
 
 function drawClusterSVG(x, y, radius, spot, color) {
   if (window.selectedClusterView === "shapes") {

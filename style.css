@@ -41,3 +41,8 @@ html, body {
   font-weight: bold;
   color: #444;
 }
+
+#svg-file-list {
+  white-space: normal;
+  word-break: break-word;
+}
