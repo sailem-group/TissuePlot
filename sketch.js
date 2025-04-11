@@ -404,7 +404,15 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
           }
         }
       } else {
-        drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, spot.values[window.sketchOptions.selectedGene].color);
+        // console.log(window.sketchOptions.selectedGene)
+        const geneName = window.sketchOptions.selectedGene;
+        const geneIndex = spot.values.findIndex(v => v.label === geneName);
+        const geneColor = geneIndex !== -1
+          ? spot.values[geneIndex].color
+          : '#cccccc';
+
+        // drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, spot.values[window.sketchOptions.selectedGene].color);
+        drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, geneColor);
         if (window.showEmojiView) {
           const topCellType = spot.cellCompositionValues?.slice().sort((a, b) => b.value - a.value)[0].label;
           const emojiImage = window.cellTypeVectors[topCellType];

@@ -678,7 +678,15 @@ async function showUMAP(showdemoCall = 0) {
                         text: window.top3CellTypeTexts         
                     };
 
-                    Plotly.newPlot('umap-plot', [trace], getUMAPLayout());
+                    // Plotly.newPlot('umap-plot', [trace], getUMAPLayout());
+                    window.geneExpressionMatrix = topExpressedGenes;
+                    const geneSelect = document.getElementById('selectGenes');
+                    const gene = geneSelect?.value;
+                    if (window.mode === 'genes' && gene) {
+                        reGenerateUMAP(clusters, []);
+                    } else {
+                        Plotly.newPlot('umap-plot', [trace], getUMAPLayout());
+                    }
                     const uniqueClusters = [...new Set(clusters)].sort((a, b) => a - b);
                     const deselectItem = document.createElement('li');
                     const deselectAllBtn = document.createElement('div');
@@ -782,20 +790,52 @@ async function showUMAP(showdemoCall = 0) {
 
 function reGenerateUMAP(allClusters, selectedClusters) {
     if (selectedClusters.length === 0) {
-        const originalTrace = {
-            x: currentEmbedding.map((point) => point[0]),
-            y: currentEmbedding.map((point) => point[1]),
-            mode: 'markers',
-            marker: {
-                size: 8,
-                color: 'grey',
-                opacity: 0.5,
-            },
-            hoverinfo: 'text',
-            text: window.top3CellTypeTexts
-        };
-    
-        Plotly.newPlot('umap-plot', [originalTrace], getUMAPLayout());
+        if(window.mode === 'cellComposition'){
+            const originalTrace = {
+                x: currentEmbedding.map((point) => point[0]),
+                y: currentEmbedding.map((point) => point[1]),
+                mode: 'markers',
+                marker: {
+                    size: 8,
+                    color: 'grey',
+                    opacity: 0.5,
+                },
+                hoverinfo: 'text',
+                text: window.top3CellTypeTexts
+            };
+            Plotly.newPlot('umap-plot', [originalTrace], getUMAPLayout());
+        } else {
+            const geneSelect = document.getElementById('selectGenes');
+            const gene = geneSelect?.value;
+
+            if (!gene || !window.geneExpressionMatrix) {
+                console.warn('No gene selected or gene data missing');
+                return;
+            }
+
+            const geneValues = window.geneExpressionMatrix.map(row => {
+                const val = parseFloat(row[gene]);
+                return isNaN(val) ? 0 : val;
+            });
+
+            const trace = {
+                x: currentEmbedding.map((point) => point[0]),
+                y: currentEmbedding.map((point) => point[1]),
+                mode: 'markers',
+                marker: {
+                    size: 8,
+                    color: geneValues,
+                    colorscale: 'Viridis',
+                    showscale: false // remove colorbar
+                },
+                hoverinfo: 'text',
+                text: geneValues.map((val, i) =>
+                    `Expression: ${val.toFixed(2)}<br>${window.top3CellTypeTexts[i]}`
+                )
+            };
+
+            Plotly.newPlot('umap-plot', [trace], getUMAPLayout());
+        }
         return;
     }    
 
@@ -835,37 +875,76 @@ function highlightUMAPRow(allClusters, indexToHighlight) {
     const umapPlotDiv = document.getElementById('umap-plot');
     umapPlotDiv.innerHTML = '<p>Updating UMAP...</p>';
 
-    const allPointsTrace = {
-        x: currentEmbedding.filter((_, index) => index !== indexToHighlight).map((point) => point[0]),
-        y: currentEmbedding.filter((_, index) => index !== indexToHighlight).map((point) => point[1]),
-        mode: 'markers',
-        marker: {
-            size: 8,
-            color: 'gray',
-            opacity: 0.5,
-        },
-        hoverinfo: 'text',
-        text: window.top3CellTypeTexts.filter((_, index) => index !== indexToHighlight),
-        name: ''
-    };
+    const x = currentEmbedding.map((pt) => pt[0]);
+    const y = currentEmbedding.map((pt) => pt[1]);
 
-    const highlightedPointTrace = {
-        x: [currentEmbedding[indexToHighlight][0]],
-        y: [currentEmbedding[indexToHighlight][1]],
-        mode: 'markers',
-        marker: {
-            size: 14,
-            color: 'brown',
-            layer: 'above traces',
-        },
-        hoverinfo: 'text',
-        text: [window.top3CellTypeTexts[indexToHighlight]],
-        name: ''
-    };
+    let allPointsTrace, highlightedPointTrace;
+
+    if (window.mode === 'genes') {
+        const geneSelect = document.getElementById('selectGenes');
+        const gene = geneSelect?.value;
+        const geneValues = window.geneExpressionMatrix.map((row) => parseFloat(row[gene]));
+
+        allPointsTrace = {
+            x: x.filter((_, i) => i !== indexToHighlight),
+            y: y.filter((_, i) => i !== indexToHighlight),
+            mode: 'markers',
+            marker: {
+                size: 8,
+                color: geneValues.filter((_, i) => i !== indexToHighlight),
+                colorscale: 'Viridis',
+                showscale: false,
+                opacity: 0.5,
+            },
+            text: window.top3CellTypeTexts.filter((_, i) => i !== indexToHighlight),
+            hoverinfo: 'text',
+        };
+
+        highlightedPointTrace = {
+            x: [x[indexToHighlight]],
+            y: [y[indexToHighlight]],
+            mode: 'markers',
+            marker: {
+                size: 14,
+                color: 'black',
+                line: { width: 2, color: 'white' },
+            },
+            text: [window.top3CellTypeTexts[indexToHighlight]],
+            hoverinfo: 'text',
+        };
+    } else {
+        // fallback to cellComposition
+        allPointsTrace = {
+            x: x.filter((_, i) => i !== indexToHighlight),
+            y: y.filter((_, i) => i !== indexToHighlight),
+            mode: 'markers',
+            marker: {
+                size: 8,
+                color: 'gray',
+                opacity: 0.5,
+            },
+            text: window.top3CellTypeTexts.filter((_, i) => i !== indexToHighlight),
+            hoverinfo: 'text',
+        };
+
+        highlightedPointTrace = {
+            x: [x[indexToHighlight]],
+            y: [y[indexToHighlight]],
+            mode: 'markers',
+            marker: {
+                size: 14,
+                color: 'brown',
+                layer: 'above traces',
+            },
+            text: [window.top3CellTypeTexts[indexToHighlight]],
+            hoverinfo: 'text',
+        };
+    }
 
     umapPlotDiv.innerHTML = '';
     Plotly.newPlot('umap-plot', [allPointsTrace, highlightedPointTrace], getUMAPLayout());
 }
+
 
 function showImageChanged(e) {
     // console.log(e.target.checked)
@@ -1372,14 +1451,15 @@ window.generateVis = function () {
             haltProcess()
             return;
         }
-        dataHeaders = genesData[0]
+        dataHeaders = genesData[0];
         
         // populate gene selection with gene headers
-        let geneOptions = ``
-        dataHeaders.sort().forEach((header, i) => {
-            geneOptions += `<option value="${i}">${header}</option>`
-        })
+        let geneOptions = ``;
+        dataHeaders.sort().forEach(header => {
+            geneOptions += `<option value="${header}">${header}</option>`;
+        });
         document.getElementById("selectGenes").innerHTML = geneOptions;
+        window.sketchOptions.selectedGene = dataHeaders[0];
         
         for (let i = 1; i < positionsData.length - 1; i++) {
             let spotCoords = positionsData[i];
@@ -1449,6 +1529,7 @@ function generateRandomColor(seed) {
 function geneSelected(e) {
     // console.log(e.target.value)
     window.sketchOptions.selectedGene = e.target.value;
+    console.log('Gene selected:', window.sketchOptions.selectedGene);
 }
 
 function modeChange(mode) {
