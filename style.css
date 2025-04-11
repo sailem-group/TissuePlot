@@ -46,3 +46,9 @@ html, body {
   white-space: normal;
   word-break: break-word;
 }
+
+label.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: default;
+}

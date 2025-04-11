@@ -88,7 +88,8 @@ function draw() {
   let adjustedMouseY = (mouseY - panY) / zoomFactor;
   const isDemoTab = document.getElementById("demoTab").classList.contains("active");
   const isUMAPTab = document.getElementById("umapTab").classList.contains("active");
-  if (mouseOverCanvas && (isUMAPTab || (isDemoTab && window.mode === "cellComposition"))) {
+  const isPlottingTab = document.getElementById("plottingTab").classList.contains("active");
+  if (mouseOverCanvas && (isUMAPTab || (isDemoTab && window.mode === "cellComposition") || isPlottingTab)) {
     hoveredHex = getHoveredHexagon(adjustedMouseX, adjustedMouseY);
   } else {
     hoveredHex = null;
@@ -376,40 +377,13 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
         if (window.showAllLevels) {
           svgElements.push(drawHexagonSVG(scaledX, scaledY, (spot.radius + 25) * scaleFactor, sortedSpotMembership[1].color));
           svgElements.push(drawHexagonSVG(scaledX, scaledY, (spot.radius + 10) * scaleFactor, sortedSpotMembership[2].color));
-        } else if (window.showEmojiView){
-          const topCellType = sortedSpotMembership[0].label;
-          const emojiImage = window.cellTypeVectors[topCellType];
-          if (emojiImage) {
-              svgElements.push(drawCellTypeVectorSVG(emojiImage, scaledX, scaledY, spot.scaledRadius * 1.5));
-          } 
-          // else {
-          //     // fallback if no image is found
-          //     // fill("black");
-          //     textAlign(CENTER, CENTER);
-          //     textSize(10);
-          //     text("?", scaledX, scaledY);
-          // }
         }
       } else {
         drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, sortedSpotMembership[0].color);
         if (window.showAllLevels) {
           drawHexagon(scaledX, scaledY, (spot.radius + 25) * scaleFactor, sortedSpotMembership[1].color);
           drawHexagon(scaledX, scaledY, (spot.radius + 10) * scaleFactor, sortedSpotMembership[2].color);
-        } else if (window.showEmojiView){
-          const topCellType = sortedSpotMembership[0].label;
-          const emojiImage = window.cellTypeVectors[topCellType];
-          if (emojiImage) {
-              drawCellTypeVectors(emojiImage, scaledX, scaledY, spot.scaledRadius * 1.5);
-          } 
-          // else {
-          //     // fallback if no image is found
-          //     // fill("black");
-          //     textAlign(CENTER, CENTER);
-          //     textSize(10);
-          //     text("?", scaledX, scaledY);
-          // }
-        }
-      
+        } 
       }
       if (window.showCluster) {
         const shapeRadius = (spot.radius - 30) * scaleFactor;
@@ -422,8 +396,22 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
     } else {
       if (saveFlag) {
         svgElements.push(drawHexagonSVG(scaledX, scaledY, (spot.radius + 40) * scaleFactor, spot.values[window.sketchOptions.selectedGene].color));
+        if (window.showEmojiView) {
+          const topCellType = spot.cellCompositionValues?.slice().sort((a, b) => b.value - a.value)[0].label;
+          const emojiImage = window.cellTypeVectors[topCellType];
+          if (emojiImage) {
+            svgElements.push(drawCellTypeVectorSVG(emojiImage, scaledX, scaledY, spot.scaledRadius * 1.5));
+          }
+        }
       } else {
         drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, spot.values[window.sketchOptions.selectedGene].color);
+        if (window.showEmojiView) {
+          const topCellType = spot.cellCompositionValues?.slice().sort((a, b) => b.value - a.value)[0].label;
+          const emojiImage = window.cellTypeVectors[topCellType];
+          if (emojiImage) {
+            drawCellTypeVectors(emojiImage, scaledX, scaledY, spot.scaledRadius * 1.5);
+          }
+        }
       }
       if (window.showCluster) {
         const shapeRadius = (spot.radius - 30) * scaleFactor;
