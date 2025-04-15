@@ -72,6 +72,15 @@ function setup() {
   let myCanvas = createCanvas(canvasWidth, canvasHeight);
   myCanvas.parent("canvasContainer");
 
+  ["stretchX", "stretchY", "offsetX", "offsetY"].forEach(id => {
+    const slider = document.getElementById(id);
+    const label = document.getElementById(id + "Value");
+    slider.addEventListener("input", () => {
+      label.textContent = slider.value;
+      window.drawAtWill = true; // Force redraw
+    });
+  });
+
   loadImageForDemo(window.whichDemo); // works because it's global
   setupCanvas(canvasWidth, canvasHeight, []);
 }
@@ -132,7 +141,6 @@ function draw() {
   }
 
 }
-
 
 function clearCanvas() {
   clear()
@@ -306,50 +314,98 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
   let offsetX = (RESIZE_canvas - dataWidth * scaleFactor) / 2;
   let offsetY = (RESIZE_canvas - dataHeight * scaleFactor) / 2;
 
-  let imgX, imgY, imgWidth, imgHeight
-
-  if(window.whichDemo == "demo2"){
-    imgX = (minX - minX) * scaleFactor + offsetX - 393;
-    imgY = (minY - minY) * scaleFactor + offsetY - 329;
-    imgWidth = dataWidth * scaleFactor + 670;
-    imgHeight = dataHeight * scaleFactor + 500;
-  } else if(window.whichDemo == "demo3"){
-    imgX = (minX - minX) * scaleFactor + offsetX - 375;
-    imgY = (minY - minY) * scaleFactor + offsetY - 430;
-    imgWidth = dataWidth * scaleFactor + 700;
-    imgHeight = dataHeight * scaleFactor + 820;
-  } else if(window.whichDemo == "demo4"){
-    imgX = (minX - minX) * scaleFactor + offsetX - 140;
-    imgY = (minY - minY) * scaleFactor + offsetY - 195;
-    imgWidth = dataWidth * scaleFactor + 290;
-    imgHeight = dataHeight * scaleFactor + 300;
-  } else if(window.whichDemo == "demo5"){
-    imgX = (minX - minX) * scaleFactor + offsetX - 135;
-    imgY = (minY - minY) * scaleFactor + offsetY - 160;
-    imgWidth = dataWidth * scaleFactor + 270;
-    imgHeight = dataHeight * scaleFactor + 305;
-  } else {
-    imgX = (minX - minX) * scaleFactor + offsetX - 110;
-    imgY = (minY - minY) * scaleFactor + offsetY - 125;
-    imgWidth = dataWidth * scaleFactor + 225;
-    imgHeight = dataHeight * scaleFactor + 225;
-  }
+  // if (img && window.showImage) {
+  //   const stretchFactorX = parseFloat(document.getElementById("stretchX").value);
+  //   const stretchFactorY = parseFloat(document.getElementById("stretchY").value);
+  //   const manualOffsetX = parseInt(document.getElementById("offsetX").value);
+  //   const manualOffsetY = parseInt(document.getElementById("offsetY").value);
+  
+  //   const imgWidth = dataWidth * stretchFactorX;
+  //   const imgHeight = dataHeight * stretchFactorY;
+  
+  //   const imgX = minX - (imgWidth - dataWidth) / 2 + manualOffsetX;
+  //   const imgY = minY - (imgHeight - dataHeight) / 2 + manualOffsetY;
+  
+  //   const scaledImgX = (imgX - minX) * scaleFactor + offsetX;
+  //   const scaledImgY = (imgY - minY) * scaleFactor + offsetY;
+  //   const scaledImgWidth = imgWidth * scaleFactor;
+  //   const scaledImgHeight = imgHeight * scaleFactor;
+  
+  //   if (saveFlag) {
+  //     const imgDataURL = img.canvas.toDataURL("image/png");
+  //     svgElements.push(`<image href="${imgDataURL}" x="${scaledImgX}" y="${scaledImgY}" width="${scaledImgWidth}" height="${scaledImgHeight}" preserveAspectRatio="none"/>`);
+  //   } else {
+  //     const opacityPercent = parseInt(document.getElementById("imageOpacity").value);
+  //     const alpha = Math.round((opacityPercent / 100) * 255);
+  //     tint(255, alpha);
+  //     image(img, scaledImgX, scaledImgY, scaledImgWidth, scaledImgHeight);
+  //     noTint();
+  //   }
+  // }
 
   if (img && window.showImage) {
-    //console.log(img.elt)
+    let stretchFactorX, stretchFactorY, manualOffsetX, manualOffsetY;
+  
+    // Handle demo-specific defaults
+    switch (window.whichDemo) {
+      case "demo1":
+        stretchFactorX = 1.22;
+        stretchFactorY = 1.23;
+        manualOffsetX = -37;
+        manualOffsetY = -168;
+        break;
+      case "demo2":
+        stretchFactorX = 1.78;
+        stretchFactorY = 1.5;
+        manualOffsetX = -646;
+        manualOffsetY = -997;
+        break;
+      case "demo3":
+        stretchFactorX = 1.65;
+        stretchFactorY = 2;
+        manualOffsetX = -275;
+        manualOffsetY = -263;
+        break;
+      case "demo4":
+        stretchFactorX = 1.28;
+        stretchFactorY = 1.29;
+        manualOffsetX = 74;
+        manualOffsetY = -545;
+        break;
+      case "demo4":
+        stretchFactorX = 1.26;
+        stretchFactorY = 1.27;
+        manualOffsetX = -37;
+        manualOffsetY = -168;
+        break;
+      default:
+        // For user uploads
+        stretchFactorX = parseFloat(document.getElementById("stretchX")?.value) || 1.5;
+        stretchFactorY = parseFloat(document.getElementById("stretchY")?.value) || 1.5;
+        manualOffsetX = parseInt(document.getElementById("offsetX")?.value) || 0;
+        manualOffsetY = parseInt(document.getElementById("offsetY")?.value) || 0;
+        break;
+    }
+  
+    const imgWidth = dataWidth * stretchFactorX;
+    const imgHeight = dataHeight * stretchFactorY;
+  
+    const imgX = minX - (imgWidth - dataWidth) / 2 + manualOffsetX;
+    const imgY = minY - (imgHeight - dataHeight) / 2 + manualOffsetY;
+  
+    const scaledImgX = (imgX - minX) * scaleFactor + offsetX;
+    const scaledImgY = (imgY - minY) * scaleFactor + offsetY;
+    const scaledImgWidth = imgWidth * scaleFactor;
+    const scaledImgHeight = imgHeight * scaleFactor;
+  
     if (saveFlag) {
-      if (img) {
-        let imgDataURL = img.canvas.toDataURL("image/png");
-
-        // Add to SVG as an image element
-        svgElements.push(`<image href="${imgDataURL}" x="${imgX}" y="${imgY}" width="${imgWidth}" height="${imgHeight}" preserveAspectRatio="none"/>`);
-      }
+      const imgDataURL = img.canvas.toDataURL("image/png");
+      svgElements.push(`<image href="${imgDataURL}" x="${scaledImgX}" y="${scaledImgY}" width="${scaledImgWidth}" height="${scaledImgHeight}" preserveAspectRatio="none"/>`);
     } else {
-      // image(img, imgX, imgY, imgWidth, imgHeight);
-      const opacityPercent = parseInt(document.getElementById("imageOpacity").value); // 0–100
-      const alpha = Math.round((opacityPercent / 100) * 255); // Convert to 0–255
+      const opacityPercent = parseInt(document.getElementById("imageOpacity")?.value) || 100;
+      const alpha = Math.round((opacityPercent / 100) * 255);
       tint(255, alpha);
-      image(img, imgX, imgY, imgWidth, imgHeight);
+      image(img, scaledImgX, scaledImgY, scaledImgWidth, scaledImgHeight);
       noTint();
     }
   }

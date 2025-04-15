@@ -386,6 +386,30 @@ function uniqueClusterCount(valuesRows) {
     return uniqueClusters;
 }
 
+function setSlidersForDemo(demo) {
+    const presets = {
+      demo5: { x: 1.26, y: 1.27, offsetX: -37, offsetY: -168 },
+      demo1: { x: 1.22, y: 1.23, offsetX: -37, offsetY: -168 },
+      demo2: { x: 1.78, y: 1.5, offsetX: -646, offsetY: -997 },
+      demo3: { x: 1.65, y: 2, offsetX: -275, offsetY: -263 },
+      demo4: { x: 1.28, y: 1.29, offsetX: 74, offsetY: -545 }
+    };
+  
+    const p = presets[demo];
+    if (!p) return;
+  
+    document.getElementById("stretchX").value = p.x;
+    document.getElementById("stretchY").value = p.y;
+    document.getElementById("offsetX").value = p.offsetX;
+    document.getElementById("offsetY").value = p.offsetY;
+  
+    // update labels too
+    document.getElementById("stretchXValue").innerText = p.x;
+    document.getElementById("stretchYValue").innerText = p.y;
+    document.getElementById("offsetXValue").innerText = p.offsetX;
+    document.getElementById("offsetYValue").innerText = p.offsetY;
+  }
+
 async function showDemo(demoValue = 'demo5') {
     clearAllUploadInputs();
     toggleCheckboxVisibility("showGenes", document.getElementById("showGenes"));
@@ -400,6 +424,8 @@ async function showDemo(demoValue = 'demo5') {
     document.getElementById("umapTab").classList.remove("d-none");
     window.showDemoButton = "clicked"
     window.uploadedEmojiFile == false;
+
+    setSlidersForDemo(window.whichDemo);
 
     if (window.whichDemo !== 'demo1'){
         preloadMappedEmojiSVGs();
@@ -1352,21 +1378,20 @@ function handleUMAPUI() {
 }
 
 window.handleImageUploadUI = function() {
-    const container = document.getElementById('imageOpacityContainer');
+    // const container = document.getElementById('imageOpacityContainer');
     const imageUploaded = document.getElementById("image").files.length > 0;
     const showImageContainer = document.getElementById("showImageContainer");
     const showImageCheckbox = document.getElementById("showImage");
     const showImageLabel = document.querySelector("label[for='showImage']");
-
+    document.getElementById("imageOpacityContainer").style.display = "none";
     if (imageUploaded) {
         showImageContainer.style.display = "flex";
         showImageCheckbox.disabled = false;
         showImageCheckbox.style.display = "inline-block";
         if (showImageLabel) showImageLabel.style.display = "inline-block";
-        if (container) {
-            container.style.display = 'block';
-        }
-
+        // if (container) {
+        //     container.style.display = 'block';
+        // }
     } else {
         showImageCheckbox.checked = false;
         showImageCheckbox.disabled = true;
