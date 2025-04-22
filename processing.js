@@ -1423,18 +1423,18 @@ window.generateVis = function () {
 
         if (!valuesData || valuesData.length == 0) {
             alert("Membership Data missing")
-            haltProcess()
+            haltProcess();
             return;
         }
         dataHeaders = valuesData[0].slice(1)
         // console.log(dataHeaders)
-        let sliceFactor = 0
-        hasClusters = false
+        let sliceFactor = 0;
+        hasClusters = false;
 
         //basically to exclude the cluster values from the direct visualization
         if (dataHeaders.at(-1).includes("Cluster")) {
-            sliceFactor = 1
-            hasClusters = true
+            sliceFactor = 1;
+            hasClusters = true;
         }
         
         let extraColorsNeeded = (dataHeaders.length - sliceFactor) - dataColors.length;
@@ -1468,12 +1468,12 @@ window.generateVis = function () {
             if (hasClusters) {
                 newSpot.cluster = valuesData[i].at(-1);
             }
-            dataSpots.push(newSpot)
+            dataSpots.push(newSpot);
         }
     } else {
         if (!genesData || genesData.length == 0) {
-            alert("Genes Data missing")
-            haltProcess()
+            alert("Genes Data missing");
+            haltProcess();
             return;
         }
         dataHeaders = genesData[0];
@@ -1554,7 +1554,7 @@ function generateRandomColor(seed) {
 function geneSelected(e) {
     // console.log(e.target.value)
     window.sketchOptions.selectedGene = e.target.value;
-    console.log('Gene selected:', window.sketchOptions.selectedGene);
+    // console.log('Gene selected:', window.sketchOptions.selectedGene);
 }
 
 function modeChange(mode) {
