@@ -1498,7 +1498,6 @@ window.generateVis = function () {
         
             const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues)
         
-            // 💡 Attach cell composition info too
             if (valuesData[i]) {
                 const sliceFactor = valuesData[0].at(-1).includes("Cluster") ? 1 : 0;
                 const cellTypeHeaders = valuesData[0].slice(1, valuesData[0].length - sliceFactor);
