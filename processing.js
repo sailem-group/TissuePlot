@@ -54,6 +54,26 @@ function toggleCheckboxVisibility(checkboxId, show) {
     if (label) label.style.display = show ? "inline-block" : "none";
 }
 
+// Global image loading function
+window.loadImageForDemo = function(demoName) {
+    if (demoName === 'demo1') {
+      img = loadImage("./image.png", () => {
+      });
+    } else if (demoName === 'demo2') {
+      img = loadImage("exampleData/p5/tissue_image.png", () => {
+      });
+    } else if (demoName === 'demo3') {
+      img = loadImage("exampleData/p6/tissue_image.png", () => {
+      });
+    } else if (demoName === 'demo4') {
+      img = loadImage("exampleData/p7/tissue_image.png", () => {
+      });
+    } else if (demoName === 'demo5') {
+      img = loadImage("exampleData/p8/tissue_image.png", () => {
+      });
+    }
+  }
+
 function clearAllUploadInputs() {
     const fileInputs = document.querySelectorAll('#fileInputSection input[type="file"]');
     fileInputs.forEach(input => {
@@ -1557,7 +1577,8 @@ function geneSelected(e) {
 }
 
 function modeChange(mode) {
-    if (window.mode == mode) {
+    if (window.mode === mode) {
+        console.log("mode unchanged skipping generateVis");
         return;
     }
     window.mode = mode;

@@ -48,26 +48,6 @@ function saveSVG() {
   window.drawAtWill = true;
 }
 
-// Global image loading function
-window.loadImageForDemo = function(demoName) {
-  if (demoName === 'demo1') {
-    img = loadImage("./image.png", () => {
-    });
-  } else if (demoName === 'demo2') {
-    img = loadImage("exampleData/p5/tissue_image.png", () => {
-    });
-  } else if (demoName === 'demo3') {
-    img = loadImage("exampleData/p6/tissue_image.png", () => {
-    });
-  } else if (demoName === 'demo4') {
-    img = loadImage("exampleData/p7/tissue_image.png", () => {
-    });
-  } else if (demoName === 'demo5') {
-    img = loadImage("exampleData/p8/tissue_image.png", () => {
-    });
-  }
-}
-
 function setup() {
   let myCanvas = createCanvas(canvasWidth, canvasHeight);
   myCanvas.parent("canvasContainer");
