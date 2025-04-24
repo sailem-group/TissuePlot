@@ -49,7 +49,7 @@ function saveSVG() {
 }
 
 // Global image loading function
-function loadImageForDemo(demoName) {
+window.loadImageForDemo = function(demoName) {
   if (demoName === 'demo1') {
     img = loadImage("./image.png", () => {
     });
