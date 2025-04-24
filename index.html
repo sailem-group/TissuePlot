@@ -172,7 +172,6 @@
                 <label for="cellTypeUpload" class="form-label">Upload Cell Type Images <sub class="upload-file-hint">(.svg only)</sub> 
                   <i class="fas fa-info-circle tooltip-icon ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="To enable Cell Type Emoji upload, please make sure both the Cell Proportion and Gene files are uploaded. Upload individual SVG files exact matching the cell type names. Max 1 per type." style="z-index: 99;"></i>
                 </label>
-                <!-- <input id="input-2" name="input2[]" type="file" class="form-control"  data-show-upload="false" data-show-caption="true" accept=".svg" multiple> -->
                 <input id="input-2" name="input2[]" type="file" class="form-control" data-show-upload="true" data-show-caption="true" accept=".svg" disabled="true" multiple="multiple">
                 <p id="svg-file-list" class="mt-2 small text-muted"></p>
               </div>
@@ -221,44 +220,51 @@
             <input type="checkbox" class="form-check-input" id="showImage" />
             <label for="showImage" class="form-label mx-2">Tissue Image</label>
           </div>
-
-          <!-- <div id="imageAlignmentControls" class="ms-4" style="width: fit-content;">
-            
-          </div> -->
           
-          <div id="imageOpacityContainer" class="ms-4 mb-3" style="display: none; max-width: 300px;">
-            <label class="mb-2 form-label" style="font-size: 1rem;">Image Alignment and Opacity</label>
-            <label for="stretchX" class="form-label d-flex justify-content-between">
-              <span>Stretch X:</span>
-              <span id="stretchXValue">1.33</span>
-            </label>
-            <input type="range" class="form-range" id="stretchX" min="1.0" max="5" step="0.01" value="1.24" style="width: 100%;">
-            
-            <label for="stretchY" class="form-label d-flex justify-content-between">
-              <span>Stretch Y:</span>
-              <span id="stretchYValue">1.36</span>
-            </label>
-            <input type="range" class="form-range" id="stretchY" min="1.0" max="5" step="0.01" value="1.33" style="width: 100%;">
-            
-            <label for="offsetX" class="form-label d-flex justify-content-between">
-              <span>Offset X:</span>
-              <span id="offsetXValue">0</span>
-            </label>
-            <input type="range" class="form-range" id="offsetX" min="-2000" max="2000" step="1" value="-61" style="width: 100%;">
-            
-            <label for="offsetY" class="form-label d-flex justify-content-between">
-              <span>Offset Y:</span>
-              <span id="offsetYValue">0</span>
-            </label>
-            <input type="range" class="form-range" id="offsetY" min="-2000" max="2000" step="1" value="-188" style="width: 100%;">
-            
-            <label for="imageOpacity" class="form-label d-flex justify-content-between">
-              <span>Image Opacity:</span>
-              <span id="opacityValue">100</span>
-            </label>
-            <input type="range" class="form-range" id="imageOpacity" min="0" max="100" step="1" value="100" style="width: 100%;">
-          </div>
-
+          <div id="imageOpacityContainer" class="ms-4 mb-3" style="max-width: 300px; display: none;">
+            <!-- Toggle Button -->
+            <button id="toggleImageOpacityBtn" class="btn btn-outline-primary mb-2" type="button">
+              <span id="toggleIcon">+</span> Image Alignment and Opacity
+            </button>            
+          
+            <!-- Collapsible Content -->
+            <div id="imageOpacityCont" class="collapse">
+          
+              <div class="d-flex flex-column gap-3 mt-2">
+                <div class="d-flex align-items-center">
+                  <label for="stretchX" class="form-label mb-0 text-nowrap" style="width: 90px;">Stretch X:</label>
+                  <input type="range" class="form-range flex-grow-1 mx-2" id="stretchX" min="1.0" max="5" step="0.01" value="1.24">
+                  <span id="stretchXValue" style="width: 40px; text-align: right;">1.26</span>
+                </div>
+              
+                <div class="d-flex align-items-center">
+                  <label for="stretchY" class="form-label mb-0 text-nowrap" style="width: 90px;">Stretch Y:</label>
+                  <input type="range" class="form-range flex-grow-1 mx-2" id="stretchY" min="1.0" max="5" step="0.01" value="1.33">
+                  <span id="stretchYValue" style="width: 40px; text-align: right;">1.27</span>
+                </div>
+              
+                <div class="d-flex align-items-center">
+                  <label for="offsetX" class="form-label mb-0 text-nowrap" style="width: 90px;">Offset X:</label>
+                  <input type="range" class="form-range flex-grow-1 mx-2" id="offsetX" min="-2000" max="2000" step="1" value="-61">
+                  <span id="offsetXValue" style="width: 40px; text-align: right;">-37</span>
+                </div>
+              
+                <div class="d-flex align-items-center">
+                  <label for="offsetY" class="form-label mb-0 text-nowrap" style="width: 90px;">Offset Y:</label>
+                  <input type="range" class="form-range flex-grow-1 mx-2" id="offsetY" min="-2000" max="2000" step="1" value="-188">
+                  <span id="offsetYValue" style="width: 40px; text-align: right;">-168</span>
+                </div>
+              
+                <div class="d-flex align-items-center">
+                  <label for="imageOpacity" class="form-label mb-0 text-nowrap" style="width: 90px;">Opacity:</label>
+                  <input type="range" class="form-range flex-grow-1 mx-2" id="imageOpacity" min="0" max="100" step="1" value="100">
+                  <span id="opacityValue" style="width: 40px; text-align: right;">100</span>
+                </div>
+              </div>
+              
+            </div>
+          </div>          
+          
           <div class="mb-3 d-flex flex-column">
             <div class=" align-items-center">
               <input type="checkbox" class="form-check-input" id="showCluster" />

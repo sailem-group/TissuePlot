@@ -21,6 +21,20 @@ document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
 document.querySelectorAll(".nav-link").forEach(tab => {
     tab.addEventListener("click", showOrHideOptions);
 });
+
+const btn = document.getElementById("toggleImageOpacityBtn");
+const icon = document.getElementById("toggleIcon");
+const panel = document.getElementById("imageOpacityCont");
+
+const collapse = new bootstrap.Collapse(panel, { toggle: false });
+
+btn.addEventListener("click", () => {
+panel.classList.contains("show") ? collapse.hide() : collapse.show();
+});
+
+panel.addEventListener("shown.bs.collapse", () => icon.textContent = "−");
+panel.addEventListener("hidden.bs.collapse", () => icon.textContent = "+");
+
 const opacitySlider = document.getElementById("imageOpacity");
 const opacityValueDisplay = document.getElementById("opacityValue");
 opacitySlider.addEventListener("input", () => {
