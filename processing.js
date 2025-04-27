@@ -112,7 +112,8 @@ window.onload = async function () {
     document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
         radio.checked = false;
     });
-    await showDemo('demo5');
+    // await showDemo('demo5');
+    await showDemo('demo5', { skipGenerateVis: true }); 
     document.getElementById("showEmojiView").click();
 }
 
@@ -424,7 +425,7 @@ function setSlidersForDemo(demo) {
     document.getElementById("offsetYValue").innerText = p.offsetY;
   }
 
-async function showDemo(demoValue = 'demo5') {
+async function showDemo(demoValue = 'demo5', options = {}) {
     clearAllUploadInputs();
     toggleCheckboxVisibility("showGenes", document.getElementById("showGenes"));
     toggleCheckboxVisibility("showImage", document.getElementById("showImage"));
@@ -561,7 +562,10 @@ async function showDemo(demoValue = 'demo5') {
     if (selectedScale) {
         dataColors = selectedScale.colors;
     }
-    generateVis();
+    // generateVis();
+    if (!options.skipGenerateVis) {
+        generateVis();
+    }
 
     document.getElementById("loadingOverlay").style.display = "none";
 
