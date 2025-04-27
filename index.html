@@ -9,7 +9,7 @@
   <title>TissuePlot</title>
 
   <link rel="stylesheet" type="text/css" href="style.css">
-
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
   <script src="libraries/p5.min.js"></script>
   <script src="libraries/p5.sound.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
@@ -64,6 +64,16 @@
     .hidden {
       display: none;
     }
+
+    #colorPaletteDropdown {
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    line-height: 1;
+    border: 1px solid #ced4da; /* same as form-select */
+    background-color: #fff;
+    border-radius: 0.375rem;
+  }
   </style>
 </head>
 
@@ -361,18 +371,48 @@
           </div>
 
           <div id="gene-specific" class="hidden">
-            <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
-              <label class="form-label" for="selectGenes">Select Target Gene </label>
-              <select id="selectGenes" class="form-select" aria-label="select gene">
-                <option selected disabled>No available options</option>
-              </select>
+            <div class="mb-3 d-flex flex-column align-items-start">
+              <label class="form-label" for="selectGenes">Select Target Gene</label>
+              
+              <!-- Dropdown and button side-by-side -->
+              <div class="d-flex align-items-center gap-2 w-100">
+                <select id="selectGenes" class="form-select" aria-label="select gene">
+                  <option selected disabled>No available options</option>
+                </select>
+          
+                <!-- Color palette button with dropdown -->
+                <div class="dropdown">
+                  <button class="p-2" type="button" id="colorPaletteDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Select Color Scale">
+                    <i class="fas fa-palette text-muted"></i>
+                  </button>
+                  <ul class="dropdown-menu" aria-labelledby="colorPaletteDropdown">
+                    <li><a class="dropdown-item color-option" data-scale="Viridis" href="#">Viridis</a></li>
+                    <li><a class="dropdown-item color-option" data-scale="Plasma" href="#">Plasma</a></li>
+                    <li><a class="dropdown-item color-option" data-scale="Turbo" href="#">Turbo</a></li>
+                  </ul>
+                </div>
+
+              </div>
             </div>
 
-            <div id="heatmapGrad" class="mb-3 d-flex flex-column justify-content-start align-items-start">
-              <h6>Gradient based on values lowest to highest</h6>
+            <!-- Intensity Slider -->
+            <div class="d-flex align-items-center gap-2 w-100 mb-3">
+              <label class="form-label mb-0" for="colorIntensitySlider" style="white-space: nowrap;">Intensity:</label>
+              <input type="range" class="form-range flex-grow-1" id="colorIntensitySlider" min="0.5" max="2" step="0.1" value="1" style="max-width: 150px;">
+              <small id="intensityValue" class="text-muted" style="min-width: 30px;">1.0x</small>
             </div>
+
+            <!-- <div id="heatmapGrad" class="mb-3 d-flex flex-column align-items-start">
+              <h6>Gradient based on values lowest to highest</h6>
+            </div> -->
+            <div id="heatmapGrad" class="mb-3 d-flex flex-column align-items-start">
+              <h6>Gradient based on values lowest to highest</h6>
+              <!-- <h6 class="mb-0">Gradient:</h6> -->
+              <div id="gradientCanvasContainer"></div> <!-- canvas will be inserted here -->
+            </div>            
 
           </div>
+          
 
         </div>
 

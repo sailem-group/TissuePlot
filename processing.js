@@ -91,6 +91,8 @@ window.numberOfClusters = [];
 window.clusterMap = [];
 window.cellTypeVectors = {};
 window.spotClusterMembership = 'none';
+window.selectedGeneColorScale = 'Viridis';
+window.geneColorIntensity = 1; 
 
 window.cellTypeToEmojiMap = {
     "B/Plasma cells": "Plasma.svg",
@@ -116,6 +118,31 @@ window.onload = async function () {
     await showDemo('demo5', { skipGenerateVis: true }); 
     document.getElementById("showEmojiView").click();
 }
+
+document.querySelectorAll('.color-option').forEach(option => {
+    option.addEventListener('click', (e) => {
+        e.preventDefault();
+        const selectedScale = e.target.getAttribute('data-scale');
+        if (selectedScale) {
+            window.selectedGeneColorScale = selectedScale;
+            console.log('Gene color scale changed to', selectedScale);
+            updateColorScalePreview();
+            if (window.mode === 'genes') {
+                generateVis(); // re-render canvas when color scale changes
+            }
+        }
+    });
+});
+
+document.getElementById("colorIntensitySlider").addEventListener("input", (e) => {
+    window.geneColorIntensity = parseFloat(e.target.value);
+    document.getElementById("intensityValue").innerText = `${window.geneColorIntensity.toFixed(1)}x`;
+    
+    if (window.mode === 'genes') {
+      generateVis(); // re-render canvas when intensity changes
+    }
+    updateColorScalePreview();
+});
 
 window.showUMAP = showUMAP;
 window.selectedClusterView = "shapes";
@@ -277,7 +304,33 @@ function preloadMappedEmojiSVGs() {
     });
 }
 
-function createGeneHeatmapGradient() {
+// function createGeneHeatmapGradient() {
+//     var xmax = 120;
+//     var ymax = 20;
+
+//     var colorRectangle = document.createElement("canvas");
+//     colorRectangle.width = xmax;
+//     colorRectangle.height = ymax;
+//     var ctx = colorRectangle.getContext("2d");
+
+//     // create gradient
+//     var grd = ctx.createLinearGradient(0, 0, xmax, 0);
+//     var colorGrad = [...heatMapColors];
+//     var numColor = colorGrad.length;
+//     for (var j = 0; j < numColor; j++) {
+//         grd.addColorStop(j / numColor, colorGrad[j]);
+//         grd.addColorStop((j + 1) / numColor - 0.01, colorGrad[j]);
+//     }
+//     ctx.fillStyle = grd;
+//     ctx.fillRect(0, 0, xmax, ymax);
+
+//     document.getElementById("heatmapGrad").appendChild(colorRectangle)
+// }
+
+function updateColorScalePreview() {
+    const container = document.getElementById('gradientCanvasContainer'); // 🔥 only clear the canvas part
+    container.innerHTML = ""; // Clear previous canvas only
+
     var xmax = 120;
     var ymax = 20;
 
@@ -286,19 +339,24 @@ function createGeneHeatmapGradient() {
     colorRectangle.height = ymax;
     var ctx = colorRectangle.getContext("2d");
 
-    // create gradient
+    // Get the selected color array
+    const selectedScale = window.selectedGeneColorScale || 'Viridis';
+    const colorGrad = [...getColorScaleArray(selectedScale)];
+    const numColor = colorGrad.length;
+
+    // Create gradient
     var grd = ctx.createLinearGradient(0, 0, xmax, 0);
-    var colorGrad = [...heatMapColors];
-    var numColor = colorGrad.length;
     for (var j = 0; j < numColor; j++) {
-        grd.addColorStop(j / numColor, colorGrad[j]);
-        grd.addColorStop((j + 1) / numColor - 0.01, colorGrad[j]);
+        grd.addColorStop(j / numColor, adjustColorIntensity(colorGrad[j], window.geneColorIntensity));
+        grd.addColorStop((j + 1) / numColor - 0.01, adjustColorIntensity(colorGrad[j], window.geneColorIntensity));
     }
+
     ctx.fillStyle = grd;
     ctx.fillRect(0, 0, xmax, ymax);
 
-    document.getElementById("heatmapGrad").appendChild(colorRectangle)
+    container.appendChild(colorRectangle);
 }
+
 
 let positionsData = []
 let valuesData = []
@@ -868,8 +926,10 @@ function reGenerateUMAP(allClusters, selectedClusters) {
                 mode: 'markers',
                 marker: {
                     size: 8,
+                    // color: geneValues,
+                    // colorscale: 'Viridis',
                     color: geneValues,
-                    colorscale: 'Viridis',
+                    colorscale: window.selectedGeneColorScale,
                     showscale: false // remove colorbar
                 },
                 hoverinfo: 'text',
@@ -936,7 +996,8 @@ function highlightUMAPRow(allClusters, indexToHighlight) {
             marker: {
                 size: 8,
                 color: geneValues.filter((_, i) => i !== indexToHighlight),
-                colorscale: 'Viridis',
+                // colorscale: 'Viridis',
+                colorscale: window.selectedGeneColorScale,
                 showscale: false,
                 opacity: 0.5,
             },
@@ -1428,6 +1489,64 @@ function getFreshColorArray(scaleName) {
     return [...scale.colors]; // shallow copy
 }
 
+// function getColorScaleArray(scaleName) {
+//     if (scaleName === 'Viridis') {
+//       return [
+//         "#440154", "#482777", "#3E4989", "#31688E",
+//         "#26828E", "#1F9E89", "#35B779", "#6DCD59",
+//         "#B4DD2C", "#FDE725"
+//       ];
+//     } else if (scaleName === 'Plasma') {
+//       return [
+//         "#0d0887", "#5c01a6", "#9a179b", "#cb4679",
+//         "#ed7953", "#fb9f3a", "#fdca26", "#f0f921"
+//       ];
+//     } else if (scaleName === 'Turbo') {
+//       return [
+//         "#23171b", "#3e1e3c", "#632f6d", "#8b499c",
+//         "#b86bcb", "#e194f3", "#f6caf1", "#f9e0d4"
+//       ];
+//     } else {
+//       return heatMapColors; // fallback to default
+//     }
+//   }
+
+function getColorScaleArray(scaleName) {
+    if (scaleName === 'Viridis') {
+      return [
+        "#238A8D", "#1F968B", "#20A387", "#29AF7F", "#3CBB75",
+        "#55C667", "#73D055", "#95D840", "#B8DE29", "#DCE319", "#FDE725"
+      ];
+    } else if (scaleName === 'Plasma') {
+      return [
+        "#5c01a6", "#7b02a8", "#9a179b", "#b83289", "#d24e72",
+        "#e86c5c", "#f58c46", "#faa638", "#fdc328", "#f0f921"
+      ];
+    } else if (scaleName === 'Turbo') {
+      return [
+        "#3e1e3c", "#602c6d", "#864b9f", "#a86fcf", "#c994e5",
+        "#e6bbf1", "#f7d1da", "#f9e3b5", "#f7f19a", "#fcfdbf"
+      ];
+    } else {
+      return heatMapColors; // fallback
+    }
+  }
+
+function adjustColorIntensity(hexColor, intensity) {
+    if (!hexColor || typeof hexColor !== 'string') return hexColor;
+  
+    let r = parseInt(hexColor.substr(1,2), 16);
+    let g = parseInt(hexColor.substr(3,2), 16);
+    let b = parseInt(hexColor.substr(5,2), 16);
+  
+    r = Math.min(255, Math.max(0, Math.round(r * intensity)));
+    g = Math.min(255, Math.max(0, Math.round(g * intensity)));
+    b = Math.min(255, Math.max(0, Math.round(b * intensity)));
+  
+    const toHex = (c) => c.toString(16).padStart(2, '0');
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+  
 window.generateVis = function () {
     dataSpots = []
     if (!positionsData || positionsData.length == 0) {
@@ -1506,12 +1625,22 @@ window.generateVis = function () {
         
         for (let i = 1; i < positionsData.length - 1; i++) {
             let spotCoords = positionsData[i];
+            // let spotValues = genesData[i].map((value, i) => {
+            //     return {
+            //         label: dataHeaders[i],
+            //         value: value,
+            //         color: heatMapColors[parseInt(value)]
+            //     }
+            // });
+            let colorMap = getColorScaleArray(window.selectedGeneColorScale);
+
             let spotValues = genesData[i].map((value, i) => {
-                return {
-                    label: dataHeaders[i],
-                    value: value,
-                    color: heatMapColors[parseInt(value)]
-                }
+            return {
+                label: dataHeaders[i],
+                value: value,
+                // color: colorMap[Math.min(parseInt(value), colorMap.length - 1)] // protect overflow
+                color: adjustColorIntensity(colorMap[Math.min(parseInt(value), colorMap.length - 1)], window.geneColorIntensity)
+            }
             });
         
             const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues)
@@ -1914,4 +2043,5 @@ const heatMapColors = [
     "#FDE725"
 ]
 
-createGeneHeatmapGradient()
+// createGeneHeatmapGradient()
+updateColorScalePreview();

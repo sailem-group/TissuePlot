@@ -314,35 +314,6 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
   let offsetX = (RESIZE_canvas - dataWidth * scaleFactor) / 2;
   let offsetY = (RESIZE_canvas - dataHeight * scaleFactor) / 2;
 
-  // if (img && window.showImage) {
-  //   const stretchFactorX = parseFloat(document.getElementById("stretchX").value);
-  //   const stretchFactorY = parseFloat(document.getElementById("stretchY").value);
-  //   const manualOffsetX = parseInt(document.getElementById("offsetX").value);
-  //   const manualOffsetY = parseInt(document.getElementById("offsetY").value);
-  
-  //   const imgWidth = dataWidth * stretchFactorX;
-  //   const imgHeight = dataHeight * stretchFactorY;
-  
-  //   const imgX = minX - (imgWidth - dataWidth) / 2 + manualOffsetX;
-  //   const imgY = minY - (imgHeight - dataHeight) / 2 + manualOffsetY;
-  
-  //   const scaledImgX = (imgX - minX) * scaleFactor + offsetX;
-  //   const scaledImgY = (imgY - minY) * scaleFactor + offsetY;
-  //   const scaledImgWidth = imgWidth * scaleFactor;
-  //   const scaledImgHeight = imgHeight * scaleFactor;
-  
-  //   if (saveFlag) {
-  //     const imgDataURL = img.canvas.toDataURL("image/png");
-  //     svgElements.push(`<image href="${imgDataURL}" x="${scaledImgX}" y="${scaledImgY}" width="${scaledImgWidth}" height="${scaledImgHeight}" preserveAspectRatio="none"/>`);
-  //   } else {
-  //     const opacityPercent = parseInt(document.getElementById("imageOpacity").value);
-  //     const alpha = Math.round((opacityPercent / 100) * 255);
-  //     tint(255, alpha);
-  //     image(img, scaledImgX, scaledImgY, scaledImgWidth, scaledImgHeight);
-  //     noTint();
-  //   }
-  // }
-
   if (img && window.showImage) {
     let stretchFactorX, stretchFactorY, manualOffsetX, manualOffsetY;
   
