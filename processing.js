@@ -1566,6 +1566,7 @@ window.generateVis = function () {
             return;
         }
         dataHeaders = genesData[0];
+        hasClusters = true;
         
         // populate gene selection with gene headers
         let geneOptions = ``;
