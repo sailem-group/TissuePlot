@@ -136,10 +136,10 @@ document.querySelectorAll('.color-option').forEach(option => {
 
 document.getElementById("colorIntensitySlider").addEventListener("input", (e) => {
     window.geneColorIntensity = parseFloat(e.target.value);
-    document.getElementById("intensityValue").innerText = `${window.geneColorIntensity.toFixed(1)}x`;
+    document.getElementById("intensityValue").innerText = `${window.geneColorIntensity.toFixed(1)}`;
     
     if (window.mode === 'genes') {
-      generateVis(); // re-render canvas when intensity changes
+        updateSpotColorsIntensity();
     }
     updateColorScalePreview();
 });
@@ -1498,7 +1498,19 @@ function adjustColorIntensity(hexColor, intensity) {
     const toHex = (c) => c.toString(16).padStart(2, '0');
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
-  
+
+function updateSpotColorsIntensity() {
+    if (!dataSpots) return;
+
+    dataSpots.forEach(spot => {
+        spot.values.forEach(v => {
+            if (v.baseColor) {
+                v.color = adjustColorIntensity(v.baseColor, window.geneColorIntensity);
+            }
+        });
+    });
+}
+ 
 window.generateVis = function () {
     dataSpots = []
     if (!positionsData || positionsData.length == 0) {
@@ -1579,15 +1591,16 @@ window.generateVis = function () {
         for (let i = 1; i < positionsData.length - 1; i++) {
             let spotCoords = positionsData[i];
             let colorMap = getColorScaleArray(window.selectedGeneColorScale);
-
             let spotValues = genesData[i].map((value, i) => {
-            return {
-                label: dataHeaders[i],
-                value: value,
-                color: adjustColorIntensity(colorMap[Math.min(parseInt(value), colorMap.length - 1)], window.geneColorIntensity)
-            }
+                let baseColor = colorMap[Math.min(parseInt(value), colorMap.length - 1)];
+                return {
+                    label: dataHeaders[i],
+                    value: value,
+                    baseColor: baseColor, // store the original color
+                    color: adjustColorIntensity(baseColor, window.geneColorIntensity) // dynamic color
+                }
             });
-        
+            
             const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues)
         
             if (valuesData[i]) {

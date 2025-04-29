@@ -74,6 +74,11 @@
     background-color: #fff;
     border-radius: 0.375rem;
   }
+
+  #selectGenes {
+    max-height: 300px;
+    overflow-y: auto;
+  }
   </style>
 </head>
 
@@ -379,6 +384,7 @@
                 <select id="selectGenes" class="form-select" aria-label="select gene">
                   <option selected disabled>No available options</option>
                 </select>
+                
           
                 <!-- Color palette button with dropdown -->
                 <div class="dropdown">
@@ -399,7 +405,7 @@
             <div class="d-flex align-items-center gap-2 w-100 mb-3">
               <label class="form-label mb-0" for="colorIntensitySlider" style="white-space: nowrap;">Intensity:</label>
               <input type="range" class="form-range flex-grow-1" id="colorIntensitySlider" min="0.5" max="2" step="0.1" value="1" style="max-width: 150px;">
-              <small id="intensityValue" class="text-muted" style="min-width: 30px;">1.0x</small>
+              <small id="intensityValue" class="text-muted" style="min-width: 30px;">1.0</small>
             </div>
 
             <!-- <div id="heatmapGrad" class="mb-3 d-flex flex-column align-items-start">
