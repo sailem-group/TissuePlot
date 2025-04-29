@@ -3,7 +3,7 @@ document.getElementById("showImage").addEventListener("change", showImageChanged
 document.getElementById("showAllLevels").addEventListener("change", showAllLevelsChanged)
 document.getElementById("showEmojiView").addEventListener("change", showEmojiViewChanged)
 document.getElementById("showCluster").addEventListener("change", showClusterLevelsChanged)
-document.getElementById("selectGenes").addEventListener("change", geneSelected)
+// document.getElementById("selectGenes").addEventListener("change", geneSelected)
 document.getElementById("showComposition").addEventListener("change", showCompositionChanged)
 document.getElementById("showGenes").addEventListener("change", showGenesChanged)
 document.getElementById("uploadNewFilesButton").addEventListener("click", uploadNewFileClicked)
@@ -20,6 +20,38 @@ document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
 // Listen for tab changes
 document.querySelectorAll(".nav-link").forEach(tab => {
     tab.addEventListener("click", showOrHideOptions);
+});
+
+document.getElementById('geneOptionsList').addEventListener('change', () => {
+    const selectedGenes = Array.from(document.querySelectorAll('.gene-checkbox:checked')).map(cb => cb.value);
+    window.sketchOptions.selectedGenes = selectedGenes;
+    if (selectedGenes.length === 0) {
+        alert("Please select at least one gene.");
+        return;
+    }
+    if (window.mode === 'genes') {
+        updateSpotColorsFromSelectedGenes();
+    }
+});
+
+document.getElementById('selectAllGenes').addEventListener('change', function () {
+    const checkboxes = document.querySelectorAll('.gene-checkbox');
+    if (this.checked) {
+        // Selecting all
+        checkboxes.forEach(cb => cb.checked = true);
+    } else {
+        // Deselecting all, but keeping the first one checked
+        checkboxes.forEach((cb, idx) => cb.checked = idx === 0);
+    }
+
+    // Updating selected genes globally
+    const selectedGenes = Array.from(document.querySelectorAll('.gene-checkbox:checked')).map(cb => cb.value);
+    window.sketchOptions.selectedGenes = selectedGenes;
+
+    // Redrawing canvas based on new selection
+    if (window.mode === 'genes') {
+        updateSpotColorsFromSelectedGenes();
+    }
 });
 
 const btn = document.getElementById("toggleImageOpacityBtn");
@@ -1510,7 +1542,27 @@ function updateSpotColorsIntensity() {
         });
     });
 }
- 
+
+function populateGeneDropdown(dataHeaders) {
+    const listContainer = document.getElementById('geneOptionsList');
+    listContainer.innerHTML = ''; // clear previous
+
+    dataHeaders.sort().forEach((header, index) => {
+        const geneId = `geneOption${index}`;
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <div class="form-check mx-3">
+                <input class="form-check-input gene-checkbox" type="checkbox" value="${header}" id="${geneId}">
+                <label class="form-check-label" for="${geneId}">${header}</label>
+            </div>
+        `;
+        listContainer.appendChild(li);
+    });
+    const selectAll = document.getElementById('selectAllGenes');
+    selectAll.checked = true;
+    selectAll.dispatchEvent(new Event('change'));
+}
+
 window.generateVis = function () {
     dataSpots = []
     if (!positionsData || positionsData.length == 0) {
@@ -1571,38 +1623,46 @@ window.generateVis = function () {
             }
             dataSpots.push(newSpot);
         }
-    } else {
-        if (!genesData || genesData.length == 0) {
+
+    } else if (mode === "genes") {
+        if (!genesData || genesData.length === 0) {
             alert("Genes Data missing");
             haltProcess();
             return;
         }
+
         dataHeaders = genesData[0];
         hasClusters = true;
-        
-        // populate gene selection with gene headers
-        let geneOptions = ``;
-        dataHeaders.sort().forEach(header => {
-            geneOptions += `<option value="${header}">${header}</option>`;
-        });
-        document.getElementById("selectGenes").innerHTML = geneOptions;
-        window.sketchOptions.selectedGene = dataHeaders[0];
-        
+
+        // Populate gene selection
+        populateGeneDropdown(dataHeaders);
+
+        // Select all genes initially
+        const allGenes = dataHeaders.slice().sort();
+        window.sketchOptions.selectedGenes = allGenes;
+
+        const selectedGeneIndices = window.sketchOptions.selectedGenes.map(gene => dataHeaders.indexOf(gene));
+
         for (let i = 1; i < positionsData.length - 1; i++) {
             let spotCoords = positionsData[i];
             let colorMap = getColorScaleArray(window.selectedGeneColorScale);
-            let spotValues = genesData[i].map((value, i) => {
-                let baseColor = colorMap[Math.min(parseInt(value), colorMap.length - 1)];
-                return {
-                    label: dataHeaders[i],
-                    value: value,
-                    baseColor: baseColor, // store the original color
-                    color: adjustColorIntensity(baseColor, window.geneColorIntensity) // dynamic color
-                }
-            });
-            
-            const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues)
-        
+            let geneRow = genesData[i];
+
+            const expressionValues = selectedGeneIndices.map(idx => parseFloat(geneRow[idx]) || 0);
+            const avgExpression = expressionValues.reduce((a, b) => a + b, 0) / expressionValues.length;
+
+            const colorIndex = Math.min(Math.floor(avgExpression), colorMap.length - 1);
+            const baseColor = colorMap[colorIndex];
+
+            let spotValues = [{
+                label: 'AvgExpression',
+                value: avgExpression,
+                baseColor: baseColor,
+                color: adjustColorIntensity(baseColor, window.geneColorIntensity)
+            }];
+
+            const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues);
+
             if (valuesData[i]) {
                 const sliceFactor = valuesData[0].at(-1).includes("Cluster") ? 1 : 0;
                 const cellTypeHeaders = valuesData[0].slice(1, valuesData[0].length - sliceFactor);
@@ -1620,14 +1680,37 @@ window.generateVis = function () {
                     newSpot.cluster = valuesData[i].at(-1);
                 }
             }
-        
+
             dataSpots.push(newSpot);
         }
     }
+    window.drawAtWill = true;
+    setupCanvas(Math.floor(window.innerWidth * 0.74), window.innerHeight, dataSpots);
+};
 
-    // console.log(dataSpots)
-    window.drawAtWill = true
-    setupCanvas(Math.floor(window.innerWidth * 0.74), window.innerHeight, dataSpots)
+function updateSpotColorsFromSelectedGenes() {
+    if (!dataSpots || !genesData || genesData.length === 0) return;
+    const colorMap = getColorScaleArray(window.selectedGeneColorScale);
+    const selectedGenes = window.sketchOptions.selectedGenes || [];
+    const selectedGeneIndices = selectedGenes.map(gene => dataHeaders.indexOf(gene));
+
+    for (let i = 0; i < dataSpots.length; i++) {
+        const spot = dataSpots[i];
+        const geneRow = genesData[i + 1]; // +1 because genesData[0] is headers
+
+        const expressionValues = selectedGeneIndices.map(idx => parseFloat(geneRow[idx]) || 0);
+        const avgExpression = expressionValues.reduce((a, b) => a + b, 0) / expressionValues.length;
+
+        const colorIndex = Math.min(Math.floor(avgExpression), colorMap.length - 1);
+        const baseColor = colorMap[colorIndex];
+
+        spot.values = [{
+            label: 'AvgExpression',
+            value: avgExpression,
+            baseColor: baseColor,
+            color: adjustColorIntensity(baseColor, window.geneColorIntensity)
+        }];
+    }
 }
 
 function seededRandom(seed) {
@@ -1653,12 +1736,6 @@ function generateRandomColor(seed) {
     );
   
     return color;
-}
-
-function geneSelected(e) {
-    // console.log(e.target.value)
-    window.sketchOptions.selectedGene = e.target.value;
-    // console.log('Gene selected:', window.sketchOptions.selectedGene);
 }
 
 function modeChange(mode) {

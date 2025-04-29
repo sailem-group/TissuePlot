@@ -66,19 +66,29 @@
     }
 
     #colorPaletteDropdown {
-    width: 40px;
-    height: 40px;
-    text-align: center;
-    line-height: 1;
-    border: 1px solid #ced4da; /* same as form-select */
-    background-color: #fff;
-    border-radius: 0.375rem;
-  }
+      width: 40px;
+      height: 40px;
+      text-align: center;
+      line-height: 1;
+      border: 1px solid #ced4da; /* same as form-select */
+      background-color: #fff;
+      border-radius: 0.25rem;
+    }
 
-  #selectGenes {
-    max-height: 300px;
-    overflow-y: auto;
-  }
+    #geneDropdown {
+      width: 40px;
+      height: 40px;
+      text-align: center;
+      line-height: 1;
+      border: 1px solid #ced4da; /* same as form-select */
+      background-color: #fff;
+      border-radius: 0.25rem;
+    }
+
+    #selectGenes {
+      max-height: 300px;
+      overflow-y: auto;
+    }
   </style>
 </head>
 
@@ -381,10 +391,24 @@
               
               <!-- Dropdown and button side-by-side -->
               <div class="d-flex align-items-center gap-2 w-100">
-                <select id="selectGenes" class="form-select" aria-label="select gene">
-                  <option selected disabled>No available options</option>
-                </select>
-                
+
+                <div class="dropdown w-100">
+                  <button class="dropdown-toggle w-100 d-flex justify-content-between align-items-center p-2" type="button" id="geneDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Select Genes
+                  </button>
+                  <ul class="dropdown-menu w-100" aria-labelledby="geneDropdown" style="max-height: 200px; overflow-y: auto;">
+                    <li>
+                      <div class="form-check mx-3">
+                        <input class="form-check-input" type="checkbox" id="selectAllGenes">
+                        <label class="form-check-label" for="selectAllGenes">Select All</label>
+                      </div>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <div id="geneOptionsList">
+                      <!-- Gene checkboxes will be added here dynamically -->
+                    </div>
+                  </ul>
+                </div>
           
                 <!-- Color palette button with dropdown -->
                 <div class="dropdown">
@@ -408,12 +432,8 @@
               <small id="intensityValue" class="text-muted" style="min-width: 30px;">1.0</small>
             </div>
 
-            <!-- <div id="heatmapGrad" class="mb-3 d-flex flex-column align-items-start">
-              <h6>Gradient based on values lowest to highest</h6>
-            </div> -->
             <div id="heatmapGrad" class="mb-3 d-flex flex-column align-items-start">
               <h6>Gradient based on values lowest to highest</h6>
-              <!-- <h6 class="mb-0">Gradient:</h6> -->
               <div id="gradientCanvasContainer"></div> <!-- canvas will be inserted here -->
             </div>            
 
