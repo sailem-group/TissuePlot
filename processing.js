@@ -786,11 +786,9 @@ async function showUMAP(showdemoCall = 0) {
                         text: window.top3CellTypeTexts         
                     };
 
-                    // Plotly.newPlot('umap-plot', [trace], getUMAPLayout());
                     window.geneExpressionMatrix = topExpressedGenes;
-                    const geneSelect = document.getElementById('selectGenes');
-                    const gene = geneSelect?.value;
-                    if (window.mode === 'genes' && gene) {
+                    const selectedGenes = window.sketchOptions.selectedGenes || [];
+                    if (window.mode === 'genes' && selectedGenes.length > 0) {
                         reGenerateUMAP(clusters, []);
                     } else {
                         Plotly.newPlot('umap-plot', [trace], getUMAPLayout());
@@ -913,17 +911,27 @@ function reGenerateUMAP(allClusters, selectedClusters) {
             };
             Plotly.newPlot('umap-plot', [originalTrace], getUMAPLayout());
         } else {
-            const geneSelect = document.getElementById('selectGenes');
-            const gene = geneSelect?.value;
+            const selectedGenes = window.sketchOptions.selectedGenes || [];
+            const geneMatrix = window.geneExpressionMatrix || [];
+            const colorMap = getColorScaleArray(window.selectedGeneColorScale || 'Viridis');
 
-            if (!gene || !window.geneExpressionMatrix) {
-                console.warn('No gene selected or gene data missing');
+            if (!selectedGenes.length || !geneMatrix.length) {
+                console.warn('Missing selected genes or gene expression matrix');
                 return;
             }
+            const allGeneNames = Object.keys(geneMatrix[0]);
+            const selectedGeneIndices = selectedGenes.map(g => allGeneNames.indexOf(g)).filter(i => i !== -1);
 
-            const geneValues = window.geneExpressionMatrix.map(row => {
-                const val = parseFloat(row[gene]);
-                return isNaN(val) ? 0 : val;
+            const avgExpressions = geneMatrix.map(row => {
+                const vals = selectedGeneIndices.map(i => parseFloat(row[allGeneNames[i]]) || 0);
+                return vals.reduce((sum, v) => sum + v, 0) / vals.length;
+            });
+
+            const maxScale = colorMap.length - 1;
+            const geneColors = avgExpressions.map(val => {
+                const colorIndex = Math.min(Math.floor(val), maxScale);
+                const baseColor = colorMap[colorIndex];
+                return adjustColorIntensity(baseColor, window.geneColorIntensity || 1);
             });
 
             const trace = {
@@ -932,15 +940,11 @@ function reGenerateUMAP(allClusters, selectedClusters) {
                 mode: 'markers',
                 marker: {
                     size: 8,
-                    // color: geneValues,
-                    // colorscale: 'Viridis',
-                    color: geneValues,
-                    colorscale: window.selectedGeneColorScale,
-                    showscale: false // remove colorbar
+                    color: geneColors,
                 },
                 hoverinfo: 'text',
-                text: geneValues.map((val, i) =>
-                    `Expression: ${val.toFixed(2)}<br>${window.top3CellTypeTexts[i]}`
+                text: avgExpressions.map((val, i) =>
+                    `${window.top3CellTypeTexts[i]}`
                 )
             };
 
@@ -991,9 +995,24 @@ function highlightUMAPRow(allClusters, indexToHighlight) {
     let allPointsTrace, highlightedPointTrace;
 
     if (window.mode === 'genes') {
-        const geneSelect = document.getElementById('selectGenes');
-        const gene = geneSelect?.value;
-        const geneValues = window.geneExpressionMatrix.map((row) => parseFloat(row[gene]));
+        const selectedGenes = window.sketchOptions.selectedGenes || [];
+        const geneMatrix = window.geneExpressionMatrix || [];
+        const colorMap = getColorScaleArray(window.selectedGeneColorScale || 'Viridis');
+
+        const allGeneNames = Object.keys(geneMatrix[0]);
+        const selectedGeneIndices = selectedGenes.map(g => allGeneNames.indexOf(g)).filter(i => i !== -1);
+
+        const avgExpressions = geneMatrix.map(row => {
+            const vals = selectedGeneIndices.map(i => parseFloat(row[allGeneNames[i]]) || 0);
+            return vals.reduce((sum, v) => sum + v, 0) / vals.length;
+        });
+
+        const maxScale = colorMap.length - 1;
+        const geneColors = avgExpressions.map(val => {
+            const colorIndex = Math.min(Math.floor(val), maxScale);
+            const baseColor = colorMap[colorIndex];
+            return adjustColorIntensity(baseColor, window.geneColorIntensity || 1);
+        });
 
         allPointsTrace = {
             x: x.filter((_, i) => i !== indexToHighlight),
@@ -1001,10 +1020,7 @@ function highlightUMAPRow(allClusters, indexToHighlight) {
             mode: 'markers',
             marker: {
                 size: 8,
-                color: geneValues.filter((_, i) => i !== indexToHighlight),
-                // colorscale: 'Viridis',
-                colorscale: window.selectedGeneColorScale,
-                showscale: false,
+                color: geneColors.filter((_, i) => i !== indexToHighlight),
                 opacity: 0.5,
             },
             text: window.top3CellTypeTexts.filter((_, i) => i !== indexToHighlight),
