@@ -256,6 +256,13 @@ function setupCanvas(width, height, newSpots) {
   panX = 0;
   panY = 0;
 
+  const canvasEl = document.getElementById("canvasContainer")?.querySelector("canvas");
+
+  if (!canvasEl) {
+    console.warn("Canvas not found inside #canvasContainer at setupCanvas()");
+    return;
+  }
+
   document.getElementById("canvasContainer").querySelector("canvas").addEventListener("mouseleave", () => {
     hoveredHex = null
     mouseOverCanvas = false
