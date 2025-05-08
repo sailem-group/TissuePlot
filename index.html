@@ -313,10 +313,10 @@
             <label for="showComposition" class="form-label mx-2">Cell Proportions View</label>
           </div>
 
-          <!-- <div class="ms-4 mb-3 ">
+          <div class="ms-4 mb-3 ">
             <div class="form-check">
-              <input class="form-check-input" type="radio" name="cellPropView" id="showEmojiView" value="showEmojiView">
-              <label class="form-check-label" for="showEmojiView">Emoji</label>
+              <input class="form-check-input" type="radio" name="cellPropView" id="showCellEmojiView" value="showCellEmojiView">
+              <label class="form-check-label" for="showCellEmojiView">Add emoji</label>
             </div>
             <div class="form-check">
               <input class="form-check-input" type="radio" name="cellPropView" id="showAllLevels" value="showAllLevels">
@@ -324,15 +324,15 @@
             </div>
           </div>
 
-          <div class="mb-4 d-flex justify-content-start align-items-start">
+          <!--  <div class="mb-4 d-flex justify-content-start align-items-start">
             <input class="form-check-input" type="radio" name="showGenes" id="showGenes">
             <label for="showGenes" class="form-label mx-2">Gene View</label>
           </div> -->
 
-          <div class="ms-4 mb-3 d-flex justify-content-start align-items-start">
+          <!-- <div class="ms-4 mb-3 d-flex justify-content-start align-items-start">
             <input type="checkbox" class="form-check-input" id="showAllLevels" />
             <label for="showAllLevels" class="form-label mx-2">Detailed view</label>
-          </div>
+          </div> -->
 
           <div class="mb-1 d-flex justify-content-start align-items-start">
             <input class="form-check-input" type="radio" name="showGenes" id="showGenes">
@@ -341,7 +341,7 @@
 
           <div class="ms-4 mb-3 d-flex justify-content-start align-items-start">
             <input type="checkbox" class="form-check-input" id="showEmojiView" />
-            <label for="showEmojiView" class="form-label mx-2">Cell type emoji</label>
+            <label for="showEmojiView" class="form-label mx-2">Add emoji</label>
           </div>
 
 
@@ -387,7 +387,9 @@
 
           <div id="gene-specific" class="hidden">
             <div class="mb-3 d-flex flex-column align-items-start">
-              <label class="form-label" for="selectGenes">Select Target Gene</label>
+              <label for="selectGenes" class="form-label">Select Tagret Gene
+                <i class="fas fa-info-circle tooltip-icon ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="By default, all genes are selected and their expression values are averaged and displayed. To customize the view, you can select specific genes but at least one gene must be selected." style="z-index: 99;"></i>
+              </label>
               
               <!-- Dropdown and button side-by-side -->
               <div class="d-flex align-items-center gap-2 w-100">

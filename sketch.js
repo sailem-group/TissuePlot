@@ -411,13 +411,33 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
         if (window.showAllLevels) {
           svgElements.push(drawHexagonSVG(scaledX, scaledY, (spot.radius + 25) * scaleFactor, sortedSpotMembership[1].color));
           svgElements.push(drawHexagonSVG(scaledX, scaledY, (spot.radius + 10) * scaleFactor, sortedSpotMembership[2].color));
+        } else if (window.showCellEmojiView){
+          const topCellType = sortedSpotMembership[0].label;
+          const emojiImage = window.cellTypeVectors[topCellType];
+          if (emojiImage) {
+              svgElements.push(drawCellTypeVectorSVG(emojiImage, scaledX, scaledY, spot.scaledRadius * 1.5));
+          } else {
+              textAlign(CENTER, CENTER);
+              textSize(10);
+              text("?", scaledX, scaledY);
+          }
         }
       } else {
         drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, sortedSpotMembership[0].color);
         if (window.showAllLevels) {
           drawHexagon(scaledX, scaledY, (spot.radius + 25) * scaleFactor, sortedSpotMembership[1].color);
           drawHexagon(scaledX, scaledY, (spot.radius + 10) * scaleFactor, sortedSpotMembership[2].color);
-        } 
+        } else if (window.showCellEmojiView){
+          const topCellType = sortedSpotMembership[0].label;
+          const emojiImage = window.cellTypeVectors[topCellType];
+          if (emojiImage) {
+              drawCellTypeVectors(emojiImage, scaledX, scaledY, spot.scaledRadius * 1.5);
+          } else {
+              textAlign(CENTER, CENTER);
+              textSize(10);
+              text("?", scaledX, scaledY);
+          }
+        }
       }
       if (window.showCluster) {
         const shapeRadius = (spot.radius - 30) * scaleFactor;
