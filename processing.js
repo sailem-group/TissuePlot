@@ -55,6 +55,17 @@ document.getElementById('selectAllGenes').addEventListener('change', function ()
     }
 });
 
+document.getElementById('geneSearchInput').addEventListener('input', function () {
+    const query = this.value.toLowerCase();
+    const geneItems = document.querySelectorAll('#geneOptionsList .form-check');
+
+    geneItems.forEach(item => {
+        const label = item.querySelector('label');
+        const geneName = label.textContent.toLowerCase();
+        item.style.display = geneName.includes(query) ? '' : 'none';
+    });
+});
+
 const btn = document.getElementById("toggleImageOpacityBtn");
 const icon = document.getElementById("toggleIcon");
 const panel = document.getElementById("imageOpacityCont");
@@ -751,8 +762,31 @@ async function showUMAP(showdemoCall = 0) {
             return `Cluster: ${cluster}<br><b>Top Cell Types:</b><br>${cellTypesText}`;
         });
         const geneNames = Object.keys(topExpressedGenes[0]);
-        const geneExpressionData = topExpressedGenes.map((row) =>
-            geneNames.map((gene) => parseFloat(row[gene])).filter((value) => !isNaN(value))
+        // const geneExpressionData = topExpressedGenes.map((row) =>
+        //     geneNames.map((gene) => parseFloat(row[gene])).filter((value) => !isNaN(value))
+        // );
+
+        const numGenes = geneNames.length;
+        const numRows = topExpressedGenes.length;
+        const geneExpressionMatrix = geneNames.map(gene => 
+            topExpressedGenes.map(row => parseFloat(row[gene]) || 0)
+        );
+
+        // Compute mean and std deviation for each gene
+        const geneMeans = geneExpressionMatrix.map(values =>
+            values.reduce((sum, v) => sum + v, 0) / values.length
+        );
+        const geneStds = geneExpressionMatrix.map((values, i) => {
+            const mean = geneMeans[i];
+            const variance = values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length;
+            return Math.sqrt(variance) || 1;
+        });
+
+        // Normalize each value (z-score)
+        const geneExpressionData = Array.from({ length: numRows }, (_, i) =>
+            geneNames.map((_, j) =>
+                (geneExpressionMatrix[j][i] - geneMeans[j]) / geneStds[j]
+            )
         );
 
         if (geneExpressionData.some((row) => row.length === 0)) {
@@ -800,7 +834,7 @@ async function showUMAP(showdemoCall = 0) {
                         marker: {
                             size: 8,
                             color: 'grey',
-                            opacity: 0.5,
+                            // opacity: 0.5,
                         },
                         hoverinfo: 'text',
                         text: window.top3CellTypeTexts         
@@ -924,7 +958,7 @@ function reGenerateUMAP(allClusters, selectedClusters) {
                 marker: {
                     size: 8,
                     color: 'grey',
-                    opacity: 0.5,
+                    // opacity: 0.5,
                 },
                 hoverinfo: 'text',
                 text: window.top3CellTypeTexts
@@ -1041,7 +1075,7 @@ function highlightUMAPRow(allClusters, indexToHighlight) {
             marker: {
                 size: 8,
                 color: geneColors.filter((_, i) => i !== indexToHighlight),
-                opacity: 0.5,
+                // opacity: 0.5,
             },
             text: window.top3CellTypeTexts.filter((_, i) => i !== indexToHighlight),
             hoverinfo: 'text',
@@ -1068,7 +1102,7 @@ function highlightUMAPRow(allClusters, indexToHighlight) {
             marker: {
                 size: 8,
                 color: 'gray',
-                opacity: 0.5,
+                // opacity: 0.5,
             },
             text: window.top3CellTypeTexts.filter((_, i) => i !== indexToHighlight),
             hoverinfo: 'text',
