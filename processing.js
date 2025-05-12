@@ -468,28 +468,30 @@ function uniqueClusterCount(valuesRows) {
 }
 
 function setSlidersForDemo(demo) {
-    const presets = {
-      demo5: { x: 1.26, y: 1.27, offsetX: -37, offsetY: -168 },
-      demo1: { x: 1.22, y: 1.23, offsetX: -37, offsetY: -168 },
-      demo2: { x: 1.78, y: 1.5, offsetX: -646, offsetY: -997 },
-      demo3: { x: 1.65, y: 2, offsetX: -275, offsetY: -263 },
-      demo4: { x: 1.28, y: 1.29, offsetX: 74, offsetY: -545 }
-    };
-  
-    const p = presets[demo];
-    if (!p) return;
-  
-    document.getElementById("stretchX").value = p.x;
-    document.getElementById("stretchY").value = p.y;
-    document.getElementById("offsetX").value = p.offsetX;
-    document.getElementById("offsetY").value = p.offsetY;
-  
-    // update labels too
-    document.getElementById("stretchXValue").innerText = p.x;
-    document.getElementById("stretchYValue").innerText = p.y;
-    document.getElementById("offsetXValue").innerText = p.offsetX;
-    document.getElementById("offsetYValue").innerText = p.offsetY;
-  }
+  const presets = {
+    demo5: { x: 1.26, offsetX: -37, offsetY: -168 },
+    demo1: { x: 1.22, offsetX: -37, offsetY: -168 },
+    demo2: { x: 1.78, offsetX: -646, offsetY: -997 },
+    demo3: { x: 1.65, offsetX: -275, offsetY: -263 },
+    demo4: { x: 1.28, offsetX: 74, offsetY: -545 }
+  };
+
+  const p = presets[demo];
+  if (!p || !window.aspectRatio) return;
+
+  const stretchX = p.x;
+  const stretchY = stretchX * window.aspectRatio;
+
+  document.getElementById("stretchX").value = stretchX.toFixed(2);
+  document.getElementById("stretchY").value = stretchY.toFixed(2);
+  document.getElementById("offsetX").value = p.offsetX;
+  document.getElementById("offsetY").value = p.offsetY;
+
+  document.getElementById("stretchXValue").innerText = stretchX.toFixed(2);
+  document.getElementById("stretchYValue").innerText = stretchY.toFixed(2);
+  document.getElementById("offsetXValue").innerText = p.offsetX;
+  document.getElementById("offsetYValue").innerText = p.offsetY;
+}
 
 async function showDemo(demoValue = 'demo5', options = {}) {
     clearAllUploadInputs();

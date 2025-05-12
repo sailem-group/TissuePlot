@@ -316,6 +316,12 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
   let RESIZE_canvas = 1000;
   let dataWidth = maxX - minX;
   let dataHeight = maxY - minY;
+  window.dataWidth = dataWidth;
+  window.dataHeight = dataHeight;
+
+  let aspectRatio = dataHeight / dataWidth;
+  window.aspectRatio = aspectRatio;
+
   let scaleFactor = Math.min(RESIZE_canvas / dataWidth, RESIZE_canvas / dataHeight);
 
   let offsetX = (RESIZE_canvas - dataWidth * scaleFactor) / 2;
@@ -350,7 +356,7 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
         manualOffsetX = 74;
         manualOffsetY = -545;
         break;
-      case "demo4":
+      case "demo5":
         stretchFactorX = 1.26;
         stretchFactorY = 1.27;
         manualOffsetX = -37;
