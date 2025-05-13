@@ -441,17 +441,21 @@ const colorScales = [{
 ];
 
 let dataColors = colorScales[0].colors;
+let selectedScaleValue = "ColorScale1"; // track current selection
 
-const dropdown = document.getElementById("colorScaleSelector");
-dropdown.value = colorScales[0].value;
+document.querySelectorAll(".color-scale-option").forEach(item => {
+    item.addEventListener("click", (e) => {
+        e.preventDefault();
 
-dropdown.addEventListener("change", (event) => {
-    const selectedScale = colorScales.find(scale => scale.value === event.target.value);
-    if (selectedScale) {
-        // console.log("Selected scale:", selectedScale);
-        dataColors = selectedScale.colors;
-        generateVis();
-    }
+        const scaleValue = item.getAttribute("data-scale");
+        selectedScaleValue = scaleValue;
+
+        const selectedScale = colorScales.find(scale => scale.value === scaleValue);
+        if (selectedScale) {
+            dataColors = selectedScale.colors;
+            generateVis();
+        }
+    });
 });
 
 function uniqueClusterCount(valuesRows) {
@@ -650,7 +654,7 @@ async function showDemo(demoValue = 'demo5', options = {}) {
         defaultScaleValue = 'ColorScale4';
     }
 
-    dropdown.value = defaultScaleValue; // updates UI
+    selectedScaleValue = defaultScaleValue;
     const selectedScale = colorScales.find(scale => scale.value === defaultScaleValue);
     if (selectedScale) {
         dataColors = selectedScale.colors;
@@ -1673,7 +1677,7 @@ window.generateVis = function () {
     }
 
     if (mode == "cellComposition") {
-        const selectedScaleName = dropdown.value;
+        const selectedScaleName = selectedScaleValue;
         dataColors = getFreshColorArray(selectedScaleName);
 
         if (!valuesData || valuesData.length == 0) {
@@ -1718,12 +1722,6 @@ window.generateVis = function () {
                     color: dataColors[i]
                 }
             })
-
-            // const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues)
-            // if (hasClusters) {
-            //     newSpot.cluster = valuesData[i].at(-1);
-            // }
-            // dataSpots.push(newSpot);
 
             const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues);
 
