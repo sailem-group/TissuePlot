@@ -23,6 +23,10 @@ document.querySelectorAll(".nav-link").forEach(tab => {
     tab.addEventListener("click", showOrHideOptions);
 });
 
+document.getElementById("closeSpotPopup").addEventListener("click", () => {
+  document.getElementById("spotInfoPopup").style.display = "none";
+});
+
 document.getElementById('geneOptionsList').addEventListener('change', () => {
     const selectedGenes = Array.from(document.querySelectorAll('.gene-checkbox:checked')).map(cb => cb.value);
     window.sketchOptions.selectedGenes = selectedGenes;
@@ -446,13 +450,7 @@ dropdown.addEventListener("change", (event) => {
     if (selectedScale) {
         // console.log("Selected scale:", selectedScale);
         dataColors = selectedScale.colors;
-        if (document.getElementById("demoTab").classList.contains("active")){
-            showDemo(window.whichDemo);
-        } else if (document.getElementById("plottingTab").classList.contains("active")){
-            generateVis();
-        } else {
-            generateVis();
-        }
+        generateVis();
     }
 });
 
@@ -1721,10 +1719,39 @@ window.generateVis = function () {
                 }
             })
 
-            const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues)
-            if (hasClusters) {
-                newSpot.cluster = valuesData[i].at(-1);
+            // const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues)
+            // if (hasClusters) {
+            //     newSpot.cluster = valuesData[i].at(-1);
+            // }
+            // dataSpots.push(newSpot);
+
+            const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues);
+
+            let geneList = [];
+            let clusterInfo = [];
+
+            if (genesData && genesData[i]) {
+                const geneRow = genesData[i];
+
+                geneList = genesData[0].map((geneName, j) => ({
+                    gene: geneName,
+                    value: parseFloat(geneRow[j]) || 0
+                }))
+                .filter(g => g.value > 0)
+                .sort((a, b) => b.value - a.value);
             }
+
+            if (hasClusters) {
+                const cluster = valuesData[i].at(-1);
+                newSpot.cluster = cluster;
+                clusterInfo.push(cluster);
+            }
+
+            if (newSpot.values[0]) {
+                newSpot.values[0].geneList = geneList;
+                newSpot.values[0].clusterInfo = clusterInfo;
+            }
+
             dataSpots.push(newSpot);
         }
 
@@ -1748,9 +1775,9 @@ window.generateVis = function () {
         const selectedGeneIndices = window.sketchOptions.selectedGenes.map(gene => dataHeaders.indexOf(gene));
 
         for (let i = 1; i < positionsData.length - 1; i++) {
-            let spotCoords = positionsData[i];
-            let colorMap = getColorScaleArray(window.selectedGeneColorScale);
-            let geneRow = genesData[i];
+            const spotCoords = positionsData[i];
+            const colorMap = getColorScaleArray(window.selectedGeneColorScale);
+            const geneRow = genesData[i];
 
             const expressionValues = selectedGeneIndices.map(idx => parseFloat(geneRow[idx]) || 0);
             const avgExpression = expressionValues.reduce((a, b) => a + b, 0) / expressionValues.length;
@@ -1758,31 +1785,49 @@ window.generateVis = function () {
             const colorIndex = Math.min(Math.floor(avgExpression), colorMap.length - 1);
             const baseColor = colorMap[colorIndex];
 
-            let spotValues = [{
+            // NEW: Generate sorted gene list (descending by expression value)
+            const geneList = window.sketchOptions.selectedGenes
+                .map((gene, j) => ({
+                    gene,
+                    value: expressionValues[j]
+                }))
+            .filter(g => g.value > 0)
+            .sort((a, b) => b.value - a.value);
+            // NEW: Determine cluster info from valuesData (if available)
+            let clusterInfo = [];
+            if (valuesData && valuesData[i]) {
+                const cluster = valuesData[i].at(-1);
+                if (valuesData[0].at(-1).includes("Cluster")) {
+                    clusterInfo.push(cluster);
+                }
+            }
+
+            const spotValues = [{
                 label: 'AvgExpression',
                 value: avgExpression,
                 baseColor: baseColor,
-                color: adjustColorIntensity(baseColor, window.geneColorIntensity)
+                color: adjustColorIntensity(baseColor, window.geneColorIntensity),
+                geneList: geneList,
+                clusterInfo: clusterInfo
             }];
 
             const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues);
 
+            // Optionally attach cell composition info
             if (valuesData[i]) {
-                const sliceFactor = valuesData[0].at(-1).includes("Cluster") ? 1 : 0;
-                const cellTypeHeaders = valuesData[0].slice(1, valuesData[0].length - sliceFactor);
-                const cellTypeValues = valuesData[i]
-                    .slice(1, valuesData[i].length - sliceFactor)
-                    .map((value, j) => {
-                        return {
-                            label: cellTypeHeaders[j],
-                            value: value,
-                            color: dataColors[j] || "#999999"
-                        };
-                    });
-                newSpot.cellCompositionValues = cellTypeValues;
-                if (sliceFactor === 1) {
-                    newSpot.cluster = valuesData[i].at(-1);
-                }
+            const sliceFactor = valuesData[0].at(-1).includes("Cluster") ? 1 : 0;
+            const cellTypeHeaders = valuesData[0].slice(1, valuesData[0].length - sliceFactor);
+            const cellTypeValues = valuesData[i]
+                .slice(1, valuesData[i].length - sliceFactor)
+                .map((value, j) => ({
+                label: cellTypeHeaders[j],
+                value: value,
+                color: dataColors[j] || "#999999"
+                }));
+            newSpot.cellCompositionValues = cellTypeValues;
+            if (sliceFactor === 1) {
+                newSpot.cluster = valuesData[i].at(-1);
+            }
             }
 
             dataSpots.push(newSpot);
@@ -1793,28 +1838,51 @@ window.generateVis = function () {
 };
 
 function updateSpotColorsFromSelectedGenes() {
-    if (!dataSpots || !genesData || genesData.length === 0) return;
-    const colorMap = getColorScaleArray(window.selectedGeneColorScale);
-    const selectedGenes = window.sketchOptions.selectedGenes || [];
-    const selectedGeneIndices = selectedGenes.map(gene => dataHeaders.indexOf(gene));
+  if (!dataSpots || !genesData || genesData.length === 0) return;
 
-    for (let i = 0; i < dataSpots.length; i++) {
-        const spot = dataSpots[i];
-        const geneRow = genesData[i + 1]; // +1 because genesData[0] is headers
+  const colorMap = getColorScaleArray(window.selectedGeneColorScale);
+  const selectedGenes = window.sketchOptions.selectedGenes || [];
 
-        const expressionValues = selectedGeneIndices.map(idx => parseFloat(geneRow[idx]) || 0);
-        const avgExpression = expressionValues.reduce((a, b) => a + b, 0) / expressionValues.length;
+  if (selectedGenes.length === 0) return;
 
-        const colorIndex = Math.min(Math.floor(avgExpression), colorMap.length - 1);
-        const baseColor = colorMap[colorIndex];
+  const selectedGeneIndices = selectedGenes.map(gene => dataHeaders.indexOf(gene));
 
-        spot.values = [{
-            label: 'AvgExpression',
-            value: avgExpression,
-            baseColor: baseColor,
-            color: adjustColorIntensity(baseColor, window.geneColorIntensity)
-        }];
+  for (let i = 0; i < dataSpots.length; i++) {
+    const spot = dataSpots[i];
+    const geneRow = genesData[i + 1];
+
+    // Compute expression and average
+    const expressionValues = selectedGeneIndices.map(idx => parseFloat(geneRow[idx]) || 0);
+    const avgExpression = expressionValues.reduce((a, b) => a + b, 0) / expressionValues.length;
+
+    const colorIndex = Math.min(Math.floor(avgExpression), colorMap.length - 1);
+    const baseColor = colorMap[colorIndex];
+
+    // Build geneList similar to generateVis
+    let geneList = selectedGenes.map((gene, j) => ({
+      gene,
+      value: expressionValues[j]
+    }));
+
+    if (geneList.length > 1) {
+      geneList = geneList.filter(g => g.value > 0);
     }
+
+    geneList.sort((a, b) => b.value - a.value);
+
+    // Preserve existing clusterInfo if available
+    const clusterInfo = spot.cluster !== undefined ? [spot.cluster] : [];
+
+    // Update spot values (overwrite)
+    spot.values = [{
+      label: 'AvgExpression',
+      value: avgExpression,
+      baseColor: baseColor,
+      color: adjustColorIntensity(baseColor, window.geneColorIntensity),
+      geneList: geneList,
+      clusterInfo: clusterInfo
+    }];
+  }
 }
 
 function seededRandom(seed) {

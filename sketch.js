@@ -147,30 +147,9 @@ function clearCanvas() {
 }
 
 function showBarChart(index, barcode, data, isCellComposition) {
-  const modal = document.getElementById("chartModal");
-  const modalDialog = modal.querySelector(".modal-dialog");
-  // const modalTitle = document.getElementById("modalTitle");
-  const closeModalButton = document.getElementById("closeModal");
   const chartContainer = document.getElementById("barChart");
 
   chartContainer.innerHTML = "";
-
-  // modalTitle.innerText = `${index}: ${barcode}`;
-
-  modal.style.display = "block";
-
-  modal.addEventListener("click", function (e) {
-    if (!modalDialog.contains(e.target)) {
-      modal.style.display = "none";
-      chartContainer.innerHTML = "";
-    }
-  });
-
-  // Add a click event to close the modal
-  closeModalButton.onclick = () => {
-    modal.style.display = "none";
-    chartContainer.innerHTML = "";
-  };
 
   let labels, values, colors, originalName;
   
@@ -308,10 +287,30 @@ function setupCanvas(width, height, newSpots) {
       }
 
       showBarChart(clickedHex.index, clickedHex.barcode, barChartData, true);
+      showSpotInfo(clickedHex);
     }
   })
 
   drawHexagonGrid(spots);
+}
+
+function showSpotInfo(clickedHex) {
+  const popup = document.getElementById("spotInfoPopup");
+  const barcodeEl = document.getElementById("popupBarcode");
+  const clusterEl = document.getElementById("popupCluster");
+  const geneContent = document.getElementById("popupGeneContent");
+
+  const cluster = clickedHex.cluster || "N/A";
+  const geneList = clickedHex.values[0].geneList || [];
+
+  const geneString = geneList
+    .map(g => `${g.gene}`)
+    .join(', ');
+
+  clusterEl.textContent = cluster;
+  geneContent.textContent = geneString;
+
+  popup.style.display = "block";
 }
 
 function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
