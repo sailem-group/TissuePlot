@@ -288,19 +288,26 @@ function setupCanvas(width, height, newSpots) {
     const clickedHex = getHoveredHexagon(adjustedMouseX, adjustedMouseY);
 
     if (clickedHex) {
-      const barChartData = clickedHex.values.map((value, index) => ({
-        label: value.label && value.label.length > 3 ? value.label.substring(0, 10) : value.label,
-        value: parseFloat(value.value) || 0,
-        color: value.color,
-        originalLabel : value.label,
-      }));
-
+      let barChartData;
       if (window.mode == "cellComposition") {
-        showBarChart(clickedHex.index, clickedHex.barcode, barChartData, true);
+        barChartData = clickedHex.values.map((value, index) => ({
+          label: value.label && value.label.length > 3 ? value.label.substring(0, 10) : value.label,
+          value: parseFloat(value.value) || 0,
+          color: value.color,
+          originalLabel : value.label,
+        }));
+      // showBarChart(clickedHex.index, clickedHex.barcode, barChartData, true);
       }
-      // else {
-      //   showBarChart(clickedHex.index, clickedHex.barcode, barChartData, false);
-      // }
+      else {
+        barChartData = clickedHex.cellCompositionValues.map((cellCompositionValues, index) => ({
+          label: cellCompositionValues.label && cellCompositionValues.label.length > 3 ? cellCompositionValues.label.substring(0, 10) : cellCompositionValues.label,
+          value: parseFloat(cellCompositionValues.value) || 0,
+          color: cellCompositionValues.color,
+          originalLabel : cellCompositionValues.label,
+        }));
+      }
+
+      showBarChart(clickedHex.index, clickedHex.barcode, barChartData, true);
     }
   })
 
