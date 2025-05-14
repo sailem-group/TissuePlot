@@ -85,15 +85,6 @@
       border-radius: 0.25rem;
     }
 
-    .spotColorDropdownMenu {
-      right: 0 !important;
-      left: auto !important;
-      top: 100% !important;
-      bottom: auto !important; 
-      transform: none !important;
-      min-width: 220px;
-    }
-
     #geneDropdown {
       width: 40px;
       height: 40px;
@@ -324,16 +315,16 @@
           
           <div class="mb-3 d-flex flex-column">
             <div class="d-flex align-items-center gap-3 mb-2">
-              <div class="d-flex align-items-center gap-2">
+              <div class="d-flex align-items-center gap-3">
                 <input type="checkbox" class="form-check-input" id="showCluster" />
                 <label for="showCluster" class="form-label mb-0">Cluster View</label>
               </div>
               
-              <div class="dropdown ms-auto" id="clusterDropdownWrapper" style="position: relative;">
-                <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="customClusterDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+              <div class="dropdown" id="clusterDropdownWrapper" style="position: relative;">
+                <button class="form-select form-select-sm" type="button" id="customClusterDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
                   Select Cluster
                 </button>
-                <div class="dropdown-menu p-2 dropdown-menu-end" id="customClusterDropdownMenu" style="max-height: 200px; overflow-y: auto;">
+                <div class="dropdown-menu p-2" id="customClusterDropdownMenu" style="max-height: 200px; overflow-y: auto;">
                   <!-- Items dynamically injected here  -->
                 </div>
               </div>
@@ -356,13 +347,13 @@
 
           <div class="mb-1 d-flex justify-content-start align-items-start">
             <input class="form-check-input" type="radio" name="showComposition" id="showComposition" checked>
-            <label for="showComposition" class="form-label mx-2">Cell Proportions View</label>
+            <label for="showComposition" class="form-label mx-2">Cell Type View</label>
 
-            <div class="dropdown ms-auto" id="cellTypeDropdownWrapper" style="position: relative;">
-                <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="customCellTypeDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+            <div class="dropdown" id="cellTypeDropdownWrapper" style="position: relative;">
+                <button class="form-select form-select-sm" type="button" id="customCellTypeDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
                   Select Cell type
                 </button>
-                <div class="dropdown-menu p-2 dropdown-menu-end" id="customCellTypeDropdownMenu" style="max-height: 200px; overflow-y: auto;">
+                <div class="dropdown-menu p-2" id="customCellTypeDropdownMenu" style="max-height: 200px; overflow-y: auto;">
                   
                 </div>
             </div>
@@ -371,7 +362,7 @@
               <button class="p-2 spotColorPaletteDropdown" type="button" id="colorScaleDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Select Color Scale">
                 <i class="fas fa-palette text-muted"></i>
               </button>
-              <ul class="dropdown-menu dropdown-menu-end spotColorDropdownMenu" aria-labelledby="colorScaleDropdownBtn">
+              <ul class="dropdown-menu" aria-labelledby="colorScaleDropdownBtn">
                 <li><a class="dropdown-item color-scale-option" data-scale="ColorScale1" href="#">Color Map 1</a></li>
                 <li><a class="dropdown-item color-scale-option" data-scale="ColorScale2" href="#">Color Map 2 (Vision friendly)</a></li>
                 <li><a class="dropdown-item color-scale-option" data-scale="ColorScale3" href="#">Color Map 3 (Vision friendly)</a></li>
