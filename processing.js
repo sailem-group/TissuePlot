@@ -28,23 +28,38 @@ document.getElementById("closeSpotPopup").addEventListener("click", () => {
   document.getElementById("spotInfoPopup").style.display = "none";
 });
 
-document.getElementById('geneOptionsList').addEventListener('change', () => {
-    const selectedGenes = Array.from(document.querySelectorAll('.gene-checkbox:checked')).map(cb => cb.value);
-    window.sketchOptions.selectedGenes = selectedGenes;
-    // if (selectedGenes.length === 0) {
-    //     alert("Please select at least one gene.");
-    //     return;
-    // }
-    const warning = document.getElementById('geneWarningMessage');
-    if (selectedGenes.length === 0) {
-        warning.style.display = 'block';
-    } else {
-        warning.style.display = 'none';
+document.getElementById('geneOptionsList').addEventListener('click', function (e) {
+  if (e.target.classList.contains('gene-checkbox')) {
+    const isCtrlPressed = e.ctrlKey || e.metaKey;
+    const clickedBox = e.target;
+
+    if (!isCtrlPressed) {
+      document.querySelectorAll('.gene-checkbox').forEach(cb => {
+        if (cb !== clickedBox) cb.checked = false;
+      });
     }
 
-    if (window.mode === 'genes') {
+    setTimeout(() => {
+      let selected = document.querySelectorAll('.gene-checkbox:checked');
+
+      if (selected.length === 0) {
+        clickedBox.checked = true;
+        selected = [clickedBox];
+      }
+
+      const allBoxes = document.querySelectorAll('.gene-checkbox');
+      const selectAll = document.getElementById('selectAllGenes');
+      selectAll.checked = selected.length === allBoxes.length;
+
+      // Update selectedGenes
+      const selectedGenes = Array.from(selected).map(cb => cb.value);
+      window.sketchOptions.selectedGenes = selectedGenes;
+
+      if (window.mode === 'genes') {
         updateSpotColorsFromSelectedGenes();
-    }
+      }
+    }, 0);
+  }
 });
 
 document.getElementById('selectAllGenes').addEventListener('change', function () {
@@ -55,16 +70,12 @@ document.getElementById('selectAllGenes').addEventListener('change', function ()
     } 
     else {
         // Deselecting all, but keeping the first one checked
-        // checkboxes.forEach((cb, idx) => cb.checked = idx === 0);
-        checkboxes.forEach(cb => cb.checked = false);
+        checkboxes.forEach((cb, idx) => cb.checked = idx === 0);
     }
 
     // Updating selected genes globally
     const selectedGenes = Array.from(document.querySelectorAll('.gene-checkbox:checked')).map(cb => cb.value);
     window.sketchOptions.selectedGenes = selectedGenes;
-
-    const warning = document.getElementById('geneWarningMessage');
-    warning.style.display = selectedGenes.length === 0 ? 'block' : 'none';
 
     // Redrawing canvas based on new selection
     if (window.mode === 'genes') {
