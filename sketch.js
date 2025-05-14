@@ -314,6 +314,8 @@ function showSpotInfo(clickedHex) {
 }
 
 function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
+  const normalize = str => str?.trim().toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/gi, '');
+  let visibleSpotCount = 0;
   let minX = spots.reduce((min, spot) => Math.min(min, spot.x), Infinity);
   let maxX = spots.reduce((max, spot) => Math.max(max, spot.x), -Infinity);
   let minY = spots.reduce((min, spot) => Math.min(min, spot.y), Infinity);
@@ -401,14 +403,29 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
   }
 
   spots.forEach(spot => {
+    const spotCluster = parseInt(spot.cluster);
     const isLegendFilterActive = window.selectedClusterInLegend !== null;
+    const isDropdownFilterActive = Array.isArray(window.selectedClusterFromDropdown) && window.selectedClusterFromDropdown.length > 0;
     const isUMAPFilterActive = Array.isArray(window.selectedUMAPClusters) && window.selectedUMAPClusters.length > 0;
+    const isCellTypeFilterActive = Array.isArray(window.selectedCellTypesFromDropdown) && window.selectedCellTypesFromDropdown.length > 0;
+
+    const cellTypesInSpot = (
+      window.mode === "cellComposition"
+        ? spot.values
+        : spot.cellCompositionValues || []
+    );
+
+    const passesCellTypeFilter =
+      !isCellTypeFilterActive ||
+      cellTypesInSpot.some(v => window.selectedCellTypesFromDropdown.includes(v.label));
 
     if (
-      (isLegendFilterActive && parseInt(spot.cluster) !== window.selectedClusterInLegend) ||
-      (isUMAPFilterActive && !window.selectedUMAPClusters.includes(parseInt(spot.cluster)))
+      (isLegendFilterActive && spotCluster !== window.selectedClusterInLegend) ||
+      (isDropdownFilterActive && !window.selectedClusterFromDropdown.includes(spotCluster)) ||
+      (isUMAPFilterActive && !window.selectedUMAPClusters.includes(spotCluster)) ||
+      !passesCellTypeFilter
     ) {
-      return; // Skip spot based on legend OR UMAP selection
+      return;
     }
     let scaledX = (spot.x - minX) * scaleFactor + offsetX;
     let scaledY = (spot.y - minY) * scaleFactor + offsetY;
@@ -416,6 +433,18 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
     spot.scaledY = scaledY
     spot.scaledRadius = (spot.radius + 40) * scaleFactor
     if (window.mode == "cellComposition") {
+      if (isCellTypeFilterActive && Array.isArray(spot.values)) {
+        const sortedSpotMembership = spot.values.slice().sort((a, b) => b.value - a.value);
+        const topCellType = sortedSpotMembership[0]?.label;
+
+        const topNormalized = normalize(topCellType);
+        const selectedNormalized = window.selectedCellTypesFromDropdown.map(normalize);
+
+        if (!selectedNormalized.includes(topNormalized)) {
+
+          return;
+        }
+      }
       const spotMembership = [...spot.values]
       let sortedSpotMembership = spotMembership.sort((a, b) => b.value - a.value);
       if (saveFlag) {
@@ -477,6 +506,27 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
         } else {
           geneColor = spot.values[0]?.color || '#cccccc';
         }
+
+        // if (isCellTypeFilterActive && Array.isArray(spot.cellCompositionValues)) {
+        //   const sortedCellTypes = spot.cellCompositionValues.slice().sort((a, b) => b.value - a.value);
+        //   const topCellType = sortedCellTypes[0]?.label;
+        //   if (!window.selectedCellTypesFromDropdown.includes(topCellType)) {
+        //     return;
+        //   }
+        // }
+
+        if (isCellTypeFilterActive && Array.isArray(spot.cellCompositionValues)) {
+          const sortedCellTypes = spot.cellCompositionValues.slice().sort((a, b) => b.value - a.value);
+          const topCellType = sortedCellTypes[0]?.label;
+
+          const topNormalized = normalize(topCellType);
+          const selectedNormalized = window.selectedCellTypesFromDropdown.map(normalize);
+
+          if (!selectedNormalized.includes(topNormalized)) {
+            return;
+          }
+        }
+
         drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, geneColor);
 
         if (window.showEmojiView) {

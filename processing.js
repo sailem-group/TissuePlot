@@ -18,6 +18,7 @@ document.getElementById("plotbutton").addEventListener("click", generteCanvasCli
 document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
     radio.addEventListener("change", clusterViewSelectionChanged);
 });
+document.getElementById("colorScaleDropdownBtn").classList.add("disabled");
 // Listen for tab changes
 document.querySelectorAll(".nav-link").forEach(tab => {
     tab.addEventListener("click", showOrHideOptions);
@@ -30,10 +31,17 @@ document.getElementById("closeSpotPopup").addEventListener("click", () => {
 document.getElementById('geneOptionsList').addEventListener('change', () => {
     const selectedGenes = Array.from(document.querySelectorAll('.gene-checkbox:checked')).map(cb => cb.value);
     window.sketchOptions.selectedGenes = selectedGenes;
+    // if (selectedGenes.length === 0) {
+    //     alert("Please select at least one gene.");
+    //     return;
+    // }
+    const warning = document.getElementById('geneWarningMessage');
     if (selectedGenes.length === 0) {
-        alert("Please select at least one gene.");
-        return;
+        warning.style.display = 'block';
+    } else {
+        warning.style.display = 'none';
     }
+
     if (window.mode === 'genes') {
         updateSpotColorsFromSelectedGenes();
     }
@@ -44,14 +52,19 @@ document.getElementById('selectAllGenes').addEventListener('change', function ()
     if (this.checked) {
         // Selecting all
         checkboxes.forEach(cb => cb.checked = true);
-    } else {
+    } 
+    else {
         // Deselecting all, but keeping the first one checked
-        checkboxes.forEach((cb, idx) => cb.checked = idx === 0);
+        // checkboxes.forEach((cb, idx) => cb.checked = idx === 0);
+        checkboxes.forEach(cb => cb.checked = false);
     }
 
     // Updating selected genes globally
     const selectedGenes = Array.from(document.querySelectorAll('.gene-checkbox:checked')).map(cb => cb.value);
     window.sketchOptions.selectedGenes = selectedGenes;
+
+    const warning = document.getElementById('geneWarningMessage');
+    warning.style.display = selectedGenes.length === 0 ? 'block' : 'none';
 
     // Redrawing canvas based on new selection
     if (window.mode === 'genes') {
@@ -133,6 +146,8 @@ function clearAllUploadInputs() {
   }
 
 window.selectedClusterInLegend = null;
+window.selectedClusterFromDropdown = null;
+window.selectedCellTypesFromDropdown = [];
 window.selectedUMAPClusters = [];
 window.currentUMAPWorker = null;
 window.numberOfClusters = [];
@@ -536,6 +551,7 @@ async function showDemo(demoValue = 'demo5', options = {}) {
         document.querySelector("label[for='showCellEmojiView']").style.display = 'inline-block'; 
 
         if(window.mode === 'genes'){
+            document.getElementById("colorScaleDropdownBtn").classList.add("disabled");
             document.getElementById("showEmojiView").checked = true;
             window.showEmojiView = true;
             document.getElementById("showAllLevels").checked = false;
@@ -547,6 +563,7 @@ async function showDemo(demoValue = 'demo5', options = {}) {
             });
         }
     } else {
+        document.getElementById("colorScaleDropdownBtn").classList.remove("disabled");
         document.getElementById("showEmojiView").disabled = true;
         document.querySelector("label[for='showEmojiView']").classList.add("disabled"); 
         document.getElementById("showEmojiView").checked = false;
@@ -585,6 +602,7 @@ async function showDemo(demoValue = 'demo5', options = {}) {
                 document.querySelector("label[for='showCellEmojiView']").classList.add("disabled"); 
             }
         } else if (window.mode == 'genes'){
+            document.getElementById("colorScaleDropdownBtn").classList.add("disabled");
             window.showCluster = true;
             document.getElementById('showCluster').checked = true;
             const radios = document.querySelectorAll("input[name='clusterType']");
@@ -641,6 +659,7 @@ async function showDemo(demoValue = 'demo5', options = {}) {
     window.numberOfClusters = uniqueClusterCount(valuesRows);
     generateClusterLegend(window.numberOfClusters);
     valuesData = valuesRows;
+    generateCellTypeDropdown(getCellTypesFromCSV(valuesData));
 
     let genesCsv = await fetch(genesFile)
     let genesRes = await genesCsv.text()
@@ -854,7 +873,7 @@ async function showUMAP(showdemoCall = 0) {
                     const deselectAllBtn = document.createElement('div');
                     deselectAllBtn.textContent = 'Deselect All';
                     deselectAllBtn.style.cursor = 'pointer';
-                    deselectAllBtn.classList.add('dropdown-item', 'text-danger', 'fw-bold');
+                    deselectAllBtn.classList.add('dropdown-item', 'text-dark', 'fw-bold');
                     deselectAllBtn.addEventListener('click', () => {
                         const allCheckboxes = clusterDropdownMenu.querySelectorAll('input[type="checkbox"]');
                         const isAnySelected = Array.from(allCheckboxes).some(cb => cb.checked);
@@ -1919,6 +1938,7 @@ function modeChange(mode) {
 
 function showCompositionChanged(e) {
     if (e.target.checked) {
+        document.getElementById("colorScaleDropdownBtn").classList.remove("disabled");
         document.getElementById("infoBox").innerHTML = '';
         document.getElementById("composition-specific").classList.remove("hidden")
         document.getElementById("gene-specific").classList.add("hidden")
@@ -1963,7 +1983,8 @@ function showGenesChanged(e) {
         document.getElementById("composition-specific").classList.add("hidden");
         document.getElementById("showAllLevels").checked = false;
         document.getElementById("showEmojiView").checked = false;
-        document.getElementById("showComposition").checked = false
+        document.getElementById("showComposition").checked = false;
+       document.getElementById("colorScaleDropdownBtn").classList.add("disabled");
         modeChange("genes");
     } else {
         document.getElementById("gene-specific").classList.add("hidden");
@@ -2217,27 +2238,161 @@ function generateClusterLegend(clusters) {
             }
         });
     });
+
+    const dropdownMenu = document.getElementById("customClusterDropdownMenu");
+    dropdownMenu.innerHTML = "";
+
+    // Deselect All
+    const deselectAllItem = document.createElement("li");
+    deselectAllItem.textContent = "Deselect All";
+    deselectAllItem.classList.add("dropdown-item", "text-dark", "fw-bold", "px-3");
+    deselectAllItem.style.cursor = "pointer";
+    dropdownMenu.appendChild(deselectAllItem);
+
+    // Cluster checkboxes
+    [...new Set(clusters)].sort((a, b) => a - b).forEach(cluster => {
+        const listItem = document.createElement("li");
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.classList.add("form-check-input", "cluster-checkbox");
+        checkbox.value = cluster;
+        checkbox.id = `clusterCheck${cluster}`;
+        checkbox.style.marginRight = "6px";
+
+        const label = document.createElement("label");
+        label.classList.add("form-check-label");
+        label.setAttribute("for", checkbox.id);
+        label.textContent = cluster;
+
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("form-check", "dropdown-item", "ms-3", "d-flex", "align-items-center");
+        wrapper.style.cursor = 'pointer';
+        wrapper.appendChild(checkbox);
+        wrapper.appendChild(label);
+
+        listItem.appendChild(wrapper);
+        dropdownMenu.appendChild(listItem);
+
+        // Handle change event
+        checkbox.addEventListener("change", () => {
+            const selectedClusters = Array.from(document.querySelectorAll(".cluster-checkbox:checked"))
+                .map(cb => parseInt(cb.value, 10));
+            
+            document.querySelectorAll(".celltype-checkbox").forEach(cb => cb.checked = false);
+            window.selectedCellTypesFromDropdown = null;
+            const uniqueSortedClusters = [...new Set(clusters)].sort((a, b) => a - b);
+            if(!document.getElementById("umapTab").classList.contains("active")){
+                highlightClusterOnCanvas(selectedClusters);
+            }
+        });
+    });
+
+    //  Handle Deselect All
+    deselectAllItem.addEventListener("click", () => {
+        document.querySelectorAll(".cluster-checkbox").forEach(cb => cb.checked = false);
+        if(!document.getElementById("umapTab").classList.contains("active")){
+             highlightClusterOnCanvas([]);   
+        }
+    });
+
 }
 
-function highlightClusterOnCanvas(clusterNumber) {
-    // Toggle off if same cluster is clicked again
-    if (window.selectedClusterInLegend === clusterNumber) {
-        window.selectedClusterInLegend = null;
+function highlightClusterOnCanvas(input) {
+  const isFromLegend = typeof input === 'number' || input === null;
+  const isFromDropdown = Array.isArray(input);
+
+  if (isFromLegend) {
+    // Legend: toggle single cluster selection
+    if (window.selectedClusterInLegend === input) {
+      window.selectedClusterInLegend = null;
     } else {
-        window.selectedClusterInLegend = clusterNumber;
+      window.selectedClusterInLegend = input;
     }
+
+    // Clear dropdown selection
+    window.selectedClusterFromDropdown = [];
+  }
+
+  if (isFromDropdown) {
+    // Dropdown: set selected clusters
+    window.selectedClusterFromDropdown = input;
+
+    // Clear legend selection
+    window.selectedClusterInLegend = null;
+  }
+
 }
 
 function highlightClustersOnCanvasUMAP(clusterArray) {
     if (!Array.isArray(clusterArray)) return;
-
+    console.log("I am working")
     // If all clusters are selected or none, clear filter
     if (clusterArray.length === 0) {
         window.selectedUMAPClusters = [];
     } else {
         window.selectedUMAPClusters = clusterArray.map(Number);
     }
+    console.log("Selected UMAP Cluster : ", selectedUMAPClusters)
 }
+
+function generateCellTypeDropdown(cellTypes) {
+    const dropdownMenu = document.getElementById("customCellTypeDropdownMenu");
+    dropdownMenu.innerHTML = "";
+
+    // Deselect All
+    const deselectAllItem = document.createElement("li");
+    deselectAllItem.textContent = "Deselect All";
+    deselectAllItem.classList.add("dropdown-item", "text-dark", "fw-bold", "px-3");
+    deselectAllItem.style.cursor = "pointer";
+    dropdownMenu.appendChild(deselectAllItem);
+
+    // Individual cell type checkboxes
+    cellTypes.forEach((cellType, index) => {
+        const listItem = document.createElement("li");
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.classList.add("form-check-input", "celltype-checkbox");
+        checkbox.value = cellType;
+        checkbox.id = `celltypeCheck${index}`;
+        checkbox.style.marginRight = "6px";
+
+        const label = document.createElement("label");
+        label.classList.add("form-check-label");
+        label.setAttribute("for", checkbox.id);
+        label.textContent = cellType;
+
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("form-check", "dropdown-item", "ms-3", "d-flex", "align-items-center");
+        wrapper.style.cursor = 'pointer';
+        wrapper.appendChild(checkbox);
+        wrapper.appendChild(label);
+
+        listItem.appendChild(wrapper);
+        dropdownMenu.appendChild(listItem);
+
+        // Optional: Add your own `onchange` logic here
+        checkbox.addEventListener("change", () => {
+            const selectedTypes = Array.from(document.querySelectorAll(".celltype-checkbox:checked"))
+                .map(cb => cb.value);
+            // console.log("Selected cell types:", selectedTypes);
+            document.querySelectorAll(".cluster-checkbox").forEach(cb => cb.checked = false);
+            if(!document.getElementById("umapTab").classList.contains("active")){
+                highlightClusterOnCanvas([]);   
+            }
+            window.selectedCellTypesFromDropdown = selectedTypes;
+            // highlightCellTypesOnCanvas(selected); // optional trigger
+        });
+    });
+
+    // Handle Deselect All
+    deselectAllItem.addEventListener("click", () => {
+        document.querySelectorAll(".celltype-checkbox").forEach(cb => cb.checked = false);
+        window.selectedCellTypesFromDropdown = null;
+    });
+}
+
 
 const heatMapColors = [
     "#238A8D",

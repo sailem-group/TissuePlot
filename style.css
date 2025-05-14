@@ -6,25 +6,34 @@ html, body {
   padding: 0;
 }
 
-#cluster-dropdown-menu {
+#cluster-dropdown-menu, #customClusterDropdownMenu, #customCellTypeDropdownMenu{
   min-width: 180px;
   max-height: 120px;
   overflow-y: auto;
   border-radius: 5px;
 }
 
-#cluster-dropdown-menu li {
+#cluster-dropdown-menu li ,
+#customClusterDropdownMenu li,
+#customCellTypeDropdownMenu li{
   display: flex;
   align-items: center;
   padding: 0px 5px;
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-#cluster-dropdown-menu li:hover {
+#cluster-dropdown-menu li:hover ,
+#customClusterDropdownMenu li:hover,
+#customCellTypeDropdownMenu li:hover {
   background-color: #f1f1f1 !important;
 }
 
-#cluster-dropdown-menu input[type="checkbox"] {
+#cluster-dropdown-menu input[type="checkbox"],
+#customClusterDropdownMenu input[type="checkbox"],
+#customCellTypeDropdownMenu input[type="checkbox"]{
   margin-right: 8px;
   cursor: pointer;
 }

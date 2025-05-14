@@ -75,6 +75,25 @@
       border-radius: 0.25rem;
     }
 
+    .spotColorPaletteDropdown {
+      width: 32px;
+      height: 31px;
+      text-align: center;
+      line-height: 0.5;
+      border: 1px solid #ced4da; /* same as form-select */
+      background-color: #fff;
+      border-radius: 0.25rem;
+    }
+
+    .spotColorDropdownMenu {
+      right: 0 !important;
+      left: auto !important;
+      top: 100% !important;
+      bottom: auto !important; 
+      transform: none !important;
+      min-width: 220px;
+    }
+
     #geneDropdown {
       width: 40px;
       height: 40px;
@@ -304,9 +323,23 @@
           </div>          
           
           <div class="mb-3 d-flex flex-column">
-            <div class=" align-items-center">
-              <input type="checkbox" class="form-check-input" id="showCluster" />
-              <label for="showCluster" class="form-label mx-2">Cluster View</label>
+            <div class="d-flex align-items-center gap-3 mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <input type="checkbox" class="form-check-input" id="showCluster" />
+                <label for="showCluster" class="form-label mb-0">Cluster View</label>
+              </div>
+              
+              <div class="dropdown ms-auto" id="clusterDropdownWrapper" style="position: relative;">
+                <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="customClusterDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                  Select Cluster
+                </button>
+                <div class="dropdown-menu p-2 dropdown-menu-end" id="customClusterDropdownMenu" style="max-height: 200px; overflow-y: auto;">
+                  <!-- Items dynamically injected here  -->
+                </div>
+              </div>
+               <!-- <button class="p-1 colorPaletteDropdown" type="button" id="clusterFeatureDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Select Cluster Feature" style="height: 30px">
+                <i class="fa-solid fa-bars"></i>
+              </button>  -->
             </div>
 
             <div id="clusterOptions" class="ps-4 d-flex justify-content-start align-items-start" style="gap: 2em;">
@@ -324,6 +357,30 @@
           <div class="mb-1 d-flex justify-content-start align-items-start">
             <input class="form-check-input" type="radio" name="showComposition" id="showComposition" checked>
             <label for="showComposition" class="form-label mx-2">Cell Proportions View</label>
+
+            <div class="dropdown ms-auto" id="cellTypeDropdownWrapper" style="position: relative;">
+                <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="customCellTypeDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                  Select Cell type
+                </button>
+                <div class="dropdown-menu p-2 dropdown-menu-end" id="customCellTypeDropdownMenu" style="max-height: 200px; overflow-y: auto;">
+                  
+                </div>
+            </div>
+
+            <div class="dropdown ms-2">
+              <button class="p-2 spotColorPaletteDropdown" type="button" id="colorScaleDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Select Color Scale">
+                <i class="fas fa-palette text-muted"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end spotColorDropdownMenu" aria-labelledby="colorScaleDropdownBtn">
+                <li><a class="dropdown-item color-scale-option" data-scale="ColorScale1" href="#">Color Map 1</a></li>
+                <li><a class="dropdown-item color-scale-option" data-scale="ColorScale2" href="#">Color Map 2 (Vision friendly)</a></li>
+                <li><a class="dropdown-item color-scale-option" data-scale="ColorScale3" href="#">Color Map 3 (Vision friendly)</a></li>
+                <li><a class="dropdown-item color-scale-option" data-scale="ColorScale4" href="#">Color Map 4 (Vision friendly)</a></li>
+                <li><a class="dropdown-item color-scale-option" data-scale="ColorScale5" href="#">Color Map 5 (Vision friendly)</a></li>
+                <li><a class="dropdown-item color-scale-option" data-scale="ColorScale6" href="#">Color Map 6 (Vision friendly)</a></li>
+              </ul>
+            </div>
+
           </div>
 
           <div class="ms-4 mb-3 d-flex justify-content-start align-items-start gap-3">
@@ -363,7 +420,7 @@
               <div class="card-header">
                 Spot Cell Composition
               </div>
-              <div class="mt-3 ms-3 dropdown">
+              <!-- <div class="mt-3 ms-3 dropdown">
                 <label for="colorScaleDropdownBtn">Color Map:</label>
                 <button class="p-2 colorPaletteDropdown" type="button" id="colorScaleDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Select Color Scale">
                   <i class="fas fa-palette text-muted"></i>
@@ -376,7 +433,7 @@
                   <li><a class="dropdown-item color-scale-option" data-scale="ColorScale5" href="#">Color Map 5 (Vision friendly)</a></li>
                   <li><a class="dropdown-item color-scale-option" data-scale="ColorScale6" href="#">Color Map 6 (Vision friendly)</a></li>
                 </ul>
-              </div>
+              </div> -->
               <div id="infoBox" class="card-body">
                 <h5 class="card-title"></h5>
                 <p class="card-text h6"></p>
@@ -407,7 +464,9 @@
                       </span>
                       <input type="text" id="geneSearchInput" class="form-control" placeholder="Search genes..." aria-label="Search genes" aria-describedby="search-icon">
                     </div>
-
+                    <div id="geneWarningMessage" class="text-danger mt-2" style="display: none; font-size: 12px;">
+                        Please select at least one gene to proceed.
+                    </div>
                     <!-- Select All -->
                     <div class="form-check mb-2">
                       <input class="form-check-input" type="checkbox" id="selectAllGenes">
