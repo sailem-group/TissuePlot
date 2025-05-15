@@ -47,6 +47,7 @@ document.getElementById('geneOptionsList').addEventListener('click', function (e
         selected = [clickedBox];
       }
 
+      document.getElementById('erasePopupGene').style.display = 'none';
       const allBoxes = document.querySelectorAll('.gene-checkbox');
       const selectAll = document.getElementById('selectAllGenes');
       selectAll.checked = selected.length === allBoxes.length;
@@ -76,6 +77,7 @@ document.getElementById('selectAllGenes').addEventListener('change', function ()
     // Updating selected genes globally
     const selectedGenes = Array.from(document.querySelectorAll('.gene-checkbox:checked')).map(cb => cb.value);
     window.sketchOptions.selectedGenes = selectedGenes;
+    document.getElementById('erasePopupGene').style.display = 'none';
 
     // Redrawing canvas based on new selection
     if (window.mode === 'genes') {
@@ -92,6 +94,66 @@ document.getElementById('geneSearchInput').addEventListener('input', function ()
         const geneName = label.textContent.toLowerCase();
         item.style.display = geneName.includes(query) ? '' : 'none';
     });
+});
+
+document.addEventListener('click', function (e) {
+  if (e.target.classList.contains('popup-gene-item')) {
+    const selectedGene = e.target.getAttribute('data-gene');
+
+    // Highlight the clicked gene, unhighlight others
+    document.querySelectorAll('.popup-gene-item').forEach(el => {
+      el.classList.remove('bg-primary', 'text-white');
+      el.classList.add('bg-light', 'text-dark');
+    });
+
+    e.target.classList.remove('bg-light', 'text-dark');
+    e.target.classList.add('bg-primary', 'text-white');
+
+    // Check only the clicked gene in dropdown
+    const allCheckboxes = document.querySelectorAll('.gene-checkbox');
+    allCheckboxes.forEach(cb => {
+      cb.checked = (cb.value === selectedGene);
+    });
+
+    // Uncheck "Select All"
+    document.getElementById('selectAllGenes').checked = false;
+
+    // Trigger change event
+    // document.getElementById('geneOptionsList').dispatchEvent(new Event('change'));
+    document.querySelectorAll('.gene-checkbox').forEach(cb => {
+        cb.checked = (cb.value === selectedGene);
+    });
+
+    // Keep state valid
+    window.sketchOptions.selectedGenes = [selectedGene];
+
+    const selectAll = document.getElementById('selectAllGenes');
+    selectAll.checked = false;
+
+    // Redraw canvas
+    if (window.mode === 'genes') {
+    updateSpotColorsFromSelectedGenes();
+    }
+
+    // Show Erase button
+    document.getElementById('erasePopupGene').style.display = 'inline-block';
+  }
+});
+
+document.getElementById('erasePopupGene').addEventListener('click', function () {
+  // Trigger "Select All"
+  const selectAll = document.getElementById('selectAllGenes');
+  selectAll.checked = true;
+  selectAll.dispatchEvent(new Event('change'));
+
+  // Remove highlight from all genes in the popup
+  document.querySelectorAll('.popup-gene-item').forEach(el => {
+    el.classList.remove('bg-primary', 'text-white');
+    el.classList.add('bg-light', 'text-dark');
+  });
+
+  // Hide erase button again
+  this.style.display = 'none';
 });
 
 const btn = document.getElementById("toggleImageOpacityBtn");
