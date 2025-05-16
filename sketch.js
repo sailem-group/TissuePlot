@@ -294,25 +294,6 @@ function setupCanvas(width, height, newSpots) {
   drawHexagonGrid(spots);
 }
 
-// function showSpotInfo(clickedHex) {
-//   const popup = document.getElementById("spotInfoPopup");
-//   const barcodeEl = document.getElementById("popupBarcode");
-//   const clusterEl = document.getElementById("popupCluster");
-//   const geneContent = document.getElementById("popupGeneContent");
-
-//   const cluster = clickedHex.cluster || "N/A";
-//   const geneList = clickedHex.values[0].geneList || [];
-
-//   const geneString = geneList
-//     .map(g => `${g.gene}`)
-//     .join(', ');
-
-//   clusterEl.textContent = cluster;
-//   geneContent.textContent = geneString;
-
-//   popup.style.display = "block";
-// }
-
 function showSpotInfo(clickedHex) {
   const popup = document.getElementById("spotInfoPopup");
   const barcodeEl = document.getElementById("popupBarcode");
@@ -323,10 +304,15 @@ function showSpotInfo(clickedHex) {
   const geneList = clickedHex.values[0].geneList || [];
 
   clusterEl.textContent = cluster;
-  // geneContent.textContent = geneString;
-  geneContent.innerHTML = geneList.map(g =>
-      `<span class="popup-gene-item badge bg-light text-dark m-1 p-1" data-gene="${g.gene}" style="cursor:pointer;">${g.gene}</span>`
-    ).join('');
+  const isClickable = window.mode !== "cellComposition";
+
+  geneContent.innerHTML = geneList.map(g => {
+    const baseClass = 'popup-gene-item badge bg-light text-dark m-1 p-1';
+    const style = isClickable ? 'cursor:pointer;' : 'cursor:default; pointer-events:none;';
+    return `<span class="${baseClass}" data-gene="${g.gene}" style="${style}">
+      ${g.gene}
+    </span>`;
+  }).join('');
 
   popup.style.display = "block";
 }
