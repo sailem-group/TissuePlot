@@ -579,8 +579,10 @@ function switchCaseCluster(scaledX, scaledY, shapeRadius, spot, colorValue) {
     // Define the range of clusters that have shapes
     const maxShapeCluster = 30;
 
-    if (clusterNumber >= 1 && clusterNumber <= maxShapeCluster) {
-      switch (spot.cluster) {
+    if ((clusterNumber >= 1 && clusterNumber <= maxShapeCluster) || clusterNumber === 0) {
+      let clusterKey = spot.cluster === "0" ? "11" : spot.cluster;
+      switch (clusterKey) {
+      // switch (spot.cluster) {
         case "1":
           drawTriangle(scaledX, scaledY, shapeRadius);
           break;

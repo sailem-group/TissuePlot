@@ -228,7 +228,8 @@ window.clusterMap = [];
 window.cellTypeVectors = {};
 window.spotClusterMembership = 'none';
 window.selectedGeneColorScale = 'Viridis';
-window.geneColorIntensity = 1; 
+window.geneColorIntensity = 1;
+window.selectedClusterFeature = 'Cluster-GE'; 
 
 window.cellTypeToEmojiMap = {
     "B/Plasma cells": "Plasma.svg",
@@ -546,25 +547,46 @@ document.querySelectorAll(".color-scale-option").forEach(item => {
     });
 });
 
-function uniqueClusterCount(valuesRows) {
-    const headers = valuesRows[0]; // no split needed
+// function uniqueClusterCount(valuesRows) {
+//     const headers = valuesRows[0]; // no split needed
 
-    const clusterIndex = headers.findIndex(header => header.trim() === 'Cluster');
+//     const clusterIndex = headers.findIndex(header => header.trim() === 'Cluster');
 
-    if (clusterIndex === -1) {
-        console.error("Cluster column not found in CSV");
+//     if (clusterIndex === -1) {
+//         console.error("Cluster column not found in CSV");
+//         return [];
+//     }
+
+//     let clusters = valuesRows.slice(1)
+//         .map(row => row[clusterIndex])
+//         .map(value => parseInt(value, 10))
+//         .filter(value => !isNaN(value));
+
+//     let uniqueClusters = [...new Set(clusters)].sort((a, b) => a - b);
+//     if (uniqueClusters[0] === 0) {
+//         uniqueClusters = uniqueClusters.map(value => value + 1);
+//     }
+//     return uniqueClusters;
+// }
+
+function uniqueClusterCount(valuesRows, clusterColumnName = 'Cluster-GE') {
+    const headers = valuesRows[0];
+    const idx = headers.findIndex(header => header.trim() === clusterColumnName);
+
+    if (idx === -1) {
+        console.error(`Cluster column '${clusterColumnName}' not found.`);
         return [];
     }
 
     let clusters = valuesRows.slice(1)
-        .map(row => row[clusterIndex])
+        .map(row => row[idx])
         .map(value => parseInt(value, 10))
         .filter(value => !isNaN(value));
 
     let uniqueClusters = [...new Set(clusters)].sort((a, b) => a - b);
-    if (uniqueClusters[0] === 0) {
-        uniqueClusters = uniqueClusters.map(value => value + 1);
-    }
+    // if (uniqueClusters[0] === 0) {
+    //     uniqueClusters = uniqueClusters.map(value => value + 1);
+    // }
     return uniqueClusters;
 }
 
@@ -729,10 +751,14 @@ async function showDemo(demoValue = 'demo5', options = {}) {
         skipEmptyLines: true,
     });
     const valuesRows = parsed.data;
-    window.numberOfClusters = uniqueClusterCount(valuesRows);
+    populateClusterFeatureDropdown(valuesRows);
+    window.numberOfClusters = uniqueClusterCount(valuesRows, window.selectedClusterFeature);
+    // console.log(window.numberOfClusters);
     generateClusterLegend(window.numberOfClusters);
     valuesData = valuesRows;
+    // console.log(valuesData);
     generateCellTypeDropdown(getCellTypesFromCSV(valuesData));
+    
 
     let genesCsv = await fetch(genesFile)
     let genesRes = await genesCsv.text()
@@ -767,6 +793,49 @@ async function showDemo(demoValue = 'demo5', options = {}) {
             .catch((error) => console.error("Error in showUMAP:", error));
     }, 0);
 }
+
+function populateClusterFeatureDropdown(valuesData) {
+    const headers = valuesData[0];
+    const clusterCols = headers.filter(h => h.startsWith("Cluster-"));
+    const clusterFeatureDropdown = document.querySelector("#clusterFeatureDropdown + .dropdown-menu");
+
+    if (!clusterFeatureDropdown) {
+        console.warn("Cluster feature dropdown element not found.");
+        return;
+    }
+
+    clusterFeatureDropdown.innerHTML = "";
+
+    if (clusterCols.length === 0) {
+        alert("No Cluster-* columns found.");
+        return;
+    }
+
+    // Set default selected cluster
+    window.selectedClusterFeature = clusterCols.includes("Cluster-GE") ? "Cluster-GE" : clusterCols[0];
+
+    clusterCols.forEach(col => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.className = "dropdown-item";
+        btn.textContent = col;
+        btn.onclick = () => {
+            window.selectedClusterFeature = col;
+            window.numberOfClusters = uniqueClusterCount(valuesData, window.selectedClusterFeature);
+            generateClusterLegend(window.numberOfClusters);
+            generateVis();
+            // reGenerateUMAP(clusters, selectedClusters);
+             setTimeout(() => {
+                showUMAP(1)
+                    .then(() => console.log("UMAP visualization completed."))
+                    .catch((error) => console.error("Error in showUMAP:", error));
+                }, 0);
+            };
+        li.appendChild(btn);
+        clusterFeatureDropdown.appendChild(li);
+    });
+}
+
 
 async function loadCSV(filePath) {
     const response = await fetch(filePath);
@@ -839,12 +908,14 @@ async function showUMAP(showdemoCall = 0) {
             topExpressedGenes = transformFileData(umapData);
         }
         window.spotClusterMembership = transformFileData(valuesData);
-        const clusters = window.spotClusterMembership.map((row) => parseInt(row.Cluster, 10));
+        // const clusters = window.spotClusterMembership.map((row) => parseInt(row.Cluster, 10));
+        const clusters = window.spotClusterMembership.map((row) => parseInt(row[window.selectedClusterFeature], 10));
         window.clusterInfo = clusters;
         window.top3CellTypeTexts = window.spotClusterMembership.map((spot, index) => {
             const cluster = clusters[index];
+            const clusterLikeKeys = Object.keys(spot).filter(k => k.toLowerCase().startsWith('cluster-'));
             const top3 = Object.entries(spot)
-                .filter(([key]) => key !== "Cluster" && key !== "barcode")
+                .filter(([key]) => key.toLowerCase() !== "barcode" && !clusterLikeKeys.includes(key))
                 .map(([key, val]) => ({ key, val: parseFloat(val) }))
                 .sort((a, b) => b.val - a.val)
                 .slice(0, 3);
@@ -1463,6 +1534,20 @@ function parseSVGFile(file, cellType) {
     reader.readAsText(file);
 }
 
+// function getCellTypesFromCSV(valuesRows) {
+//     if (!Array.isArray(valuesRows) || valuesRows.length === 0) {
+//         console.warn("CSV data is empty or invalid");
+//         return [];
+//     }
+
+//     const headerRow = valuesRows[0];
+
+//     // Remove "Barcode" and "Cluster" (case-insensitive match)
+//     return headerRow.filter(col =>
+//         col.toLowerCase() !== "barcode" && col.toLowerCase() !== "cluster"
+//     );
+// }
+
 function getCellTypesFromCSV(valuesRows) {
     if (!Array.isArray(valuesRows) || valuesRows.length === 0) {
         console.warn("CSV data is empty or invalid");
@@ -1471,10 +1556,11 @@ function getCellTypesFromCSV(valuesRows) {
 
     const headerRow = valuesRows[0];
 
-    // Remove "Barcode" and "Cluster" (case-insensitive match)
-    return headerRow.filter(col =>
-        col.toLowerCase() !== "barcode" && col.toLowerCase() !== "cluster"
-    );
+    // Exclude 'barcode' and any columns starting with 'Cluster-'
+    return headerRow.filter(col => {
+        const lower = col.toLowerCase();
+        return lower !== "barcode" && !lower.startsWith("cluster-");
+    });
 }
 
 function positinosUploaded(e) {
@@ -1514,6 +1600,7 @@ function valuesUploaded(e) {
             });
 
             const valuesRows = parsed.data;
+            populateClusterFeatureDropdown(valuesRows);
             window.numberOfClusters = uniqueClusterCount(valuesRows);
             generateClusterLegend(window.numberOfClusters);
             valuesData = valuesRows;
@@ -1772,24 +1859,26 @@ window.generateVis = function () {
         const selectedScaleName = selectedScaleValue;
         dataColors = getFreshColorArray(selectedScaleName);
 
-        if (!valuesData || valuesData.length == 0) {
-            alert("Membership Data missing")
+        if (!valuesData || valuesData.length === 0) {
+            alert("Membership Data missing");
             haltProcess();
             return;
         }
-        dataHeaders = valuesData[0].slice(1)
-        // console.log(dataHeaders)
-        let sliceFactor = 0;
-        hasClusters = false;
 
-        //basically to exclude the cluster values from the direct visualization
-        if (dataHeaders.at(-1).includes("Cluster")) {
-            sliceFactor = 1;
-            hasClusters = true;
-        }
-        
-        let extraColorsNeeded = (dataHeaders.length - sliceFactor) - dataColors.length;
+        // Extract cell type column indices
+        const headers = valuesData[0];
+        const cellTypeIndices = headers
+            .map((col, idx) => ({ col, idx }))
+            .filter(({ col }) =>
+                col.toLowerCase() !== "barcode" &&
+                !col.toLowerCase().startsWith("cluster-")
+            );
 
+        dataHeaders = cellTypeIndices.map(({ col }) => col);
+        hasClusters = Boolean(window.selectedClusterFeature);
+
+        // Make sure we have enough colors
+        const extraColorsNeeded = cellTypeIndices.length - dataColors.length;
         if (extraColorsNeeded > 0) {
             const baseSeed = {
                 "ColorScale1": 42,
@@ -1801,19 +1890,20 @@ window.generateVis = function () {
             }[selectedScaleName] || 50;
 
             for (let i = 0; i < extraColorsNeeded; i++) {
-                // Use baseSeed + i to ensure unique color
                 dataColors.push(generateRandomColor(baseSeed + i));
             }
         }
+
+        const clusterIdx = headers.findIndex(h => h === window.selectedClusterFeature);
+
         for (let i = 1; i < positionsData.length - 1; i++) {
-            let spotCoords = positionsData[i];
-            let spotValues = valuesData[i].slice(1, valuesData[i].length - sliceFactor).map((value, i) => {
-                return {
-                    label: dataHeaders[i],
-                    value: value,
-                    color: dataColors[i]
-                }
-            })
+            const spotCoords = positionsData[i];
+
+            const spotValues = cellTypeIndices.map(({ col, idx }, j) => ({
+                label: col,
+                value: valuesData[i][idx],
+                color: dataColors[j]
+            }));
 
             const newSpot = new Spot(i, spotCoords[0], spotCoords[1], spotCoords[2], spotCoords[3], spotValues);
 
@@ -1822,7 +1912,6 @@ window.generateVis = function () {
 
             if (genesData && genesData[i]) {
                 const geneRow = genesData[i];
-
                 geneList = genesData[0].map((geneName, j) => ({
                     gene: geneName,
                     value: parseFloat(geneRow[j]) || 0
@@ -1831,8 +1920,8 @@ window.generateVis = function () {
                 .sort((a, b) => b.value - a.value);
             }
 
-            if (hasClusters) {
-                const cluster = valuesData[i].at(-1);
+            if (clusterIdx !== -1) {
+                const cluster = valuesData[i][clusterIdx];
                 newSpot.cluster = cluster;
                 clusterInfo.push(cluster);
             }
@@ -1844,8 +1933,9 @@ window.generateVis = function () {
 
             dataSpots.push(newSpot);
         }
+    }
 
-    } else if (mode === "genes") {
+    else if (mode === "genes") {
         if (!genesData || genesData.length === 0) {
             alert("Genes Data missing");
             haltProcess();
@@ -1885,9 +1975,10 @@ window.generateVis = function () {
             .sort((a, b) => b.value - a.value);
             // NEW: Determine cluster info from valuesData (if available)
             let clusterInfo = [];
-            if (valuesData && valuesData[i]) {
-                const cluster = valuesData[i].at(-1);
-                if (valuesData[0].at(-1).includes("Cluster")) {
+            if (valuesData && valuesData[i] && window.selectedClusterFeature) {
+                const clusterIndex = valuesData[0].findIndex(h => h === window.selectedClusterFeature);
+                if (clusterIndex !== -1) {
+                    const cluster = valuesData[i][clusterIndex];
                     clusterInfo.push(cluster);
                 }
             }
@@ -1905,19 +1996,29 @@ window.generateVis = function () {
 
             // Optionally attach cell composition info
             if (valuesData[i]) {
-            const sliceFactor = valuesData[0].at(-1).includes("Cluster") ? 1 : 0;
-            const cellTypeHeaders = valuesData[0].slice(1, valuesData[0].length - sliceFactor);
-            const cellTypeValues = valuesData[i]
-                .slice(1, valuesData[i].length - sliceFactor)
-                .map((value, j) => ({
-                label: cellTypeHeaders[j],
-                value: value,
-                color: dataColors[j] || "#999999"
+                const headers = valuesData[0];
+
+                // Get indices of cell type columns (exclude barcode and cluster-* columns)
+                const cellTypeIndices = headers
+                    .map((col, idx) => ({ col, idx }))
+                    .filter(({ col }) =>
+                        col.toLowerCase() !== "barcode" &&
+                        !col.toLowerCase().startsWith("cluster-")
+                    );
+
+                const cellTypeValues = cellTypeIndices.map(({ col, idx }, j) => ({
+                    label: col,
+                    value: valuesData[i][idx],
+                    color: dataColors[j] || "#999999"
                 }));
-            newSpot.cellCompositionValues = cellTypeValues;
-            if (sliceFactor === 1) {
-                newSpot.cluster = valuesData[i].at(-1);
-            }
+
+                newSpot.cellCompositionValues = cellTypeValues;
+
+                // Assign cluster from selected cluster feature
+                const clusterIdx = headers.findIndex(h => h === window.selectedClusterFeature);
+                if (clusterIdx !== -1) {
+                    newSpot.cluster = valuesData[i][clusterIdx];
+                }
             }
 
             dataSpots.push(newSpot);
@@ -2278,11 +2379,16 @@ function generateClusterLegend(clusters) {
         const numberElement = document.createElement("span");
 
         // If the cluster number exceeds 30, loop it back for the shape
-        const loopedShapeNumber = ((clusterNumber - 1) % maxShapeCluster) + 1;
+        // const loopedShapeNumber = ((clusterNumber - 1) % maxShapeCluster) + 1;
+        const loopedShapeNumber = (clusterNumber % maxShapeCluster) || maxShapeCluster;
 
         if (clusterNumber <= maxShapeCluster) {
             // Display the original shape for clusters 1-30
-            shapeElement.innerHTML = shapeSVGs[clusterNumber] || "?";
+            if (clusterNumber === 0) {
+                shapeElement.innerHTML = shapeSVGs[11]; // Use shape 11 for cluster 0
+            } else {
+                shapeElement.innerHTML = shapeSVGs[clusterNumber] || "?";
+            }
         } else {
             // Display only the number (1-30) instead of a shape for clusters >30
             shapeElement.innerText = loopedShapeNumber;

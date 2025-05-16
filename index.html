@@ -315,23 +315,28 @@
           </div>          
           
           <div class="mb-3 d-flex flex-column">
-            <div class="d-flex align-items-center gap-3 mb-2">
-              <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-4 mb-2">
+              <div class="d-flex align-items-center gap-2">
                 <input type="checkbox" class="form-check-input" id="showCluster" />
                 <label for="showCluster" class="form-label mb-0">Cluster View</label>
               </div>
               
-              <div class="dropdown" id="clusterDropdownWrapper" style="position: relative;">
-                <button class="form-select form-select-sm" type="button" id="customClusterDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+              <div class="dropdown" id="clusterDropdownWrapper" style="position: relative; width: 145px;">
+                <button class="form-select form-select-sm" type="button" id="customClusterDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" style="width: 100%;">
                   Select Cluster
                 </button>
-                <div class="dropdown-menu p-2" id="customClusterDropdownMenu" style="max-height: 200px; overflow-y: auto;">
+                <div class="dropdown-menu p-2" id="customClusterDropdownMenu" style="max-height: 200px; overflow-y: auto; width: 145px;">
                   <!-- Items dynamically injected here  -->
                 </div>
               </div>
-               <!-- <button class="p-1 colorPaletteDropdown" type="button" id="clusterFeatureDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Select Cluster Feature" style="height: 30px">
-                <i class="fa-solid fa-bars"></i>
-              </button>  -->
+              <div class="dropdown" style="margin-left: -15px;">
+                  <button class="p-1 spotColorPaletteDropdown" type="button" id="clusterFeatureDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Select Cluster Feature">
+                    <i class="fa-solid fa-bars"></i>
+                  </button> 
+                  <ul class="dropdown-menu" aria-labelledby="clusterFeatureDropdown">
+                    <!-- Items dynamically injected here  -->
+                  </ul>
+              </div>
             </div>
 
             <div id="clusterOptions" class="ps-4 d-flex justify-content-start align-items-start" style="gap: 2em;">
