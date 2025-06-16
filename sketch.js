@@ -294,6 +294,29 @@ function setupCanvas(width, height, newSpots) {
   drawHexagonGrid(spots);
 }
 
+// function showSpotInfo(clickedHex) {
+//   const popup = document.getElementById("spotInfoPopup");
+//   const barcodeEl = document.getElementById("popupBarcode");
+//   const clusterEl = document.getElementById("popupCluster");
+//   const geneContent = document.getElementById("popupGeneContent");
+
+//   const cluster = clickedHex.cluster || "N/A";
+//   const geneList = clickedHex.values[0].geneList || [];
+
+//   clusterEl.textContent = cluster;
+//   const isClickable = window.mode !== "cellComposition";
+
+//   geneContent.innerHTML = geneList.map(g => {
+//     const baseClass = 'popup-gene-item badge bg-light text-dark m-1 p-1';
+//     const style = isClickable ? 'cursor:pointer;' : 'cursor:default; pointer-events:none;';
+//     return `<span class="${baseClass}" data-gene="${g.gene}" style="${style}">
+//       ${g.gene}
+//     </span>`;
+//   }).join('');
+
+//   popup.style.display = "block";
+// }
+
 function showSpotInfo(clickedHex) {
   const popup = document.getElementById("spotInfoPopup");
   const barcodeEl = document.getElementById("popupBarcode");
@@ -304,9 +327,17 @@ function showSpotInfo(clickedHex) {
   const geneList = clickedHex.values[0].geneList || [];
 
   clusterEl.textContent = cluster;
+
   const isClickable = window.mode !== "cellComposition";
 
-  geneContent.innerHTML = geneList.map(g => {
+  // Build the "Select All" button
+  const selectAllStyle = isClickable ? 'cursor:pointer;' : 'cursor:default; pointer-events:none;';
+  const selectAllButton = `<span class="popup-gene-item badge bg-primary text-white m-1 p-1" data-select-all="true" style="${selectAllStyle}">
+    Select All
+  </span>`;
+
+  // Build the gene items
+  const geneItems = geneList.map(g => {
     const baseClass = 'popup-gene-item badge bg-light text-dark m-1 p-1';
     const style = isClickable ? 'cursor:pointer;' : 'cursor:default; pointer-events:none;';
     return `<span class="${baseClass}" data-gene="${g.gene}" style="${style}">
@@ -314,8 +345,12 @@ function showSpotInfo(clickedHex) {
     </span>`;
   }).join('');
 
+  // Combine "Select All" and gene items
+  geneContent.innerHTML = selectAllButton + geneItems;
+
   popup.style.display = "block";
 }
+
 
 function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
   const normalize = str => str?.trim().toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/gi, '');
