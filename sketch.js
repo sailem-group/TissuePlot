@@ -55,6 +55,18 @@ window.loadImageForDemo = function(demoName) {
   } else if (demoName === 'demo5') {
     img = loadImage("exampleData/p8/tissue_image.png", () => {
     });
+  } else if (demoName === 'demo6') {
+    img = loadImage("exampleData/p1/tissue_image.png", () => {
+    });
+  } else if (demoName === 'demo7') {
+    img = loadImage("exampleData/p2/tissue_image.png", () => {
+    });
+  } else if (demoName === 'demo8') {
+    img = loadImage("exampleData/p3/tissue_image.png", () => {
+    });
+  } else if (demoName === 'demo9') {
+    img = loadImage("exampleData/p4/tissue_image.png", () => {
+    });
   }
 }
 
@@ -294,29 +306,6 @@ function setupCanvas(width, height, newSpots) {
   drawHexagonGrid(spots);
 }
 
-// function showSpotInfo(clickedHex) {
-//   const popup = document.getElementById("spotInfoPopup");
-//   const barcodeEl = document.getElementById("popupBarcode");
-//   const clusterEl = document.getElementById("popupCluster");
-//   const geneContent = document.getElementById("popupGeneContent");
-
-//   const cluster = clickedHex.cluster || "N/A";
-//   const geneList = clickedHex.values[0].geneList || [];
-
-//   clusterEl.textContent = cluster;
-//   const isClickable = window.mode !== "cellComposition";
-
-//   geneContent.innerHTML = geneList.map(g => {
-//     const baseClass = 'popup-gene-item badge bg-light text-dark m-1 p-1';
-//     const style = isClickable ? 'cursor:pointer;' : 'cursor:default; pointer-events:none;';
-//     return `<span class="${baseClass}" data-gene="${g.gene}" style="${style}">
-//       ${g.gene}
-//     </span>`;
-//   }).join('');
-
-//   popup.style.display = "block";
-// }
-
 function showSpotInfo(clickedHex) {
   const popup = document.getElementById("spotInfoPopup");
   const barcodeEl = document.getElementById("popupBarcode");
@@ -408,6 +397,30 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
         stretchFactorY = 1.27;
         manualOffsetX = -37;
         manualOffsetY = -168;
+        break;
+      case "demo6":
+        stretchFactorX = 1.27;
+        stretchFactorY = 1.26;
+        manualOffsetX = -37;
+        manualOffsetY = -168;
+        break;
+      case "demo7":
+        stretchFactorX = 1.92;
+        stretchFactorY = 1.54;
+        manualOffsetX = 679;
+        manualOffsetY = 502;
+        break;
+      case "demo8":
+        stretchFactorX = 1.44;
+        stretchFactorY = 1.96;
+        manualOffsetX = -406;
+        manualOffsetY = -168;
+        break;
+      case "demo9":
+        stretchFactorX = 1.35;
+        stretchFactorY = 1.41;
+        manualOffsetX = -108;
+        manualOffsetY = -48;
         break;
       default:
         // For user uploads

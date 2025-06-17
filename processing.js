@@ -14,6 +14,10 @@ document.getElementById("demo2").addEventListener("click", () => showDemo('demo2
 document.getElementById("demo3").addEventListener("click", () => showDemo('demo3'));
 document.getElementById("demo4").addEventListener("click", () => showDemo('demo4'));
 document.getElementById("demo5").addEventListener("click", () => showDemo('demo5'));
+document.getElementById("demo6").addEventListener("click", () => showDemo('demo6'));
+document.getElementById("demo7").addEventListener("click", () => showDemo('demo7'));
+document.getElementById("demo8").addEventListener("click", () => showDemo('demo8'));
+document.getElementById("demo9").addEventListener("click", () => showDemo('demo9'));
 document.getElementById("plotbutton").addEventListener("click", generteCanvasClicked)
 document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
     radio.addEventListener("change", clusterViewSelectionChanged);
@@ -627,7 +631,11 @@ function setSlidersForDemo(demo) {
     demo1: { x: 1.22, offsetX: -37, offsetY: -168 },
     demo2: { x: 1.78, offsetX: -646, offsetY: -997 },
     demo3: { x: 1.65, offsetX: -275, offsetY: -263 },
-    demo4: { x: 1.28, offsetX: 74, offsetY: -545 }
+    demo4: { x: 1.28, offsetX: 74, offsetY: -545 },
+    demo6: { x: 1.27, offsetX: -37, offsetY: -168 },
+    demo7: { x: 1.92, offsetX: 679, offsetY: 502 },
+    demo8: { x: 1.44, offsetX: -406, offsetY: -168 },
+    demo9: { x: 1.35, offsetX: -108, offsetY: -48 },
   };
 
   const p = presets[demo];
@@ -766,6 +774,22 @@ async function showDemo(demoValue = 'demo5', options = {}) {
         positionsFile = './exampleData/p8/SpotPositions_SP8_matched.csv';
         valuesFile = './exampleData/p8/SpotClusterMembership_SP8.csv';
         genesFile = './exampleData/p8/TopExpressedGenes_SP8.csv';
+    } else if (demoValue === 'demo6') {
+        positionsFile = './exampleData/p1/SpotPositions_SP1.csv';
+        valuesFile = './exampleData/p1/SpotClusterMembership_SP1.csv';
+        genesFile = './exampleData/p1/TopExpressedGenes_SP1.csv';
+    } else if (demoValue === 'demo7') {
+        positionsFile = './exampleData/p2/SpotPositions_SP2.csv';
+        valuesFile = './exampleData/p2/SpotClusterMembership_SP2.csv';
+        genesFile = './exampleData/p2/TopExpressedGenes_SP2.csv';
+    } else if (demoValue === 'demo8') {
+        positionsFile = './exampleData/p3/SpotPositions_SP3.csv';
+        valuesFile = './exampleData/p3/SpotClusterMembership_SP3.csv';
+        genesFile = './exampleData/p3/TopExpressedGenes_SP3.csv';
+    } else if (demoValue === 'demo9') {
+        positionsFile = './exampleData/p4/SpotPositions_SP4.csv';
+        valuesFile = './exampleData/p4/SpotClusterMembership_SP4.csv';
+        genesFile = './exampleData/p4/TopExpressedGenes_SP4.csv';
     }
 
     let positionsCsv = await fetch(positionsFile)
@@ -799,7 +823,7 @@ async function showDemo(demoValue = 'demo5', options = {}) {
 
     document.getElementById("optionsContainer").style.display = "block";
     let defaultScaleValue = 'ColorScale1';
-    if (['demo2', 'demo3', 'demo4', 'demo5'].includes(demoValue)) {
+    if (['demo2', 'demo3', 'demo4', 'demo5', 'demo6', 'demo7', 'demo8', 'demo9'].includes(demoValue)) {
         defaultScaleValue = 'ColorScale4';
     }
 
@@ -1427,7 +1451,7 @@ function showClusterLevelsChanged(e) {
         document.querySelectorAll("input[name='clusterType']").forEach((radio) => {
             radio.checked = false;
         });
-        if (window.whichDemo !== 'demo2' && window.whichDemo !== 'demo3' && window.whichDemo !== 'demo4' && window.whichDemo !== 'demo5'){
+        if (window.whichDemo !== 'demo2' && window.whichDemo !== 'demo3' && window.whichDemo !== 'demo4' && window.whichDemo !== 'demo5' && window.whichDemo !== 'demo6' && window.whichDemo !== 'demo7' && window.whichDemo !== 'demo8' && window.whichDemo !== 'demo9'){
             showEmojiViewCheckbox.disabled = true;
             showCellEmojiViewCheckbox.disabled = true;
         }
