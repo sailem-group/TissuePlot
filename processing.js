@@ -523,6 +523,7 @@ window.showAllLevels = false;
 window.showEmojiView = false;
 window.showCellEmojiView = false;
 window.showCluster = false;
+window.lastRenderedDemo = null;
 
 let currentEmbedding = null
 let currentClusters = []

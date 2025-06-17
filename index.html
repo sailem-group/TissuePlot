@@ -108,7 +108,7 @@
 
       <div id="canvasContainer" class="col-md-9"></div>
 
-      <div id="spotInfoPopup" style="display:none; position: fixed; top: 20px; left: 20px; z-index: 9999; width: 320px; max-height: 550px; overflow-y: auto; background: white; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); padding: 16px;">
+      <div id="spotInfoPopup" style="display:none; position: fixed; top: 20px; left: 20px; z-index: 9999; width: 320px; max-height: 765px; overflow-y: auto; background: white; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); padding: 16px;">
         <div style="display: flex; justify-content: space-between;">
           <h5> Spot Information </h5>
             <button id="closeSpotPopup" style="position: absolute; top: 8px; right: 8px; border: none; background: transparent; font-size: 22px; cursor: pointer;"><i class="bi bi-x"></i></button>
@@ -116,6 +116,10 @@
         <div id="spotInfoHeader" style="margin-top: 10px;">
           <div><strong>Distribution of Cell type:</strong></div>
           <div id="barChart" style="height: 200px; margin-top: 10px; margin-bottom: 10px;"></div>
+        </div>
+        <div id="stackSpotInfo" style="margin-top: 10px;">
+          <div><strong>Cell Type Composition per Cluster:</strong></div>
+          <div id="overallCellTypeDistribution" style="height: 250px;"></div>
         </div>
         <div style="margin-top: 10px;"><strong>Cluster <span id="popupCluster"></span>-associated Genes:</strong></div>
         <div id="popupGeneContent" style="max-height: 120px; overflow-y: auto; padding-right: 4px; white-space: pre-wrap; margin-top: 5px;"></div>

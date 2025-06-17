@@ -299,14 +299,14 @@ function setupCanvas(width, height, newSpots) {
       }
 
       showBarChart(clickedHex.index, clickedHex.barcode, barChartData, true);
-      showSpotInfo(clickedHex);
+      showSpotInfo(clickedHex,spots);
     }
   })
 
   drawHexagonGrid(spots);
 }
 
-function showSpotInfo(clickedHex) {
+function showSpotInfo(clickedHex, spots) {
   const popup = document.getElementById("spotInfoPopup");
   const barcodeEl = document.getElementById("popupBarcode");
   const clusterEl = document.getElementById("popupCluster");
@@ -338,8 +338,102 @@ function showSpotInfo(clickedHex) {
   geneContent.innerHTML = selectAllButton + geneItems;
 
   popup.style.display = "block";
+  // const currentDemo = window.whichDemo;
+
+  // if (window.lastRenderedDemo !== currentDemo) {
+  //   window.lastRenderedDemo = currentDemo;
+  //   renderClusterStackedBarChart(spots);
+  // }
+  renderClusterStackedBarChart(spots);
 }
 
+function renderClusterStackedBarChart(spots) {
+  const container = document.getElementById("overallCellTypeDistribution");
+  container.innerHTML = ''; // Clear old chart if exists
+
+  const clusterCellMap = {};
+  const cellTypesSet = new Set();
+
+  spots.forEach(spot => {
+    const cluster = spot.cluster;
+    if (!clusterCellMap[cluster]) {
+      clusterCellMap[cluster] = {};
+    }
+
+    const values = spot.cellCompositionValues || spot.values || [];
+    values.forEach(({ label, value }) => {
+      if (!label) return;
+      cellTypesSet.add(label);
+      if (!clusterCellMap[cluster][label]) {
+        clusterCellMap[cluster][label] = 0;
+      }
+      clusterCellMap[cluster][label] += parseFloat(value) || 0;
+    });
+  });
+
+  const clusters = Object.keys(clusterCellMap).sort((a, b) => parseInt(a) - parseInt(b));
+  const cellTypes = Array.from(cellTypesSet);
+
+  const traces = cellTypes.map(cellType => {
+    const yValues = clusters.map(cluster => {
+      const total = Object.values(clusterCellMap[cluster] || {}).reduce((a, b) => a + b, 0);
+      const val = (clusterCellMap[cluster][cellType] || 0);
+      // return total > 0 ? (val / total * 100).toFixed(2) : 0;
+      return total > 0 ? (val / total).toFixed(3) : 0;
+    });
+
+    // Find a color from any matching spot
+    let color = "#999999";
+    for (let s of spots) {
+      const values = s.cellCompositionValues || s.values;
+      const v = values?.find(v => v.label === cellType);
+      if (v && v.color) {
+        color = v.color;
+        break;
+      }
+    }
+
+    return {
+      x: clusters,
+      y: yValues,
+      name: cellType,
+      type: 'bar',
+      marker: { color: color },
+    };
+  });
+
+  const layout = {
+    barmode: 'stack',
+    xaxis: {
+      title: {
+        text: 'Cluster',
+        font: { size: 14 }
+      },
+      tickfont: { size: 11 }
+    },
+    yaxis: {
+      title: {
+        text: 'Proportion',
+        font: { size: 14 }
+      },
+      range: [0, 1],
+      tickformat: ".1f",
+      tickfont: { size: 11 }
+    },
+    height: 250,
+    width: 300,
+    margin: { t: 30, l: 40, r: 10, b: 40 },
+    legend: {
+      traceorder: "reversed",
+      xanchor: "left",
+      font: { size: 10 },
+      itemwidth: 5,
+      bgcolor: 'rgba(0,0,0,0)'
+    }
+  };
+
+  Plotly.newPlot(container, traces, layout, { responsive: true });
+}
 
 function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
   const normalize = str => str?.trim().toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/gi, '');
