@@ -1074,16 +1074,23 @@ async function showUMAP(showdemoCall = 0) {
                     currentEmbedding = embedding;
                     // Clearing the "loading" message
                     umapPlotDiv.innerHTML = '';
-
                     // Generating the UMAP plot using Plotly
                     const trace = {
                         x: embedding.map((point) => point[0]),
                         y: embedding.map((point) => point[1]),
                         mode: 'markers',
+                        // marker: {
+                        //     size: 8,
+                        //     color: 'grey',
+                        //     // opacity: 0.5,
+                        // },
                         marker: {
                             size: 8,
-                            color: 'grey',
-                            // opacity: 0.5,
+                            color: window.selectedClusterFeature === 'Cluster-UMAP' ? clusters : 'grey',
+                            colorscale: window.selectedClusterFeature === 'Cluster-UMAP' ? 'Viridis' : undefined,
+                            // colorbar: window.selectedClusterFeature === 'Cluster-UMAP'
+                            //     ? { title: 'Cluster-UMAP' }
+                            //     : undefined,
                         },
                         hoverinfo: 'text',
                         text: window.top3CellTypeTexts         
@@ -1204,11 +1211,19 @@ function reGenerateUMAP(allClusters, selectedClusters) {
                 x: currentEmbedding.map((point) => point[0]),
                 y: currentEmbedding.map((point) => point[1]),
                 mode: 'markers',
+                // marker: {
+                //     size: 8,
+                //     color: 'grey',
+                //     // opacity: 0.5,
+                // },
                 marker: {
-                    size: 8,
-                    color: 'grey',
-                    // opacity: 0.5,
-                },
+                            size: 8,
+                            color: window.selectedClusterFeature === 'Cluster-UMAP' ? allClusters : 'grey',
+                            colorscale: window.selectedClusterFeature === 'Cluster-UMAP' ? 'Viridis' : undefined,
+                            // colorbar: window.selectedClusterFeature === 'Cluster-UMAP'
+                            //     ? { title: 'Cluster-UMAP' }
+                            //     : undefined,
+                        },
                 hoverinfo: 'text',
                 text: window.top3CellTypeTexts
             };
@@ -1283,25 +1298,126 @@ function reGenerateUMAP(allClusters, selectedClusters) {
     Plotly.newPlot('umap-plot', [trace], getUMAPLayout());
 }
 
+// function highlightUMAPRow(allClusters, indexToHighlight) {
+//     if (!currentEmbedding || !allClusters) {
+//         console.error("UMAP data not found!");
+//         return;
+//     }
+
+//     const umapPlotDiv = document.getElementById('umap-plot');
+//     umapPlotDiv.innerHTML = '<p>Updating UMAP...</p>';
+
+//     const x = currentEmbedding.map((pt) => pt[0]);
+//     const y = currentEmbedding.map((pt) => pt[1]);
+
+//     let allPointsTrace, highlightedPointTrace;
+
+//     if (window.mode === 'genes') {
+//         const selectedGenes = window.sketchOptions.selectedGenes || [];
+//         const geneMatrix = window.geneExpressionMatrix || [];
+//         const colorMap = getColorScaleArray(window.selectedGeneColorScale || 'Viridis');
+
+//         const allGeneNames = Object.keys(geneMatrix[0]);
+//         const selectedGeneIndices = selectedGenes.map(g => allGeneNames.indexOf(g)).filter(i => i !== -1);
+
+//         const avgExpressions = geneMatrix.map(row => {
+//             const vals = selectedGeneIndices.map(i => parseFloat(row[allGeneNames[i]]) || 0);
+//             return vals.reduce((sum, v) => sum + v, 0) / vals.length;
+//         });
+
+//         const maxScale = colorMap.length - 1;
+//         const geneColors = avgExpressions.map(val => {
+//             const colorIndex = Math.min(Math.floor(val), maxScale);
+//             const baseColor = colorMap[colorIndex];
+//             return adjustColorIntensity(baseColor, window.geneColorIntensity || 1);
+//         });
+
+//         allPointsTrace = {
+//             x: x.filter((_, i) => i !== indexToHighlight),
+//             y: y.filter((_, i) => i !== indexToHighlight),
+//             mode: 'markers',
+//             marker: {
+//                 size: 8,
+//                 color: geneColors.filter((_, i) => i !== indexToHighlight),
+//                 // opacity: 0.5,
+//             },
+//             text: window.top3CellTypeTexts.filter((_, i) => i !== indexToHighlight),
+//             hoverinfo: 'text',
+//         };
+
+//         highlightedPointTrace = {
+//             x: [x[indexToHighlight]],
+//             y: [y[indexToHighlight]],
+//             mode: 'markers',
+//             marker: {
+//                 size: 14,
+//                 color: 'black',
+//                 line: { width: 2, color: 'white' },
+//             },
+//             text: [window.top3CellTypeTexts[indexToHighlight]],
+//             hoverinfo: 'text',
+//         };
+//     } else {
+//         console.log(allClusters)
+//         // fallback to cellComposition
+//         allPointsTrace = {
+//             x: x.filter((_, i) => i !== indexToHighlight),
+//             y: y.filter((_, i) => i !== indexToHighlight),
+//             mode: 'markers',
+//             // marker: {
+//             //     size: 8,
+//             //     color: 'gray',
+//             //     // opacity: 0.5,
+//             // },
+//             marker: {
+//                             size: 8,
+//                             color: window.selectedClusterFeature === 'Cluster-UMAP' ? allClusters : 'grey',
+//                             colorscale: window.selectedClusterFeature === 'Cluster-UMAP' ? 'Viridis' : undefined,
+//                             // colorbar: window.selectedClusterFeature === 'Cluster-UMAP'
+//                             //     ? { title: 'Cluster-UMAP' }
+//                             //     : undefined,
+//                         },
+//             text: window.top3CellTypeTexts.filter((_, i) => i !== indexToHighlight),
+//             hoverinfo: 'text',
+//         };
+
+//         highlightedPointTrace = {
+//             x: [x[indexToHighlight]],
+//             y: [y[indexToHighlight]],
+//             mode: 'markers',
+//             marker: {
+//                 size: 14,
+//                 color: 'brown',
+//                 layer: 'above traces',
+//             },
+//             text: [window.top3CellTypeTexts[indexToHighlight]],
+//             hoverinfo: 'text',
+//         };
+//     }
+
+//     umapPlotDiv.innerHTML = '';
+//     Plotly.newPlot('umap-plot', [allPointsTrace, highlightedPointTrace], getUMAPLayout());
+// }
+
 function highlightUMAPRow(allClusters, indexToHighlight) {
     if (!currentEmbedding || !allClusters) {
         console.error("UMAP data not found!");
         return;
     }
 
-    const umapPlotDiv = document.getElementById('umap-plot');
-    umapPlotDiv.innerHTML = '<p>Updating UMAP...</p>';
-
     const x = currentEmbedding.map((pt) => pt[0]);
     const y = currentEmbedding.map((pt) => pt[1]);
 
-    let allPointsTrace, highlightedPointTrace;
+    const umapPlotDiv = document.getElementById('umap-plot');
+    umapPlotDiv.innerHTML = '<p>Updating UMAP...</p>';
+
+    let colorArray;
 
     if (window.mode === 'genes') {
+        // Use already computed gene matrix and selected genes
         const selectedGenes = window.sketchOptions.selectedGenes || [];
         const geneMatrix = window.geneExpressionMatrix || [];
         const colorMap = getColorScaleArray(window.selectedGeneColorScale || 'Viridis');
-
         const allGeneNames = Object.keys(geneMatrix[0]);
         const selectedGeneIndices = selectedGenes.map(g => allGeneNames.indexOf(g)).filter(i => i !== -1);
 
@@ -1311,65 +1427,49 @@ function highlightUMAPRow(allClusters, indexToHighlight) {
         });
 
         const maxScale = colorMap.length - 1;
-        const geneColors = avgExpressions.map(val => {
+        colorArray = avgExpressions.map(val => {
             const colorIndex = Math.min(Math.floor(val), maxScale);
             const baseColor = colorMap[colorIndex];
             return adjustColorIntensity(baseColor, window.geneColorIntensity || 1);
         });
-
-        allPointsTrace = {
-            x: x.filter((_, i) => i !== indexToHighlight),
-            y: y.filter((_, i) => i !== indexToHighlight),
-            mode: 'markers',
-            marker: {
-                size: 8,
-                color: geneColors.filter((_, i) => i !== indexToHighlight),
-                // opacity: 0.5,
-            },
-            text: window.top3CellTypeTexts.filter((_, i) => i !== indexToHighlight),
-            hoverinfo: 'text',
-        };
-
-        highlightedPointTrace = {
-            x: [x[indexToHighlight]],
-            y: [y[indexToHighlight]],
-            mode: 'markers',
-            marker: {
-                size: 14,
-                color: 'black',
-                line: { width: 2, color: 'white' },
-            },
-            text: [window.top3CellTypeTexts[indexToHighlight]],
-            hoverinfo: 'text',
-        };
     } else {
-        // fallback to cellComposition
-        allPointsTrace = {
-            x: x.filter((_, i) => i !== indexToHighlight),
-            y: y.filter((_, i) => i !== indexToHighlight),
-            mode: 'markers',
-            marker: {
-                size: 8,
-                color: 'gray',
-                // opacity: 0.5,
-            },
-            text: window.top3CellTypeTexts.filter((_, i) => i !== indexToHighlight),
-            hoverinfo: 'text',
-        };
-
-        highlightedPointTrace = {
-            x: [x[indexToHighlight]],
-            y: [y[indexToHighlight]],
-            mode: 'markers',
-            marker: {
-                size: 14,
-                color: 'brown',
-                layer: 'above traces',
-            },
-            text: [window.top3CellTypeTexts[indexToHighlight]],
-            hoverinfo: 'text',
-        };
+        // Use cluster coloring if enabled
+        colorArray = (window.selectedClusterFeature === 'Cluster-UMAP')
+            ? allClusters
+            : Array(allClusters.length).fill('grey');
     }
+
+    // Original trace with all points (including the one to highlight)
+    const allPointsTrace = {
+        x,
+        y,
+        mode: 'markers',
+        marker: {
+            size: 8,
+            color: colorArray,
+            colorscale: (window.mode !== 'genes' && window.selectedClusterFeature === 'Cluster-UMAP') ? 'Viridis' : undefined,
+            colorbar: undefined,
+        },
+        text: window.top3CellTypeTexts,
+        hoverinfo: 'text',
+    };
+
+    // Overlay a larger point on top to highlight
+    const highlightedPointTrace = {
+        x: [x[indexToHighlight]],
+        y: [y[indexToHighlight]],
+        mode: 'markers',
+        marker: {
+            size: 14,
+            color: 'black',
+            line: {
+                width: 2,
+                color: 'white'
+            }
+        },
+        text: [window.top3CellTypeTexts[indexToHighlight]],
+        hoverinfo: 'text',
+    };
 
     umapPlotDiv.innerHTML = '';
     Plotly.newPlot('umap-plot', [allPointsTrace, highlightedPointTrace], getUMAPLayout());
@@ -1914,24 +2014,41 @@ function updateSpotColorsIntensity() {
     });
 }
 
+
 function populateGeneDropdown(dataHeaders) {
     const listContainer = document.getElementById('geneOptionsList');
     listContainer.innerHTML = ''; // clear previous
 
+    const selectAll = document.getElementById('selectAllGenes');
+    const previouslySelected = new Set(window.sketchOptions.selectedGenes || []);
+    const hasPrevious = previouslySelected.size > 0;
+
+    // Keep only the genes that exist in the new dataset
+    const validGenes = dataHeaders.filter(gene => previouslySelected.has(gene));
+
+    // Only select all if there's no valid prior selection or nothing was selected before
+    const shouldSelectAll = !hasPrevious || validGenes.length === 0;
+
+    const actuallySelected = shouldSelectAll ? [...dataHeaders] : [...validGenes];
+
+    // Sort for consistent UI
     dataHeaders.sort().forEach((header, index) => {
         const geneId = `geneOption${index}`;
+        const isChecked = actuallySelected.includes(header);
+
         const li = document.createElement('li');
         li.innerHTML = `
             <div class="form-check mx-3">
-                <input class="form-check-input gene-checkbox" type="checkbox" value="${header}" id="${geneId}">
+                <input class="form-check-input gene-checkbox" type="checkbox" value="${header}" id="${geneId}" ${isChecked ? "checked" : ""}>
                 <label class="form-check-label" for="${geneId}">${header}</label>
             </div>
         `;
         listContainer.appendChild(li);
     });
-    const selectAll = document.getElementById('selectAllGenes');
-    selectAll.checked = true;
-    selectAll.dispatchEvent(new Event('change'));
+
+    selectAll.checked = actuallySelected.length === dataHeaders.length;
+
+    window.sketchOptions.selectedGenes = actuallySelected;
 }
 
 window.generateVis = function () {
@@ -2034,11 +2151,11 @@ window.generateVis = function () {
         // Populate gene selection
         populateGeneDropdown(dataHeaders);
 
-        // Select all genes initially
-        const allGenes = dataHeaders.slice().sort();
-        window.sketchOptions.selectedGenes = allGenes;
+        const selectedGeneIndices = window.sketchOptions.selectedGenes
+        .map(gene => dataHeaders.indexOf(gene))
+        .filter(idx => idx !== -1);
 
-        const selectedGeneIndices = window.sketchOptions.selectedGenes.map(gene => dataHeaders.indexOf(gene));
+        // const selectedGeneIndices = window.sketchOptions.selectedGenes.map(gene => dataHeaders.indexOf(gene));
 
         // let medianExpression = 0;
         // if (window.expressionThresholdFilter !== 'all') {
