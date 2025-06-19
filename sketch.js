@@ -306,27 +306,85 @@ function setupCanvas(width, height, newSpots) {
   drawHexagonGrid(spots);
 }
 
-function showSpotInfo(clickedHex, spots) {
+// function showSpotInfo(clickedHex, spots) {
+//   const popup = document.getElementById("spotInfoPopup");
+//   const barcodeEl = document.getElementById("popupBarcode");
+//   const clusterEl = document.getElementById("popupCluster");
+//   const geneContent = document.getElementById("popupGeneContent");
+
+//   const cluster = clickedHex.cluster || "N/A";
+//   const geneList = clickedHex.values[0].geneList || [];
+
+//   clusterEl.textContent = cluster;
+
+//   const isClickable = window.mode !== "cellComposition";
+
+//   // Build the "Select All" button
+//   const selectAllStyle = isClickable ? 'cursor:pointer;' : 'cursor:default; pointer-events:none;';
+//   const selectAllButton = `<span class="popup-gene-item badge bg-primary text-white m-1 p-1" data-select-all="true" style="${selectAllStyle}">
+//     Select All
+//   </span>`;
+
+//   // Build the gene items
+//   const geneItems = geneList.map(g => {
+//     const baseClass = 'popup-gene-item badge bg-light text-dark m-1 p-1';
+//     const style = isClickable ? 'cursor:pointer;' : 'cursor:default; pointer-events:none;';
+//     return `<span class="${baseClass}" data-gene="${g.gene}" style="${style}">
+//       ${g.gene}
+//     </span>`;
+//   }).join('');
+
+//   // Combine "Select All" and gene items
+//   geneContent.innerHTML = selectAllButton + geneItems;
+
+//   popup.style.display = "block";
+//   // const currentDemo = window.whichDemo;
+
+//   // if (window.lastRenderedDemo !== currentDemo) {
+//   //   window.lastRenderedDemo = currentDemo;
+//   //   renderClusterStackedBarChart(spots);
+//   // }
+//   renderClusterStackedBarChart(spots);
+// }
+
+function showSpotInfo(clickedHex, allSpots) {
   const popup = document.getElementById("spotInfoPopup");
   const barcodeEl = document.getElementById("popupBarcode");
   const clusterEl = document.getElementById("popupCluster");
   const geneContent = document.getElementById("popupGeneContent");
 
   const cluster = clickedHex.cluster || "N/A";
-  const geneList = clickedHex.values[0].geneList || [];
-
   clusterEl.textContent = cluster;
 
   const isClickable = window.mode !== "cellComposition";
 
-  // Build the "Select All" button
+  // Getting all spots in the same cluster
+  const clusterSpots = allSpots.filter(s => s.cluster == cluster);
+
+  // Collecting and aggregate gene expressions
+  const geneMap = {};
+  clusterSpots.forEach(s => {
+    const genes = s.values[0]?.geneList || [];
+    genes.forEach(g => {
+      if (!geneMap[g.gene]) geneMap[g.gene] = { total: 0, count: 0 };
+      geneMap[g.gene].total += g.value;
+      geneMap[g.gene].count += 1;
+    });
+  });
+
+  // Sorting by average expression
+  const topGenes = Object.entries(geneMap)
+    .map(([gene, { total, count }]) => ({ gene, avg: total / count }))
+    .sort((a, b) => b.avg - a.avg)
+    // .slice(0, 20); // Currently showing only top 20
+
+  // Creating UI elements
   const selectAllStyle = isClickable ? 'cursor:pointer;' : 'cursor:default; pointer-events:none;';
   const selectAllButton = `<span class="popup-gene-item badge bg-primary text-white m-1 p-1" data-select-all="true" style="${selectAllStyle}">
     Select All
   </span>`;
 
-  // Build the gene items
-  const geneItems = geneList.map(g => {
+  const geneItems = topGenes.map(g => {
     const baseClass = 'popup-gene-item badge bg-light text-dark m-1 p-1';
     const style = isClickable ? 'cursor:pointer;' : 'cursor:default; pointer-events:none;';
     return `<span class="${baseClass}" data-gene="${g.gene}" style="${style}">
@@ -334,22 +392,16 @@ function showSpotInfo(clickedHex, spots) {
     </span>`;
   }).join('');
 
-  // Combine "Select All" and gene items
   geneContent.innerHTML = selectAllButton + geneItems;
 
   popup.style.display = "block";
-  // const currentDemo = window.whichDemo;
 
-  // if (window.lastRenderedDemo !== currentDemo) {
-  //   window.lastRenderedDemo = currentDemo;
-  //   renderClusterStackedBarChart(spots);
-  // }
-  renderClusterStackedBarChart(spots);
+  renderClusterStackedBarChart(allSpots);
 }
 
 function renderClusterStackedBarChart(spots) {
   const container = document.getElementById("overallCellTypeDistribution");
-  container.innerHTML = ''; // Clear old chart if exists
+  container.innerHTML = '';
 
   const clusterCellMap = {};
   const cellTypesSet = new Set();
@@ -375,14 +427,12 @@ function renderClusterStackedBarChart(spots) {
   const cellTypes = Array.from(cellTypesSet);
 
   const traces = cellTypes.map(cellType => {
-    const yValues = clusters.map(cluster => {
+    const xValues = clusters.map(cluster => {
       const total = Object.values(clusterCellMap[cluster] || {}).reduce((a, b) => a + b, 0);
       const val = (clusterCellMap[cluster][cellType] || 0);
-      // return total > 0 ? (val / total * 100).toFixed(2) : 0;
       return total > 0 ? (val / total).toFixed(3) : 0;
     });
 
-    // Find a color from any matching spot
     let color = "#999999";
     for (let s of spots) {
       const values = s.cellCompositionValues || s.values;
@@ -394,24 +444,25 @@ function renderClusterStackedBarChart(spots) {
     }
 
     return {
-      x: clusters,
-      y: yValues,
+      y: clusters,
+      x: xValues,
       name: cellType,
       type: 'bar',
+      orientation: 'h',
       marker: { color: color },
     };
   });
 
   const layout = {
     barmode: 'stack',
-    xaxis: {
+    yaxis: {
       title: {
         text: 'Cluster',
         font: { size: 14 }
       },
       tickfont: { size: 11 }
     },
-    yaxis: {
+    xaxis: {
       title: {
         text: 'Proportion',
         font: { size: 14 }
@@ -421,19 +472,13 @@ function renderClusterStackedBarChart(spots) {
       tickfont: { size: 11 }
     },
     height: 250,
-    width: 300,
     margin: { t: 30, l: 40, r: 10, b: 40 },
-    legend: {
-      traceorder: "reversed",
-      xanchor: "left",
-      font: { size: 10 },
-      itemwidth: 5,
-      bgcolor: 'rgba(0,0,0,0)'
-    }
+    showlegend: false,
   };
 
   Plotly.newPlot(container, traces, layout, { responsive: true });
 }
+
 
 function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
   const normalize = str => str?.trim().toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/gi, '');
@@ -627,7 +672,19 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
         }
       }
       if (window.showCluster) {
-        const shapeRadius = (spot.radius - 30) * scaleFactor;
+        requiredDemos = ['demo6', 'demo7', 'demo8', 'demo9'];
+        let shapeRadius = 0;
+        if (requiredDemos.includes(window.whichDemo)) {
+          if(window.selectedClusterView === "numbers"){
+            shapeRadius = (spot.radius - 80) * scaleFactor;
+          } else {
+            shapeRadius = (spot.radius - 50) * scaleFactor;
+          }
+        }
+        else {
+          shapeRadius = (spot.radius - 30) * scaleFactor;
+        }
+        // const shapeRadius = (spot.radius - 30) * scaleFactor;
         if (saveFlag) {
           svgElements.push(drawClusterSVG(scaledX, scaledY, shapeRadius, spot, sortedSpotMembership[0].color));
         } else {
@@ -684,7 +741,19 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
         }
       }
       if (window.showCluster) {
-        const shapeRadius = (spot.radius - 30) * scaleFactor;
+        requiredDemos = ['demo6', 'demo7', 'demo8', 'demo9'];
+        let shapeRadius = 0;
+        if (requiredDemos.includes(window.whichDemo)) {
+          if(window.selectedClusterView === "numbers"){
+            shapeRadius = (spot.radius - 80) * scaleFactor;
+          } else {
+            shapeRadius = (spot.radius - 50) * scaleFactor;
+          }
+        }
+        else {
+          shapeRadius = (spot.radius - 30) * scaleFactor;
+        }
+        // const shapeRadius = (spot.radius - 30) * scaleFactor;
         if (saveFlag) {
           svgElements.push(drawClusterSVG(scaledX, scaledY, shapeRadius, spot, spot.values[0].color));
         } else {

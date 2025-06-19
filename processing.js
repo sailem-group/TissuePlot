@@ -190,6 +190,26 @@ document.getElementById('erasePopupGene').addEventListener('click', function () 
   this.style.display = 'none';
 });
 
+// document.querySelectorAll('.expression-threshold-option').forEach(option => {
+//   option.addEventListener('click', e => {
+//     e.preventDefault();
+//     const selected = option.getAttribute('data-threshold');
+
+//     if (window.expressionThresholdFilter === selected) {
+//       return; // No change — don't re-render
+//     }
+
+//     window.expressionThresholdFilter = selected;
+
+//     // updating dropdown button text for clarity
+//     document.getElementById('expressionThresholdBtn').innerText = 
+//       selected === 'all' ? 'Select Level' :
+//       selected === 'high' ? 'High Expression' : 'Low Expression';
+
+//     // Regenerate only if selection changed
+//     generateVis();
+//   });
+// });
 
 const btn = document.getElementById("toggleImageOpacityBtn");
 const icon = document.getElementById("toggleIcon");
@@ -384,6 +404,13 @@ function showOrHideOptions() {
         optionsContainer.style.display = "block";
 
     } else {
+        if (!umapTab.classList.contains("active")) {
+            window.selectedUMAPClusters = [];
+
+            // Uncheck all checkboxes in UMAP cluster dropdown
+            const umapClusterCheckboxes = document.querySelectorAll('#cluster-dropdown-menu input[type="checkbox"]');
+            umapClusterCheckboxes.forEach(cb => cb.checked = false);
+        }
         if (plottingTab.classList.contains("active")) {
             if (window.showDemoButton === "none") {
                 if (window.getComputedStyle(document.getElementById("fileInputSection")).display === "block") {
@@ -524,6 +551,7 @@ window.showEmojiView = false;
 window.showCellEmojiView = false;
 window.showCluster = false;
 window.lastRenderedDemo = null;
+window.expressionThresholdFilter = 'all'; // 'all' | 'high' | 'low'
 
 let currentEmbedding = null
 let currentClusters = []
@@ -773,7 +801,7 @@ async function showDemo(demoValue = 'demo5', options = {}) {
         genesFile = './exampleData/p7/TopExpressedGenes_SP7.csv';
     } else if (demoValue === 'demo5') {
         positionsFile = './exampleData/p8/SpotPositions_SP8_matched.csv';
-        valuesFile = './exampleData/p8/SpotClusterMembership_SP8.csv';
+        valuesFile = './exampleData/p8/SpotClusterMembership_SP8_withUMAP.csv';
         genesFile = './exampleData/p8/TopExpressedGenes_SP8.csv';
     } else if (demoValue === 'demo6') {
         positionsFile = './exampleData/p1/SpotPositions_SP1.csv';
@@ -1369,6 +1397,7 @@ function showAllLevelsChanged(e) {
             document.getElementById("infoBox").innerHTML = '';
             document.getElementById("gene-specific").classList.add("hidden");
             document.getElementById("composition-specific").classList.remove("hidden");
+            document.getElementById("colorScaleDropdownBtn").classList.remove("disabled");
             document.getElementById("showComposition").checked = true;
             document.getElementById("showGenes").checked = false;
             document.getElementById("showEmojiView").checked = false;
@@ -1392,6 +1421,7 @@ function showCellEmojiViewChanged(e) {
             document.getElementById("infoBox").innerHTML = '';
             document.getElementById("gene-specific").classList.add("hidden");
             document.getElementById("composition-specific").classList.remove("hidden");
+            document.getElementById("colorScaleDropdownBtn").classList.remove("disabled");
             document.getElementById("showComposition").checked = true;
             document.getElementById("showGenes").checked = false;
             document.getElementById("showEmojiView").checked = false;
@@ -2010,6 +2040,16 @@ window.generateVis = function () {
 
         const selectedGeneIndices = window.sketchOptions.selectedGenes.map(gene => dataHeaders.indexOf(gene));
 
+        // let medianExpression = 0;
+        // if (window.expressionThresholdFilter !== 'all') {
+        //     const valuesForMedian = genesData.slice(1).map(row => {
+        //         const vals = selectedGeneIndices.map(idx => parseFloat(row[idx]) || 0);
+        //         return vals.reduce((a, b) => a + b, 0) / vals.length;
+        //     });
+        //     const sorted = [...valuesForMedian].sort((a, b) => a - b);
+        //     medianExpression = sorted[Math.floor(sorted.length / 2)];
+        // }
+
         for (let i = 1; i < positionsData.length - 1; i++) {
             const spotCoords = positionsData[i];
             const colorMap = getColorScaleArray(window.selectedGeneColorScale);
@@ -2017,6 +2057,13 @@ window.generateVis = function () {
 
             const expressionValues = selectedGeneIndices.map(idx => parseFloat(geneRow[idx]) || 0);
             const avgExpression = expressionValues.reduce((a, b) => a + b, 0) / expressionValues.length;
+
+            // if (window.expressionThresholdFilter === 'high' && avgExpression < medianExpression) {
+            //     continue;
+            // }
+            // if (window.expressionThresholdFilter === 'low' && avgExpression >= medianExpression) {
+            //     continue;
+            // }
 
             const colorIndex = Math.min(Math.floor(avgExpression), colorMap.length - 1);
             const baseColor = colorMap[colorIndex];

@@ -177,15 +177,15 @@
                 Select Demo
               </button>
               <ul class="dropdown-menu" aria-labelledby="demoDropdown">
-                <li><a class="dropdown-item" href="#" id="demo5">HGSOC GSM6506117</a></li>
-                <li><a class="dropdown-item" href="#" id="demo1">Mouse Brain Data</a></li>
-                <li><a class="dropdown-item" href="#" id="demo2">HGSOC GSM6506114</a></li>
-                <li><a class="dropdown-item" href="#" id="demo3">HGSOC GSM6506115</a></li>
-                <li><a class="dropdown-item" href="#" id="demo4">HGSOC GSM6506116</a></li>
-                <li><a class="dropdown-item" href="#" id="demo6">HGSOC GSM6506110</a></li>
-                <li><a class="dropdown-item" href="#" id="demo7">HGSOC GSM6506111</a></li>
-                <li><a class="dropdown-item" href="#" id="demo8">HGSOC GSM6506112</a></li>
-                <li><a class="dropdown-item" href="#" id="demo9">HGSOC GSM6506113</a></li>
+                <li><a class="dropdown-item" href="#" id="demo5">HGSOC-1 GSM6506117</a></li>
+                <li><a class="dropdown-item" href="#" id="demo1">Mouse Brain Data-2</a></li>
+                <li><a class="dropdown-item" href="#" id="demo2">HGSOC-3 GSM6506114</a></li>
+                <li><a class="dropdown-item" href="#" id="demo3">HGSOC-4 GSM6506115</a></li>
+                <li><a class="dropdown-item" href="#" id="demo4">HGSOC-5 GSM6506116</a></li>
+                <li><a class="dropdown-item" href="#" id="demo6">HGSOC-6 GSM6506110</a></li>
+                <li><a class="dropdown-item" href="#" id="demo7">HGSOC-7 GSM6506111</a></li>
+                <li><a class="dropdown-item" href="#" id="demo8">HGSOC-8 GSM6506112</a></li>
+                <li><a class="dropdown-item" href="#" id="demo9">HGSOC-9 GSM6506113</a></li>
               </ul>
             </div>
           </div>
@@ -412,6 +412,29 @@
           <div class="mb-1 d-flex justify-content-start align-items-start">
             <input class="form-check-input" type="radio" name="showGenes" id="showGenes">
             <label for="showGenes" class="form-label mx-2">Gene View</label>
+
+            <!-- <div class="dropdown ms-2" id="expressionThresholdWrapper">
+              <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="expressionThresholdBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                Select Level
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="expressionThresholdBtn">
+                <li><a class="dropdown-item expression-threshold-option" data-threshold="all" href="#">All</a></li>
+                <li><a class="dropdown-item expression-threshold-option" data-threshold="high" href="#">High Expression</a></li>
+                <li><a class="dropdown-item expression-threshold-option" data-threshold="low" href="#">Low Expression</a></li>
+              </ul>
+            </div> -->
+            <div class="dropdown " id="expressionThresholdWrapper" style="position: relative; margin-left: 30px; max-width: 200px; display: none;">
+              <button class="form-select form-select-sm" type="button" id="expressionThresholdBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                Select Level
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="expressionThresholdBtn">
+                <li><a class="dropdown-item expression-threshold-option" data-threshold="all" href="#">All</a></li>
+                <li><a class="dropdown-item expression-threshold-option" data-threshold="high" href="#">High Expression</a></li>
+                <li><a class="dropdown-item expression-threshold-option" data-threshold="low" href="#">Low Expression</a></li>
+              </ul>
+            </div>
+
+
           </div>
 
           <div class="ms-4 mb-3 d-flex justify-content-start align-items-start">
