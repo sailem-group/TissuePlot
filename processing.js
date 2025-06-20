@@ -801,7 +801,7 @@ async function showDemo(demoValue = 'demo5', options = {}) {
         genesFile = './exampleData/p7/TopExpressedGenes_SP7.csv';
     } else if (demoValue === 'demo5') {
         positionsFile = './exampleData/p8/SpotPositions_SP8_matched.csv';
-        valuesFile = './exampleData/p8/SpotClusterMembership_SP8_withUMAP.csv';
+        valuesFile = './exampleData/p8/SpotClusterMembership_SP8.csv';
         genesFile = './exampleData/p8/TopExpressedGenes_SP8.csv';
     } else if (demoValue === 'demo6') {
         positionsFile = './exampleData/p1/SpotPositions_SP1.csv';
