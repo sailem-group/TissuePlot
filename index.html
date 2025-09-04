@@ -4,110 +4,41 @@
 
 <head>
   <meta charset="utf-8" />
+
+  <!-- Favicon-->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>TissuePlot</title>
 
   <link rel="stylesheet" type="text/css" href="style.css">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
   <script src="libraries/p5.min.js"></script>
   <script src="libraries/p5.sound.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opentype.js@latest/dist/opentype.js"></script>
-
   <script src="libraries/svgpath.min.js"></script>
-
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
     integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous">
   </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
     integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous">
-  </script>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
-    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  </script> -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous">
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
     integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous">
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"
+  </script> -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"
     integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous">
-  </script>
+  </script> -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 
-  <style>
-    .main-container {
-      width: 100%;
-      display: flex;
-    }
-
-    #canvasContainer {
-      flex: 1;
-      height: 100%;
-    }
-
-    .legendColor {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border: 1px solid black;
-    }
-
-    .upload-file-hint {
-      color: gray;
-      font-style: italic;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .colorPaletteDropdown {
-      width: 40px;
-      height: 40px;
-      text-align: center;
-      line-height: 1;
-      border: 1px solid #ced4da; /* same as form-select */
-      background-color: #fff;
-      border-radius: 0.25rem;
-    }
-
-    .spotColorPaletteDropdown {
-      width: 32px;
-      height: 31px;
-      text-align: center;
-      line-height: 0.5;
-      border: 1px solid #ced4da; /* same as form-select */
-      background-color: #fff;
-      border-radius: 0.25rem;
-    }
-
-    #geneDropdown {
-      width: 40px;
-      height: 40px;
-      text-align: center;
-      line-height: 1;
-      border: 1px solid #ced4da; /* same as form-select */
-      background-color: #fff;
-      border-radius: 0.25rem;
-    }
-
-    #selectGenes {
-      max-height: 300px;
-      overflow-y: auto;
-    }
-
-    .popup-gene-label.popup-gene-selected {
-      text-decoration: underline;
-      font-weight: 600;
-      text-underline-offset: 2px;
-    }
-  </style>
 </head>
 
 <body>
@@ -115,23 +46,72 @@
     <div class="main-container row">
 
       <div id="canvasContainer" class="col-md-9"></div>
+      <!-- <div class="col-md-9 mt-2" style="max-height: 100vh; overflow-y: auto;">
+        <div id="singleCanvasAccordion">
+          <div id="canvasContainer" class="col-md-9"></div>
+        </div>
+      </div> -->
 
-      <div id="spotInfoPopup" style="display:none; position: fixed; top: 20px; left: 20px; z-index: 9999; width: 320px; max-height: 785px; overflow-y: auto; background: white; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); padding: 16px;">
+      <div id="spotInfoPopup"
+        style="display:none; position: fixed; top: 20px; left: 20px; right: 20px; z-index: 9999; max-width: 325px; max-height: 785px; overflow-x: hidden; overflow-y: auto; background: white; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); padding: 16px;">
         <div style="display: flex; justify-content: space-between;">
-          <h5> Spot Information </h5>
-            <button id="closeSpotPopup" style="position: absolute; top: 8px; right: 8px; border: none; background: transparent; font-size: 22px; cursor: pointer;"><i class="bi bi-x"></i></button>
+          <button id="closeSpotPopup"
+            style="position: absolute; top: 8px; right: 8px; border: none; background: transparent; font-size: 22px; cursor: pointer;"><i
+              class="bi bi-x"></i></button>
         </div>
-        <div id="spotInfoHeader" style="margin-top: 10px;">
-          <div><strong>Distribution of Cell type:</strong></div>
-          <div id="barChart" style="height: 200px; margin-top: 10px; margin-bottom: 10px;"></div>
+
+        <ul class="nav nav-tabs mt-2" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="local-tab" data-bs-toggle="tab" data-bs-target="#localTab" type="button"
+              role="tab">Spot Information</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="global-tab" data-bs-toggle="tab" data-bs-target="#globalTab" type="button"
+              role="tab">Global</button>
+          </li>
+        </ul>
+
+        <div class="tab-content mt-3">
+          <div class="tab-pane fade show active" id="localTab" role="tabpanel">
+            <div id="spotInfoHeader">
+              <div><strong>Distribution of Cell type:</strong></div>
+              <div id="barChart" style="height: 200px; margin-top: 10px; margin-bottom: 10px; width: 310px;"></div>
+            </div>
+
+            <div style="margin-top: 10px;"><strong>Cluster <span id="popupCluster"></span>-associated Genes:</strong>
+            </div>
+            <div id="popupGeneContent"
+              style="max-height: 130px; overflow-y: auto; padding-right: 4px; white-space: pre-wrap; margin-top: 5px;">
+            </div>
+            <button id="erasePopupGene" class="btn btn-sm btn-outline-danger mt-2"
+              style="display: none; margin-bottom: 2px;"><i class="bi bi-eraser"></i>Erase</button>
+          </div>
+
+          <div class="tab-pane fade" id="globalTab" role="tabpanel">
+            <div style="display: flex; gap: 5px; max-width: 325px;">
+              <div id="stackCellTypeInfo">
+                <div><strong>Distribution of Cell Type:</strong></div>
+                <div id="pieChart" style="width: 120px; height: 120px;"></div>
+              </div>
+              <div id="stackClusterInfo">
+                <div><strong>Distribution of <span id="SelectedClusterType"></span>:</strong></div>
+                <div id="clusterPieChart" style="width: 120px; height: 120px;"></div>
+              </div>
+            </div>
+            <div id="stackGeneClusterInfo" style="margin-top: 20px; display: none;">
+              <div><strong>Gene Expression per Cluster:</strong></div>
+              <div id="geneClusterBarChart" style="width: 300px; height: 200px;"></div>
+            </div>
+            <div id="stackGeneCellInfo" style="margin-top: 20px; display: none;">
+              <div><strong>Gene Expression per Cell type:</strong></div>
+              <div id="geneCellTypeBarChart" style="width: 300px; height: 200px;"></div>
+            </div>
+            <div id="stackSpotInfo" style="margin-top: 20px;">
+              <div><strong>Cell Type Composition per Cluster:</strong></div>
+              <div id="overallCellTypeDistribution" style="height: 250px; width: 310px;"></div>
+            </div>
+          </div>
         </div>
-        <div id="stackSpotInfo" style="margin-top: 10px;">
-          <div><strong>Cell Type Composition per Cluster:</strong></div>
-          <div id="overallCellTypeDistribution" style="height: 250px;"></div>
-        </div>
-        <div style="margin-top: 10px;"><strong>Cluster <span id="popupCluster"></span>-associated Genes:</strong></div>
-        <div id="popupGeneContent" style="max-height: 120px; overflow-y: auto; padding-right: 4px; white-space: pre-wrap; margin-top: 5px;"></div>
-        <button id="erasePopupGene" class="btn btn-sm btn-outline-danger mt-2" style="display: none; margin-bottom: 2px;"><i class="bi bi-eraser"></i>Erase</button>
       </div>
 
       <div class="controls col-md-3"
@@ -176,9 +156,6 @@
 
         <div class="tab-content py-3" id="nav-tabContent">
           <div class="tab-pane fade show active" id="demo-pane" role="tabpanel" aria-labelledby="demoTab" tabindex="0">
-            <!-- <button id="showDemoButton" class="btn btn-primary btn-lg my-2">
-              Show Demo
-            </button> -->
             <div class="dropdown my-2">
               <button class="btn btn-primary btn-lg dropdown-toggle" type="button" id="demoDropdown"
                 data-bs-toggle="dropdown" aria-expanded="false">
@@ -199,58 +176,107 @@
           </div>
 
           <div class="tab-pane fade" id="plotting-pane" role="tabpanel" aria-labelledby="plottingTab" tabindex="0">
+            <div id="selectUploadMethod" class="mb-3">
+              <label class="form-label">Choose Upload Method</label>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="uploadOption" id="uploadIndividualOption" checked>
+                <label class="form-check-label" for="uploadIndividualOption">
+                  Upload Files Individually
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="uploadOption" id="uploadFolderOption">
+                <label class="form-check-label" for="uploadFolderOption">
+                  Upload Folder <i class="fas fa-info-circle tooltip-icon ms-1" data-bs-toggle="tooltip" data-bs-html="true" title="To upload multiple examples, please create a folder named 'multipleExamples'. Inside it, add subfolders like 'exp1', 'exp2', and so on (up to 'exp5'). Each subfolder should contain one complete set of files for that example. 
+                  <br> Use the following file names exactly:
+                  - SpotPositions.csv (positions file)
+                  - SpotClusterMembership.csv (values file)
+                  - TopExpressedGenes.csv (genes file)
+                  - tissue_image.png (image file)
+                  - SpotUMAP.csv (UMAP file)" style="z-index: 99;"></i>
+                </label>
+              </div>
+            </div>
 
+            <!-- Folder Upload Section -->
+            <div id="folderUploadSection" class="mb-4" style="display: none;">
+              <label for="folderInput" class="form-label">Upload Folder</label>
+              <input type="file" class="form-control" id="folderInput" webkitdirectory directory multiple>
+              <small class="form-text text-muted">Expected files inside: SpotPositions.csv, SpotClusterMembership.csv, TopExpressedGenes.csv, tissue_image.png, SpotUMAP.csv, and optional SVGs</small>
+            </div>
+
+            <!-- Individual File Upload Section -->
             <div id="fileInputSection">
-              <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
-                <label for="positions" class="form-label">Upload Positions File <span class="text-danger">*</span> <sub
-                    class="upload-file-hint">(.CSV
-                    only)</sub></label>
+              <div class="mb-3">
+                <label for="positions" class="form-label">Upload Positions File <span class="text-danger">*</span> <sub>(.CSV only)</sub></label>
                 <input type="file" class="form-control" id="positions" accept=".csv" />
               </div>
 
-              <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
-                <label for="values" class="form-label">Upload Cell Proportions <span class="text-danger">*</span> <sub
-                    class="upload-file-hint">(.CSV
-                    only)</sub></label>
+              <div class="mb-3">
+                <label for="values" class="form-label">Upload Cell Proportions <span class="text-danger">*</span> <sub>(.CSV only)</sub></label>
                 <input type="file" class="form-control" id="values" accept=".csv" />
               </div>
 
-              <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
-                <label for="genesUpload" class="form-label">Upload Genes File <sub class="upload-file-hint">(.CSV
-                    only)</sub></label>
+              <div class="mb-3">
+                <label for="genesUpload" class="form-label">Upload Genes File <sub>(.CSV only)</sub></label>
                 <input type="file" class="form-control" id="genesUpload" accept=".csv" />
               </div>
 
-              <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
-                <label for="image" class="form-label">Upload Image <sub class="upload-file-hint">(.png
-                  only)</sub></label>
+              <div class="mb-3">
+                <label for="image" class="form-label">Upload Image <sub>(.png only)</sub></label>
                 <input type="file" class="form-control" id="image" accept="image/*" />
               </div>
 
-              <div class="mb-3 d-flex flex-column justify-content-start align-items-start">
-                <label for="umapUpload" class="form-label">Upload UMAP file <sub class="upload-file-hint">(.CSV
-                  only)</sub></label>
+              <div class="mb-3">
+                <label for="umapUpload" class="form-label">Upload UMAP file <sub>(.CSV only)</sub></label>
                 <input type="file" class="form-control" id="umapUpload" accept=".csv" />
               </div>
 
-              <div class="mb-2 d-flex flex-column justify-content-start align-items-start">
-                <label for="cellTypeUpload" class="form-label">Upload Cell Type Images <sub class="upload-file-hint">(.svg only)</sub> 
-                  <i class="fas fa-info-circle tooltip-icon ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="To enable Cell Type Emoji upload, please make sure both the Cell Proportion and Gene files are uploaded. Upload individual SVG files exact matching the cell type names. Max 1 per type." style="z-index: 99;"></i>
+              <div class="mb-2">
+                <label for="cellTypeUpload" class="form-label">
+                  Upload Cell Type Images <sub>(.svg only)</sub>
+                  <i class="fas fa-info-circle tooltip-icon ms-1" data-bs-toggle="tooltip" title="To enable Cell Type Emoji upload, make sure both the Cell Proportion and Gene files are uploaded. Match SVG names to cell types." style="z-index: 99;"></i>
                 </label>
-                <input id="input-2" name="input2[]" type="file" class="form-control" data-show-upload="true" data-show-caption="true" accept=".svg" disabled="true" multiple="multiple">
+                <input id="input-2" name="input2[]" type="file" class="form-control" accept=".svg" multiple disabled>
                 <p id="svg-file-list" class="mt-2 small text-muted"></p>
               </div>
-
-              <button id="plotbutton" class="btn btn-primary btn-lg mb-2" disabled="true">
-                Generate
-              </button>
             </div>
 
-            <button id="uploadNewFilesButton" class="btn btn-primary btn-lg my-2" style="display: none;">
+            <button id="plotbutton" class="btn btn-primary btn-lg mb-2" disabled>
+              Generate
+            </button>
+
+            <!-- <button id="uploadNewFilesButton" class="btn btn-primary btn-lg my-2" style="display: none;">
               Upload New Files
             </button>
 
+            <div id="displayExampleDropdown" class="dropdown my-2" style="display: none;">
+              <button class="btn btn-primary btn-lg dropdown-toggle" type="button" id="exampleDropdown"
+                data-bs-toggle="dropdown" aria-expanded="false">
+                Select Example
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="exampleDropdown">
+                
+              </ul>
+            </div> -->
+            <div class="d-flex align-items-center gap-2 my-2" id="exampleControls">
+              <div id="displayExampleDropdown" class="dropdown" style="display: none;">
+                <button class="btn btn-primary btn-lg dropdown-toggle" type="button" id="exampleDropdown"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+                  Select Example
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="exampleDropdown">
+                  <!-- Populated dynamically -->
+                </ul>
+              </div>
+
+              <button id="uploadNewFilesButton" class="btn btn-primary btn-lg" style="display: none;">
+                Upload New Files
+              </button>
+            </div>
+            
           </div>
+
 
           <div class="tab-pane fade" id="umap-pane" role="tabpanel" aria-labelledby="umapTab" tabindex="0">
             <div class="card mt-3">
@@ -259,20 +285,6 @@
               </div>
               <div class="card-body" style="padding: 1rem 0rem 0rem 0rem;">
                 <div id="umap-plot"></div>
-                <div class="dropdown col-md-3" id="clusterDropdownContainer" style="padding-bottom: 15px; padding-left: 15px; display: none;">
-                  <button class="btn btn-primary dropdown-toggle d-inline-flex align-items-center" type="button"
-                          id="clusterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    Select cluster to highlight
-                  </button>
-
-                  <i class="fas fa-info-circle tooltip-icon ms-2"
-                    data-bs-toggle="tooltip" data-bs-placement="top"
-                    title="You can only select up to 5 clusters at a time."
-                    style="position: absolute; top: 40%; transform: translateY(-50%); left: calc(100% + 145px); z-index: 99; cursor: pointer;"></i>
-
-                  <ul class="dropdown-menu" aria-labelledby="clusterDropdown" id="cluster-dropdown-menu"
-                    style="max-height: 150px; overflow-y: auto;"></ul>
-                </div>
               </div>
             </div>
           </div>
@@ -285,73 +297,81 @@
             <input type="checkbox" class="form-check-input" id="showImage" />
             <label for="showImage" class="form-label mx-2">Tissue Image</label>
           </div>
-          
+
           <div id="imageOpacityContainer" class="ms-4 mb-3" style="max-width: 300px; display: none;">
             <!-- Toggle Button -->
             <button id="toggleImageOpacityBtn" class="btn btn-outline-primary mb-2" type="button">
               <span id="toggleIcon">+</span> Image Alignment
-            </button>            
-          
+            </button>
+
             <!-- Collapsible Content -->
             <div id="imageOpacityCont" class="collapse">
-          
+
               <div class="d-flex flex-column gap-3 mt-2">
                 <div class="d-flex align-items-center">
                   <label for="stretchX" class="form-label mb-0 text-nowrap" style="width: 90px;">Stretch X:</label>
-                  <input type="range" class="form-range flex-grow-1 mx-2" id="stretchX" min="1.0" max="5" step="0.01" value="1.24">
+                  <input type="range" class="form-range flex-grow-1 mx-2" id="stretchX" min="1.0" max="5" step="0.01"
+                    value="1.24">
                   <span id="stretchXValue" style="width: 40px; text-align: right;">1.26</span>
                 </div>
-              
+
                 <div class="d-flex align-items-center">
                   <label for="stretchY" class="form-label mb-0 text-nowrap" style="width: 90px;">Stretch Y:</label>
-                  <input type="range" class="form-range flex-grow-1 mx-2" id="stretchY" min="1.0" max="5" step="0.01" value="1.33">
+                  <input type="range" class="form-range flex-grow-1 mx-2" id="stretchY" min="1.0" max="5" step="0.01"
+                    value="1.33">
                   <span id="stretchYValue" style="width: 40px; text-align: right;">1.27</span>
                 </div>
-              
+
                 <div class="d-flex align-items-center">
                   <label for="offsetX" class="form-label mb-0 text-nowrap" style="width: 90px;">Offset X:</label>
-                  <input type="range" class="form-range flex-grow-1 mx-2" id="offsetX" min="-2000" max="2000" step="1" value="-61">
+                  <input type="range" class="form-range flex-grow-1 mx-2" id="offsetX" min="-2000" max="2000" step="1"
+                    value="-61">
                   <span id="offsetXValue" style="width: 40px; text-align: right;">-37</span>
                 </div>
-              
+
                 <div class="d-flex align-items-center">
                   <label for="offsetY" class="form-label mb-0 text-nowrap" style="width: 90px;">Offset Y:</label>
-                  <input type="range" class="form-range flex-grow-1 mx-2" id="offsetY" min="-2000" max="2000" step="1" value="-188">
+                  <input type="range" class="form-range flex-grow-1 mx-2" id="offsetY" min="-2000" max="2000" step="1"
+                    value="-188">
                   <span id="offsetYValue" style="width: 40px; text-align: right;">-168</span>
                 </div>
-              
+
               </div>
-              
+
             </div>
             <div class="d-flex align-items-center mt-3">
               <label for="imageOpacity" class="form-label mb-0 text-nowrap" style="width: 90px;">Opacity:</label>
-              <input type="range" class="form-range flex-grow-1 mx-2" id="imageOpacity" min="1" max="100" step="1" value="100">
+              <input type="range" class="form-range flex-grow-1 mx-2" id="imageOpacity" min="1" max="100" step="1"
+                value="100">
               <span id="opacityValue" style="width: 40px; text-align: right;">100</span>
             </div>
-          </div>          
-          
+          </div>
+
           <div class="mb-3 d-flex flex-column">
             <div class="d-flex align-items-center gap-4 mb-2">
               <div class="d-flex align-items-center gap-2">
                 <input type="checkbox" class="form-check-input" id="showCluster" />
                 <label for="showCluster" class="form-label mb-0">Cluster View</label>
               </div>
-              
+
               <div class="dropdown" id="clusterDropdownWrapper" style="position: relative; width: 145px;">
-                <button class="form-select form-select-sm" type="button" id="customClusterDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" style="width: 100%;">
+                <button class="form-select form-select-sm" type="button" id="customClusterDropdownBtn"
+                  data-bs-toggle="dropdown" aria-expanded="false" style="width: 100%;">
                   Select Cluster
                 </button>
-                <div class="dropdown-menu p-2" id="customClusterDropdownMenu" style="max-height: 200px; overflow-y: auto; width: 145px;">
+                <div class="dropdown-menu p-2" id="customClusterDropdownMenu"
+                  style="max-height: 200px; overflow-y: auto; width: 145px;">
                   <!-- Items dynamically injected here  -->
                 </div>
               </div>
               <div class="dropdown" style="margin-left: -15px;">
-                  <button class="p-1 spotColorPaletteDropdown" type="button" id="clusterFeatureDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Select Cluster Feature">
-                    <i class="fa-solid fa-bars"></i>
-                  </button> 
-                  <ul class="dropdown-menu" aria-labelledby="clusterFeatureDropdown">
-                    <!-- Items dynamically injected here  -->
-                  </ul>
+                <button class="p-1 spotColorPaletteDropdown" type="button" id="clusterFeatureDropdown"
+                  data-bs-toggle="dropdown" aria-expanded="false" title="Select Cluster Feature">
+                  <i class="fa-solid fa-bars"></i>
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="clusterFeatureDropdown">
+                  <!-- Items dynamically injected here  -->
+                </ul>
               </div>
             </div>
 
@@ -368,29 +388,37 @@
           </div>
 
           <div class="mb-1 d-flex justify-content-start align-items-start">
-            <input class="form-check-input" type="radio" name="showComposition" id="showComposition" checked>
+            <input class="form-check-input" type="checkbox" name="showComposition" id="showComposition" checked>
             <label for="showComposition" class="form-label mx-2">Cell Type View</label>
 
             <div class="dropdown" id="cellTypeDropdownWrapper" style="position: relative;">
-                <button class="form-select form-select-sm" type="button" id="customCellTypeDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                  Select Cell type
-                </button>
-                <div class="dropdown-menu p-2" id="customCellTypeDropdownMenu" style="max-height: 200px; overflow-y: auto;">
-                  
-                </div>
+              <button class="form-select form-select-sm" type="button" id="customCellTypeDropdownBtn"
+                data-bs-toggle="dropdown" aria-expanded="false">
+                Select Cell type
+              </button>
+              <div class="dropdown-menu p-2" id="customCellTypeDropdownMenu"
+                style="max-height: 200px; overflow-y: auto;">
+
+              </div>
             </div>
 
             <div class="dropdown ms-2">
-              <button class="p-2 spotColorPaletteDropdown" type="button" id="colorScaleDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Select Color Scale">
+              <button class="p-2 spotColorPaletteDropdown" type="button" id="colorScaleDropdownBtn"
+                data-bs-toggle="dropdown" aria-expanded="false" title="Select Color Scale">
                 <i class="fas fa-palette text-muted"></i>
               </button>
               <ul class="dropdown-menu" aria-labelledby="colorScaleDropdownBtn">
                 <li><a class="dropdown-item color-scale-option" data-scale="ColorScale1" href="#">Color Map 1</a></li>
-                <li><a class="dropdown-item color-scale-option" data-scale="ColorScale2" href="#">Color Map 2 (Vision friendly)</a></li>
-                <li><a class="dropdown-item color-scale-option" data-scale="ColorScale3" href="#">Color Map 3 (Vision friendly)</a></li>
-                <li><a class="dropdown-item color-scale-option" data-scale="ColorScale4" href="#">Color Map 4 (Vision friendly)</a></li>
-                <li><a class="dropdown-item color-scale-option" data-scale="ColorScale5" href="#">Color Map 5 (Vision friendly)</a></li>
-                <li><a class="dropdown-item color-scale-option" data-scale="ColorScale6" href="#">Color Map 6 (Vision friendly)</a></li>
+                <li><a class="dropdown-item color-scale-option" data-scale="ColorScale2" href="#">Color Map 2 (Vision
+                    friendly)</a></li>
+                <li><a class="dropdown-item color-scale-option" data-scale="ColorScale3" href="#">Color Map 3 (Vision
+                    friendly)</a></li>
+                <li><a class="dropdown-item color-scale-option" data-scale="ColorScale4" href="#">Color Map 4 (Vision
+                    friendly)</a></li>
+                <li><a class="dropdown-item color-scale-option" data-scale="ColorScale5" href="#">Color Map 5 (Vision
+                    friendly)</a></li>
+                <li><a class="dropdown-item color-scale-option" data-scale="ColorScale6" href="#">Color Map 6 (Vision
+                    friendly)</a></li>
               </ul>
             </div>
 
@@ -398,7 +426,8 @@
 
           <div class="ms-4 mb-3 d-flex justify-content-start align-items-start gap-3">
             <div class="form-check">
-              <input class="form-check-input" type="radio" name="cellPropView" id="showCellEmojiView" value="showCellEmojiView">
+              <input class="form-check-input" type="radio" name="cellPropView" id="showCellEmojiView"
+                value="showCellEmojiView">
               <label class="form-check-label" for="showCellEmojiView">Add emoji</label>
             </div>
             <div class="form-check">
@@ -408,26 +437,28 @@
           </div>
 
           <div class="mb-1 d-flex justify-content-start align-items-start">
-            <input class="form-check-input" type="radio" name="showGenes" id="showGenes">
+            <input class="form-check-input" type="checkbox" name="showGenes" id="showGenes">
             <label for="showGenes" class="form-label mx-2">Gene View</label>
 
-            <div class="dropdown " id="expressionThresholdWrapper" style="position: relative; margin-left: 30px; max-width: 200px; display: none;">
-              <button class="form-select form-select-sm" type="button" id="expressionThresholdBtn" data-bs-toggle="dropdown" aria-expanded="false">
+            <div class="dropdown " id="expressionThresholdWrapper"
+              style="position: relative; margin-left: 30px; max-width: 200px;">
+              <button class="form-select form-select-sm" type="button" id="expressionThresholdBtn"
+                data-bs-toggle="dropdown" aria-expanded="false">
                 Select Level
               </button>
               <ul class="dropdown-menu" aria-labelledby="expressionThresholdBtn">
                 <li><a class="dropdown-item expression-threshold-option" data-threshold="all" href="#">All</a></li>
-                <li><a class="dropdown-item expression-threshold-option" data-threshold="high" href="#">High Expression</a></li>
-                <li><a class="dropdown-item expression-threshold-option" data-threshold="low" href="#">Low Expression</a></li>
+                <li><a class="dropdown-item expression-threshold-option" data-threshold="high" href="#">High
+                    Expression</a></li>
+                <li><a class="dropdown-item expression-threshold-option" data-threshold="low" href="#">Low
+                    Expression</a></li>
               </ul>
             </div>
-
-
           </div>
 
           <div class="ms-4 mb-3 d-flex justify-content-start align-items-start gap-3">
             <div class="form-check">
-              <input type="radio" class="form-check-input" id="showEmojiView" />
+              <input type="checkbox" class="form-check-input" id="showEmojiView" />
               <label for="showEmojiView" class="form-label">Add emoji</label>
             </div>
           </div>
@@ -441,7 +472,12 @@
                 <h5 class="card-title"></h5>
                 <p class="card-text h6"></p>
               </div>
-              <div id="clusterLegendContainer" style="padding: 10px;"></div>
+
+              <div id="clusterLegendContainer" style="padding: 5px 10px 0px 10px;"></div>
+
+              <div id="clusterTypeInfo" class="card-body" style="margin-top: -10px;">
+                <p class="card-text h6"></p>
+              </div>
             </div>
 
           </div>
@@ -449,23 +485,28 @@
           <div id="gene-specific" class="hidden">
             <div class="mb-3 d-flex flex-column align-items-start">
               <label for="selectGenes" class="form-label">Select Tagret Gene
-                <i class="fas fa-info-circle tooltip-icon ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="By default, all genes are selected and their expression values are averaged and displayed. To customize the view, you can select specific genes but at least one gene must be selected." style="z-index: 99;"></i>
+                <i class="fas fa-info-circle tooltip-icon ms-1" data-bs-toggle="tooltip" data-bs-placement="top"
+                  title="By default, all genes are selected and their expression values are averaged and displayed. To customize the view, you can select specific genes but at least one gene must be selected."
+                  style="z-index: 99;"></i>
               </label>
-              
+
               <!-- Dropdown and button side-by-side -->
               <div class="d-flex align-items-center gap-2 w-100">
                 <div class="dropdown w-100">
-                  <button class="dropdown-toggle w-100 d-flex justify-content-between align-items-center p-2" type="button" id="geneDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                  <button class="dropdown-toggle w-100 d-flex justify-content-between align-items-center p-2"
+                    type="button" id="geneDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     Select Genes
                   </button>
-                  <div class="dropdown-menu w-100 p-2" aria-labelledby="geneDropdown" style="max-height: 300px; overflow-y: auto;">
-                    
+                  <div class="dropdown-menu w-100 p-2" aria-labelledby="geneDropdown"
+                    style="max-height: 300px; overflow-y: auto;">
+
                     <!-- Search box with icon -->
                     <div class="input-group mb-2">
                       <span class="input-group-text" id="search-icon">
                         <i class="bi bi-search"></i>
                       </span>
-                      <input type="text" id="geneSearchInput" class="form-control" placeholder="Search genes..." aria-label="Search genes" aria-describedby="search-icon">
+                      <input type="text" id="geneSearchInput" class="form-control" placeholder="Search genes..."
+                        aria-label="Search genes" aria-describedby="search-icon">
                     </div>
                     <!-- Select All -->
                     <div class="form-check mb-2">
@@ -478,13 +519,40 @@
                     </div>
                   </div>
                 </div>
-          
+
                 <!-- Color palette button with dropdown -->
                 <div class="dropdown">
-                  <button class="p-2 colorPaletteDropdown" type="button" id="colorPaletteDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Select Color Scale">
+                  <button class="p-2 colorPaletteDropdown" type="button" id="colorPaletteDropdown"
+                    data-bs-toggle="dropdown" aria-expanded="false" title="Select Color Scale">
                     <i class="fas fa-palette text-muted"></i>
                   </button>
                   <ul class="dropdown-menu" aria-labelledby="colorPaletteDropdown">
+                    <!-- Intensity Control -->
+                    <li class="px-3 py-2">
+                      <div class="d-flex flex-column">
+                        <label class="form-label mb-1" for="colorIntensitySlider"
+                          style="white-space: nowrap;">Intensity:</label>
+                        <div class="d-flex align-items-center gap-2">
+                          <input type="range" class="form-range flex-grow-1" id="colorIntensitySlider" min="0.5" max="2"
+                            step="0.1" value="1" style="max-width: 130px; height: 1.25rem;">
+                          <small id="intensityValue" class="text-muted"
+                            style="min-width: 30px; font-size: 0.85rem;">1.0</small>
+                        </div>
+                      </div>
+                    </li>
+
+                    <!-- Gradient Preview -->
+                    <li class="px-3 py-2">
+                      <div id="heatmapGrad" class="d-flex flex-column align-items-start">
+                        <h6 class="mb-1" style="font-size: 0.9rem;">Low to High</h6>
+                        <div id="gradientCanvasContainer" style="width: 100%; height: 20px;"></div>
+                      </div>
+                    </li>
+
+                    <li>
+                      <hr class="dropdown-divider">
+                    </li>
+                    <!-- Color Options -->
                     <li><a class="dropdown-item color-option" data-scale="Viridis" href="#">Viridis</a></li>
                     <li><a class="dropdown-item color-option" data-scale="Plasma" href="#">Plasma</a></li>
                     <li><a class="dropdown-item color-option" data-scale="Turbo" href="#">Turbo</a></li>
@@ -494,20 +562,7 @@
               </div>
             </div>
 
-            <!-- Intensity Slider -->
-            <div class="d-flex align-items-center gap-2 w-100 mb-3">
-              <label class="form-label mb-0" for="colorIntensitySlider" style="white-space: nowrap;">Intensity:</label>
-              <input type="range" class="form-range flex-grow-1" id="colorIntensitySlider" min="0.5" max="2" step="0.1" value="1" style="max-width: 150px;">
-              <small id="intensityValue" class="text-muted" style="min-width: 30px;">1.0</small>
-            </div>
-
-            <div id="heatmapGrad" class="mb-3 d-flex flex-column align-items-start">
-              <h6>Gradient based on values lowest to highest</h6>
-              <div id="gradientCanvasContainer"></div> <!-- canvas will be inserted here -->
-            </div>            
-
           </div>
-          
 
         </div>
 
@@ -518,7 +573,11 @@
       Loading, please wait...
     </div>
   </main>
+
+  <!-- App Scripts-->
+  <script src="utils.js"></script>
   <script type="module" src="processing.js"></script>
+  <script src="charts.js"></script>
   <script src="sketch.js"></script>
 </body>
 

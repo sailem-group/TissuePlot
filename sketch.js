@@ -2,13 +2,21 @@
 let canvasWidth = 800;
 let canvasHeight = 600;
 let spots = [];
-window.drawAtWill = false;
 let img;
 let saveFlag = false
+let mouseOverCanvas = false;
+let zoomFactor = 1;
+let panX = 0;
+let panY = 0;
+let lastClickedSpot = null;
+
+window.drawAtWill = false;
 window.hoveredHex = null;
 window.clickedHex = null;
-let mouseOverCanvas = false;
-let infoBox = document.getElementById("infoBox")
+window.highlightedCanvasHexIndex = -1;
+
+const infoBox = document.getElementById("infoBox");
+const markerGeneCache = {};
 
 document.getElementById("image").addEventListener("change", function (e) {
   imageUploaded(e);
@@ -18,222 +26,116 @@ document.getElementById("image").addEventListener("change", function (e) {
 
 function imageUploaded(event) {
   const file = event.target.files[0];
-
   if (file && file.type.startsWith('image/')) {
     const reader = new FileReader();
-
     reader.onload = function (e) {
-      // Create an image element using p5.js
-      // img = createImg(e.target.result, '');
-      // img.hide();
       loadImage(e.target.result, (loadedImg) => {
         img = loadedImg;
       });
     };
-
     reader.readAsDataURL(file);
   } else {
     console.log('Not an image file!');
   }
-
 }
 
-// Global image loading function
 window.loadImageForDemo = function(demoName) {
-  if (demoName === 'demo1') {
-    img = loadImage("./image.png", () => {
+  const demoPathMap = {
+    demo1: "demoData/mouse/tissue_image.png",
+    demo2: "demoData/p5/tissue_image.png",
+    demo3: "demoData/p6/tissue_image.png",
+    demo4: "demoData/p7/tissue_image.png",
+    demo5: "demoData/p8/tissue_image.png",
+    demo6: "demoData/p1/tissue_image.png",
+    demo7: "demoData/p2/tissue_image.png",
+    demo8: "demoData/p3/tissue_image.png",
+    demo9: "demoData/p4/tissue_image.png"
+  };
+  let path = demoPathMap[demoName];
+  if (path) img = loadImage(path, () => {});
+};
+
+function setup() {
+  let myCanvas = createCanvas(canvasWidth, canvasHeight);
+  myCanvas.parent("canvasContainer");
+  
+  ["stretchX", "stretchY", "offsetX", "offsetY"].forEach(id => {
+    let slider = document.getElementById(id);
+    let label = document.getElementById(id + "Value");
+    slider.addEventListener("input", () => {
+      label.textContent = slider.value;
+      window.drawAtWill = true; // Forcing to redraw
     });
-  } else if (demoName === 'demo2') {
-    img = loadImage("exampleData/p5/tissue_image.png", () => {
-    });
-  } else if (demoName === 'demo3') {
-    img = loadImage("exampleData/p6/tissue_image.png", () => {
-    });
-  } else if (demoName === 'demo4') {
-    img = loadImage("exampleData/p7/tissue_image.png", () => {
-    });
-  } else if (demoName === 'demo5') {
-    img = loadImage("exampleData/p8/tissue_image.png", () => {
-    });
-  } else if (demoName === 'demo6') {
-    img = loadImage("exampleData/p1/tissue_image.png", () => {
-    });
-  } else if (demoName === 'demo7') {
-    img = loadImage("exampleData/p2/tissue_image.png", () => {
-    });
-  } else if (demoName === 'demo8') {
-    img = loadImage("exampleData/p3/tissue_image.png", () => {
-    });
-  } else if (demoName === 'demo9') {
-    img = loadImage("exampleData/p4/tissue_image.png", () => {
-    });
-  }
+  });
+
+  loadImageForDemo(window.whichDemo);
+  setupCanvas(canvasWidth, canvasHeight, []);
 }
 
-// Zoom and pan variables
-let zoomFactor = 1;
-let panX = 0;
-let panY = 0;
+function draw() {
+  if (!window.drawAtWill) return;
+
+  background("#FFFFFF");
+  translate(panX, panY);
+  scale(zoomFactor);
+  drawHexagonGrid(spots);
+
+  let adjustedMouseX = (mouseX - panX) / zoomFactor;
+  let adjustedMouseY = (mouseY - panY) / zoomFactor;
+
+  const isDemoTab = document.getElementById("demoTab").classList.contains("active");
+  const isUMAPTab = document.getElementById("umapTab").classList.contains("active");
+  const isPlottingTab = document.getElementById("plottingTab").classList.contains("active");
+
+  if (mouseOverCanvas && (isUMAPTab || (isDemoTab && window.mode === "cellComposition") || isPlottingTab)) {
+    hoveredHex = getHoveredHexagon(adjustedMouseX, adjustedMouseY);
+  } else {
+    hoveredHex = null;
+  }
+
+  if (hoveredHex) {
+    infoBox.innerHTML = `
+            <h6 class="card-title">${hoveredHex.barcode}</h6>
+            <p class="card-text h6"><small> ${hoveredHex.getSummary()}</small></p>`
+
+    clusterTypeInfo.innerHTML = `<p class="card-text h6"><small> ${hoveredHex.getClusterInfoSummary()}</small></p>`
+  }
+
+  if (saveFlag) exportSVG();
+}
 
 function saveSVG() {
   saveFlag = true
   window.drawAtWill = true;
 }
 
-function setup() {
-  let myCanvas = createCanvas(canvasWidth, canvasHeight);
-  myCanvas.parent("canvasContainer");
+function exportSVG() {
+  let svgElements = drawHexagonGrid(spots, true, []);
 
-  ["stretchX", "stretchY", "offsetX", "offsetY"].forEach(id => {
-    const slider = document.getElementById(id);
-    const label = document.getElementById(id + "Value");
-    slider.addEventListener("input", () => {
-      label.textContent = slider.value;
-      window.drawAtWill = true; // Force redraw
-    });
+  // Calculating the correct viewBox for zoom & pan
+  let viewBoxX = -panX / zoomFactor;
+  let viewBoxY = -panY / zoomFactor;
+  let viewBoxWidth = canvasWidth / zoomFactor;
+  let viewBoxHeight = canvasHeight / zoomFactor;
+
+  let svgHeader = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvasWidth}" height="${canvasHeight}" viewBox="${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet">`;
+  let svgFooter = `</svg>`;
+  let fullSVG = svgHeader + svgElements.join("\n") + svgFooter;
+  let blob = new Blob([fullSVG], {
+    type: "image/svg+xml"
   });
-
-  loadImageForDemo(window.whichDemo); // works because it's global
-  setupCanvas(canvasWidth, canvasHeight, []);
-}
-
-function draw() {
-  if (!window.drawAtWill) {
-    return
-  }
-  background("#FFFFFF");
-  translate(panX, panY);
-  scale(zoomFactor);
-  drawHexagonGrid(spots);
-  let adjustedMouseX = (mouseX - panX) / zoomFactor;
-  let adjustedMouseY = (mouseY - panY) / zoomFactor;
-  const isDemoTab = document.getElementById("demoTab").classList.contains("active");
-  const isUMAPTab = document.getElementById("umapTab").classList.contains("active");
-  const isPlottingTab = document.getElementById("plottingTab").classList.contains("active");
-  if (mouseOverCanvas && (isUMAPTab || (isDemoTab && window.mode === "cellComposition") || isPlottingTab)) {
-    hoveredHex = getHoveredHexagon(adjustedMouseX, adjustedMouseY);
-  } else {
-    hoveredHex = null;
-  }
-  if (hoveredHex) {
-    infoBox.innerHTML = `
-            <h6 class="card-title">${hoveredHex.index} ${hoveredHex.barcode}</h6>
-            <p class="card-text h6"><small> ${hoveredHex.getSummary()}</small></p>`
-  }
-  // else{
-  //   infoBox.innerHTML =''
-  // }
-
-  if (saveFlag) {
-    let svgElements = drawHexagonGrid(spots, true, []);
-
-    // **Calculate the correct viewBox for zoom & pan**
-    let viewBoxX = -panX / zoomFactor;
-    let viewBoxY = -panY / zoomFactor;
-    let viewBoxWidth = canvasWidth / zoomFactor;
-    let viewBoxHeight = canvasHeight / zoomFactor;
-
-    let svgHeader = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvasWidth}" height="${canvasHeight}" viewBox="${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}">`;
-
-    // let svgHeader = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvasWidth}" height="${canvasHeight}" viewBox="0 0 ${canvasWidth} ${canvasHeight}">`;
-
-    let svgFooter = `</svg>`;
-    let fullSVG = svgHeader + svgElements.join("\n") + svgFooter;
-
-    let blob = new Blob([fullSVG], {
-      type: "image/svg+xml"
-    });
-    let a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "tissue_plot.svg";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    saveFlag = false
-  }
-
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "tissue_plot.svg";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  saveFlag = false
 }
 
 function clearCanvas() {
   clear()
 }
-
-function showBarChart(index, barcode, data, isCellComposition) {
-  const chartContainer = document.getElementById("barChart");
-
-  chartContainer.innerHTML = "";
-
-  let labels, values, colors, originalName;
-  
-  if (isCellComposition) {
-    labels = data.map(item => item.label);
-    values = data.map(item => item.value);
-    colors = data.map(item => item.color);
-    originalName = data.map(item => item.originalLabel);
-  } else {
-    const clusterCounts = {};
-    const clusterColors = {};
-
-    data.forEach(item => {
-      const clusterValue = item.value;
-      const clusterColor = item.color;
-
-      clusterCounts[clusterValue] = (clusterCounts[clusterValue] || 0) + 1;
-
-      if (!clusterColors[clusterValue]) {
-        clusterColors[clusterValue] = clusterColor;
-      }
-    });
-
-    labels = Object.keys(clusterCounts).map(value => `${value}`);
-    values = Object.values(clusterCounts);
-    colors = Object.keys(clusterCounts).map(value => clusterColors[value]);
-  }
-
-  const total = values.reduce((acc, val) => acc + val, 0);
-  const percentages = values.map(value => (value / total) * 100);
-  let maxPercentage = ((Math.ceil(Math.max(...percentages) / 10) * 10) + 10) > 100 ? (Math.ceil(Math.max(...percentages) / 10) * 10) : (Math.ceil(Math.max(...percentages) / 10) * 10) + 10; // Round up to nearest 10
-
-  const trace = {
-    x: labels,
-    y: percentages,
-    type: "bar",
-    marker: {
-      color: colors,
-    },
-    // text: isCellComposition ? values.map((value, index) => `${labels[index]}: ${value.toFixed(2)}`) : values.map((value, index) => `${labels[index]}: ${value}`),
-    text: percentages.map((value, index) => `${originalName[index]}: ${Math.round(value)}%`),
-    hoverinfo: "text",
-    textposition: "none",
-  };
-
-  const layout = {
-    xaxis: {
-      title: isCellComposition ? "Cell type" : "Clusters",
-      type: 'category',
-      tickangle: -45,
-      tickfont: {
-        size: 10,
-      },
-    },
-    yaxis: {
-      title: "Percentage (%)",
-      range: [0, maxPercentage], // Y-axis always ranges from 0 to 100
-      dtick: 10,
-    },
-    margin: {
-      t: 5,
-      l: 50,
-      r: 20,
-      b: 70,
-    },
-    hovermode: "closest",
-    responsive: true,
-  };
-
-  Plotly.newPlot("barChart", [trace], layout);
-}
-
 
 function setupCanvas(width, height, newSpots) {
   spots = []
@@ -298,191 +200,134 @@ function setupCanvas(width, height, newSpots) {
         }));
       }
 
-      showBarChart(clickedHex.index, clickedHex.barcode, barChartData, true);
-      showSpotInfo(clickedHex,spots);
+      // showBarChart(clickedHex.index, clickedHex.barcode, barChartData, true);
+      showSpotInfo(clickedHex,spots, clickedHex.index, clickedHex.barcode, barChartData, true);
     }
   })
 
   drawHexagonGrid(spots);
 }
 
-// function showSpotInfo(clickedHex, spots) {
-//   const popup = document.getElementById("spotInfoPopup");
-//   const barcodeEl = document.getElementById("popupBarcode");
-//   const clusterEl = document.getElementById("popupCluster");
-//   const geneContent = document.getElementById("popupGeneContent");
-
-//   const cluster = clickedHex.cluster || "N/A";
-//   const geneList = clickedHex.values[0].geneList || [];
-
-//   clusterEl.textContent = cluster;
-
-//   const isClickable = window.mode !== "cellComposition";
-
-//   // Build the "Select All" button
-//   const selectAllStyle = isClickable ? 'cursor:pointer;' : 'cursor:default; pointer-events:none;';
-//   const selectAllButton = `<span class="popup-gene-item badge bg-primary text-white m-1 p-1" data-select-all="true" style="${selectAllStyle}">
-//     Select All
-//   </span>`;
-
-//   // Build the gene items
-//   const geneItems = geneList.map(g => {
-//     const baseClass = 'popup-gene-item badge bg-light text-dark m-1 p-1';
-//     const style = isClickable ? 'cursor:pointer;' : 'cursor:default; pointer-events:none;';
-//     return `<span class="${baseClass}" data-gene="${g.gene}" style="${style}">
-//       ${g.gene}
-//     </span>`;
-//   }).join('');
-
-//   // Combine "Select All" and gene items
-//   geneContent.innerHTML = selectAllButton + geneItems;
-
-//   popup.style.display = "block";
-//   // const currentDemo = window.whichDemo;
-
-//   // if (window.lastRenderedDemo !== currentDemo) {
-//   //   window.lastRenderedDemo = currentDemo;
-//   //   renderClusterStackedBarChart(spots);
-//   // }
-//   renderClusterStackedBarChart(spots);
-// }
-
-function showSpotInfo(clickedHex, allSpots) {
+async function showSpotInfo(clickedHex, allSpots, index, barcode, barChartData, BooleanVal) {
   const popup = document.getElementById("spotInfoPopup");
-  const barcodeEl = document.getElementById("popupBarcode");
   const clusterEl = document.getElementById("popupCluster");
+  const clusterName = document.getElementById("SelectedClusterType");
   const geneContent = document.getElementById("popupGeneContent");
 
-  const cluster = clickedHex.cluster || "N/A";
-  clusterEl.textContent = cluster;
+  const selectedCluster = clickedHex.cluster || "N/A";
+  clusterEl.textContent = selectedCluster;
+  clusterName.textContent = window.selectedClusterFeature;
+
+  // If same spot clicked again, just return (no need to do anything again)
+  if (lastClickedSpot === clickedHex) {
+    popup.style.display = "block";
+    return;
+  }
+
+  // Save current clicked spot for future comparison
+  lastClickedSpot = clickedHex;
+
+  geneContent.innerHTML = `<div class="text-muted px-2 py-1">Loading marker genes...</div>`;
+  popup.style.display = "block";
+  popup.offsetWidth;
+
+  showBarChart(index, barcode, barChartData, BooleanVal);
+  renderClusterStackedBarChart(allSpots);
+  showOverallCellTypeDistribution(allSpots);
+  showOverallClusterDistribution(allSpots);
+  if (window.mode === "genes") {
+    document.getElementById("stackGeneClusterInfo").style.display = 'block';
+    document.getElementById("stackGeneCellInfo").style.display = 'block';
+    showGeneExpressionByClusterBarChart(allSpots);
+    showGeneExpressionByCellTypeBarChart(allSpots);
+  } else {
+    const container1 = document.getElementById("geneClusterBarChart");
+    container1.innerHTML = '';
+    const container2 = document.getElementById("geneCellTypeBarChart");
+    container2.innerHTML = '';
+    document.getElementById("stackGeneClusterInfo").style.display = 'none';
+    document.getElementById("stackGeneCellInfo").style.display = 'none';
+  }
+
+  await new Promise(requestAnimationFrame);
+
+  // If marker genes are already cached for this cluster, use them
+  let markerGenes = markerGeneCache[selectedCluster];
+  if (!markerGenes) {
+    markerGenes = await detectMarkersInCluster(allSpots, selectedCluster);
+    markerGeneCache[selectedCluster] = markerGenes;
+  }
+
+  window.currentPopupMarkerGenes = markerGenes.map(g => g.gene);
+
+  const expressionValues = markerGenes.map(g => parseFloat(g.selectedMean));
+  const minVal = Math.min(...expressionValues);
+  const maxVal = Math.max(...expressionValues);
+
+  const colorScale = d3.scaleSequential()
+    .domain([minVal, maxVal])
+    .interpolator(d3.interpolateViridis);
 
   const isClickable = window.mode !== "cellComposition";
-
-  // Getting all spots in the same cluster
-  const clusterSpots = allSpots.filter(s => s.cluster == cluster);
-
-  // Collecting and aggregate gene expressions
-  const geneMap = {};
-  clusterSpots.forEach(s => {
-    const genes = s.values[0]?.geneList || [];
-    genes.forEach(g => {
-      if (!geneMap[g.gene]) geneMap[g.gene] = { total: 0, count: 0 };
-      geneMap[g.gene].total += g.value;
-      geneMap[g.gene].count += 1;
-    });
-  });
-
-  // Sorting by average expression
-  const topGenes = Object.entries(geneMap)
-    .map(([gene, { total, count }]) => ({ gene, avg: total / count }))
-    .sort((a, b) => b.avg - a.avg)
-    // .slice(0, 20); // Currently showing only top 20
-
-  // Creating UI elements
+  const showSelectAll = markerGenes.length > 1;
   const selectAllStyle = isClickable ? 'cursor:pointer;' : 'cursor:default; pointer-events:none;';
-  const selectAllButton = `<span class="popup-gene-item badge bg-primary text-white m-1 p-1" data-select-all="true" style="${selectAllStyle}">
-    Select All
-  </span>`;
+  const selectAllButton = showSelectAll
+    ? `<span class="popup-markergene-item badge bg-light text-dark m-1 p-1" data-select-all="true" style="${selectAllStyle}">
+        Select All
+      </span>`
+    : '';
 
-  const geneItems = topGenes.map(g => {
-    const baseClass = 'popup-gene-item badge bg-light text-dark m-1 p-1';
-    const style = isClickable ? 'cursor:pointer;' : 'cursor:default; pointer-events:none;';
+  const geneItems = markerGenes.map(g => {
+    const baseClass = 'popup-gene-item badge m-1 p-1';
+    const style = `
+      background-color: ${colorScale(parseFloat(g.selectedMean))};
+      color: white;
+      ${isClickable ? 'cursor:pointer;' : 'cursor:default; pointer-events:none;'}
+    `;
     return `<span class="${baseClass}" data-gene="${g.gene}" style="${style}">
-      ${g.gene}
+      <span class="popup-gene-label">${g.gene}</span>
     </span>`;
   }).join('');
 
   geneContent.innerHTML = selectAllButton + geneItems;
-
-  popup.style.display = "block";
-
-  renderClusterStackedBarChart(allSpots);
 }
 
-function renderClusterStackedBarChart(spots) {
-  const container = document.getElementById("overallCellTypeDistribution");
-  container.innerHTML = '';
+const worker = new Worker('markerWorker.js');
 
-  const clusterCellMap = {};
-  const cellTypesSet = new Set();
+function detectMarkersInCluster(allSpots, selectedCluster) {
+  return new Promise((resolve) => {
+    worker.postMessage({ allSpots, selectedCluster });
+    // worker.postMessage({ allSpots, selectedCluster ,mode: 'single'});
 
-  spots.forEach(spot => {
-    const cluster = spot.cluster;
-    if (!clusterCellMap[cluster]) {
-      clusterCellMap[cluster] = {};
-    }
-
-    const values = spot.cellCompositionValues || spot.values || [];
-    values.forEach(({ label, value }) => {
-      if (!label) return;
-      cellTypesSet.add(label);
-      if (!clusterCellMap[cluster][label]) {
-        clusterCellMap[cluster][label] = 0;
-      }
-      clusterCellMap[cluster][label] += parseFloat(value) || 0;
-    });
-  });
-
-  const clusters = Object.keys(clusterCellMap).sort((a, b) => parseInt(a) - parseInt(b));
-  const cellTypes = Array.from(cellTypesSet);
-
-  const traces = cellTypes.map(cellType => {
-    const xValues = clusters.map(cluster => {
-      const total = Object.values(clusterCellMap[cluster] || {}).reduce((a, b) => a + b, 0);
-      const val = (clusterCellMap[cluster][cellType] || 0);
-      return total > 0 ? (val / total).toFixed(3) : 0;
-    });
-
-    let color = "#999999";
-    for (let s of spots) {
-      const values = s.cellCompositionValues || s.values;
-      const v = values?.find(v => v.label === cellType);
-      if (v && v.color) {
-        color = v.color;
-        break;
-      }
-    }
-
-    return {
-      y: clusters,
-      x: xValues,
-      name: cellType,
-      type: 'bar',
-      orientation: 'h',
-      marker: { color: color },
+    worker.onmessage = function(e) {
+      const { markerGenes } = e.data;
+      resolve(markerGenes);
     };
+    // worker.postMessage({
+    //   allSpots,
+    //   mode: 'all'
+    // });
+
+    // worker.onmessage = function(e) {
+    //   const { csv } = e.data;
+    //   if (csv) {
+    //     // Save or download CSV
+    //     const blob = new Blob([csv], { type: 'text/csv' });
+    //     const url = URL.createObjectURL(blob);
+    //     const a = document.createElement('a');
+    //     a.href = url;
+    //     a.download = 'marker_genes_all_clusters.csv';
+    //     a.click();
+    //     URL.revokeObjectURL(url);
+    //   }
+    //   resolve(csv)
+    // };
   });
-
-  const layout = {
-    barmode: 'stack',
-    yaxis: {
-      title: {
-        text: 'Cluster',
-        font: { size: 14 }
-      },
-      tickfont: { size: 11 }
-    },
-    xaxis: {
-      title: {
-        text: 'Proportion',
-        font: { size: 14 }
-      },
-      range: [0, 1],
-      tickformat: ".1f",
-      tickfont: { size: 11 }
-    },
-    height: 250,
-    margin: { t: 30, l: 40, r: 10, b: 40 },
-    showlegend: false,
-  };
-
-  Plotly.newPlot(container, traces, layout, { responsive: true });
 }
-
 
 function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
   const normalize = str => str?.trim().toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/gi, '');
-  let visibleSpotCount = 0;
+
   let minX = spots.reduce((min, spot) => Math.min(min, spot.x), Infinity);
   let maxX = spots.reduce((max, spot) => Math.max(max, spot.x), -Infinity);
   let minY = spots.reduce((min, spot) => Math.min(min, spot.y), Infinity);
@@ -491,123 +336,107 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
   let RESIZE_canvas = 1000;
   let dataWidth = maxX - minX;
   let dataHeight = maxY - minY;
-  window.dataWidth = dataWidth;
-  window.dataHeight = dataHeight;
-
   let aspectRatio = dataHeight / dataWidth;
-  window.aspectRatio = aspectRatio;
-
   let scaleFactor = Math.min(RESIZE_canvas / dataWidth, RESIZE_canvas / dataHeight);
-
   let offsetX = (RESIZE_canvas - dataWidth * scaleFactor) / 2;
   let offsetY = (RESIZE_canvas - dataHeight * scaleFactor) / 2;
 
+  window.dataWidth = dataWidth;
+  window.dataHeight = dataHeight;
+  window.aspectRatio = aspectRatio;
+
   if (img && window.showImage) {
     let stretchFactorX, stretchFactorY, manualOffsetX, manualOffsetY;
-  
-    // Handle demo-specific defaults
-    switch (window.whichDemo) {
-      case "demo1":
-        stretchFactorX = 1.22;
-        stretchFactorY = 1.23;
-        manualOffsetX = -37;
-        manualOffsetY = -168;
-        break;
-      case "demo2":
-        stretchFactorX = 1.78;
-        stretchFactorY = 1.5;
-        manualOffsetX = -646;
-        manualOffsetY = -997;
-        break;
-      case "demo3":
-        stretchFactorX = 1.65;
-        stretchFactorY = 2;
-        manualOffsetX = -275;
-        manualOffsetY = -263;
-        break;
-      case "demo4":
-        stretchFactorX = 1.28;
-        stretchFactorY = 1.29;
-        manualOffsetX = 74;
-        manualOffsetY = -545;
-        break;
-      case "demo5":
-        stretchFactorX = 1.26;
-        stretchFactorY = 1.27;
-        manualOffsetX = -37;
-        manualOffsetY = -168;
-        break;
-      case "demo6":
-        stretchFactorX = 1.27;
-        stretchFactorY = 1.26;
-        manualOffsetX = -37;
-        manualOffsetY = -168;
-        break;
-      case "demo7":
-        stretchFactorX = 1.92;
-        stretchFactorY = 1.54;
-        manualOffsetX = 679;
-        manualOffsetY = 502;
-        break;
-      case "demo8":
-        stretchFactorX = 1.44;
-        stretchFactorY = 1.96;
-        manualOffsetX = -406;
-        manualOffsetY = -168;
-        break;
-      case "demo9":
-        stretchFactorX = 1.35;
-        stretchFactorY = 1.41;
-        manualOffsetX = -108;
-        manualOffsetY = -48;
-        break;
-      default:
-        // For user uploads
-        stretchFactorX = parseFloat(document.getElementById("stretchX")?.value) || 1.5;
-        stretchFactorY = parseFloat(document.getElementById("stretchY")?.value) || 1.5;
-        manualOffsetX = parseInt(document.getElementById("offsetX")?.value) || 0;
-        manualOffsetY = parseInt(document.getElementById("offsetY")?.value) || 0;
-        break;
-    }
-  
-    const imgWidth = dataWidth * stretchFactorX;
-    const imgHeight = dataHeight * stretchFactorY;
-  
-    const imgX = minX - (imgWidth - dataWidth) / 2 + manualOffsetX;
-    const imgY = minY - (imgHeight - dataHeight) / 2 + manualOffsetY;
-  
-    const scaledImgX = (imgX - minX) * scaleFactor + offsetX;
-    const scaledImgY = (imgY - minY) * scaleFactor + offsetY;
-    const scaledImgWidth = imgWidth * scaleFactor;
-    const scaledImgHeight = imgHeight * scaleFactor;
-  
-    if (saveFlag) {
-      const imgDataURL = img.canvas.toDataURL("image/png");
-      svgElements.push(`<image href="${imgDataURL}" x="${scaledImgX}" y="${scaledImgY}" width="${scaledImgWidth}" height="${scaledImgHeight}" preserveAspectRatio="none"/>`);
+    if (window.showDemoButton == 'clicked') {
+      switch (window.whichDemo) {
+        case "demo1":
+          [stretchFactorX, stretchFactorY, manualOffsetX, manualOffsetY] = [1.22, 1.23, -37, -168];
+          break;
+        case "demo2":
+          [stretchFactorX, stretchFactorY, manualOffsetX, manualOffsetY] = [1.78, 1.5, -646, -997];
+          break;
+        case "demo3":
+          [stretchFactorX, stretchFactorY, manualOffsetX, manualOffsetY] = [1.65, 2, -275, -263];
+          break;
+        case "demo4":
+          [stretchFactorX, stretchFactorY, manualOffsetX, manualOffsetY] = [1.28, 1.29, 74, -545];
+          break;
+        case "demo5":
+          [stretchFactorX, stretchFactorY, manualOffsetX, manualOffsetY] = [1.27, 1.26, -37, -168];
+          break;
+        case "demo6":
+          [stretchFactorX, stretchFactorY, manualOffsetX, manualOffsetY] = [1.26, 1.27, -37, -168];
+          break;
+        case "demo7":
+          [stretchFactorX, stretchFactorY, manualOffsetX, manualOffsetY] = [1.92, 1.54, 679, 502];
+          break;
+        case "demo8":
+          [stretchFactorX, stretchFactorY, manualOffsetX, manualOffsetY] = [1.44, 1.96, -406, -168];
+          break;
+        case "demo9":
+          [stretchFactorX, stretchFactorY, manualOffsetX, manualOffsetY] = [1.35, 1.41, -108, -48];
+          break;
+      }
     } else {
-      const opacityPercent = parseInt(document.getElementById("imageOpacity")?.value) || 100;
-      const alpha = Math.round((opacityPercent / 100) * 255);
+      stretchFactorX = parseFloat(document.getElementById("stretchX")?.value) || 1.5;
+      stretchFactorY = parseFloat(document.getElementById("stretchY")?.value) || 1.5;
+      manualOffsetX = parseInt(document.getElementById("offsetX")?.value) || 0;
+      manualOffsetY = parseInt(document.getElementById("offsetY")?.value) || 0;
+    }
+    let imgWidth = dataWidth * stretchFactorX;
+    let imgHeight = dataHeight * stretchFactorY;
+    let imgX = minX - (imgWidth - dataWidth) / 2 + manualOffsetX;
+    let imgY = minY - (imgHeight - dataHeight) / 2 + manualOffsetY;
+
+    let scaledImgX = (imgX - minX) * scaleFactor + offsetX;
+    let scaledImgY = (imgY - minY) * scaleFactor + offsetY;
+    let scaledImgWidth = imgWidth * scaleFactor;
+    let scaledImgHeight = imgHeight * scaleFactor;
+
+    if (saveFlag) {
+      let imgDataURL = img.canvas.toDataURL("image/png");
+      svgElements.push(`<image href="${imgDataURL}" x="${scaledImgX}" y="${scaledImgY}" width="${scaledImgWidth}" height="${scaledImgHeight}" preserveAspectRatio="none"/>`);
+      if (!document.getElementById("showComposition").checked == false && !document.getElementById("showGenes").checked) {
+        return svgElements;
+      }
+    } else {
+      let opacityPercent = parseInt(document.getElementById("imageOpacity")?.value) || 100;
+      let alpha = Math.round((opacityPercent / 100) * 255);
       tint(255, alpha);
       image(img, scaledImgX, scaledImgY, scaledImgWidth, scaledImgHeight);
       noTint();
+
+      if(!document.getElementById("showComposition").checked && !document.getElementById("showGenes").checked){
+        return;
+      }
     }
   }
 
   spots.forEach(spot => {
-    const spotCluster = parseInt(spot.cluster);
+    if (spot.visible === false) return;
+
+    const {
+      index, cluster, x, y, radius, values, cellCompositionValues
+    } = spot;
+
+    let scaledX = (x - minX) * scaleFactor + offsetX;
+    let scaledY = (y - minY) * scaleFactor + offsetY;
+    let scaledRadius = (radius + 40) * scaleFactor;
+
+    spot.scaledX = scaledX;
+    spot.scaledY = scaledY;
+    spot.scaledRadius = scaledRadius;
+
+    const isHighlighted = index === window.highlightedSpotIndex;
+    const spotCluster = parseInt(cluster);
     const isLegendFilterActive = window.selectedClusterInLegend !== null;
     const isDropdownFilterActive = Array.isArray(window.selectedClusterFromDropdown) && window.selectedClusterFromDropdown.length > 0;
     const isUMAPFilterActive = Array.isArray(window.selectedUMAPClusters) && window.selectedUMAPClusters.length > 0;
     const isCellTypeFilterActive = Array.isArray(window.selectedCellTypesFromDropdown) && window.selectedCellTypesFromDropdown.length > 0;
 
-    const cellTypesInSpot = (
-      window.mode === "cellComposition"
-        ? spot.values
-        : spot.cellCompositionValues || []
-    );
+    const cellTypesInSpot = window.mode === "cellComposition" ? values : cellCompositionValues || [];
 
-    const passesCellTypeFilter =
-      !isCellTypeFilterActive ||
+    const passesCellTypeFilter = !isCellTypeFilterActive ||
       cellTypesInSpot.some(v => window.selectedCellTypesFromDropdown.includes(v.label));
 
     if (
@@ -618,266 +447,167 @@ function drawHexagonGrid(spots, saveFlag = false, svgElements = []) {
     ) {
       return;
     }
-    let scaledX = (spot.x - minX) * scaleFactor + offsetX;
-    let scaledY = (spot.y - minY) * scaleFactor + offsetY;
-    spot.scaledX = scaledX
-    spot.scaledY = scaledY
-    spot.scaledRadius = (spot.radius + 40) * scaleFactor
-    if (window.mode == "cellComposition") {
-      if (isCellTypeFilterActive && Array.isArray(spot.values)) {
-        const sortedSpotMembership = spot.values.slice().sort((a, b) => b.value - a.value);
-        const topCellType = sortedSpotMembership[0]?.label;
 
+    if (window.mode === "cellComposition") {
+      if (isCellTypeFilterActive && Array.isArray(values)) {
+        const sorted = values.slice().sort((a, b) => b.value - a.value);
+        const topCellType = sorted[0]?.label;
         const topNormalized = normalize(topCellType);
         const selectedNormalized = window.selectedCellTypesFromDropdown.map(normalize);
-
-        if (!selectedNormalized.includes(topNormalized)) {
-
-          return;
-        }
+        if (!selectedNormalized.includes(topNormalized)) return;
       }
-      const spotMembership = [...spot.values]
-      let sortedSpotMembership = spotMembership.sort((a, b) => b.value - a.value);
+
+      const sortedSpotMembership = [...values].sort((a, b) => b.value - a.value);
+
       if (saveFlag) {
-        svgElements.push(drawHexagonSVG(scaledX, scaledY, spot.scaledRadius, sortedSpotMembership[0].color));
+        svgElements.push(drawHexagonSVG(scaledX, scaledY, scaledRadius, sortedSpotMembership[0].color));
+
         if (window.showAllLevels) {
-          svgElements.push(drawHexagonSVG(scaledX, scaledY, (spot.radius + 25) * scaleFactor, sortedSpotMembership[1].color));
-          svgElements.push(drawHexagonSVG(scaledX, scaledY, (spot.radius + 10) * scaleFactor, sortedSpotMembership[2].color));
-        } else if (window.showCellEmojiView){
-          const topCellType = sortedSpotMembership[0].label;
-          const emojiImage = window.cellTypeVectors[topCellType];
+          if (sortedSpotMembership[1]?.value > 0.1) svgElements.push(drawHexagonSVG(scaledX, scaledY, (radius + 25) * scaleFactor, sortedSpotMembership[1].color));
+          if (sortedSpotMembership[2]?.value > 0.1) svgElements.push(drawHexagonSVG(scaledX, scaledY, (radius + 10) * scaleFactor, sortedSpotMembership[2].color));
+        } else if (window.showCellEmojiView) {
+          const emojiImage = window.cellTypeVectors[sortedSpotMembership[0].label];
           if (emojiImage) {
-              svgElements.push(drawCellTypeVectorSVG(emojiImage, scaledX, scaledY, spot.scaledRadius * 1.5));
+            svgElements.push(drawCellTypeVectorSVG(emojiImage, scaledX, scaledY, scaledRadius * 1.5));
           } else {
-              textAlign(CENTER, CENTER);
-              textSize(10);
-              text("?", scaledX, scaledY);
+            textAlign(CENTER, CENTER);
+            textSize(10);
+            text("?", scaledX, scaledY);
           }
         }
       } else {
-        drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, sortedSpotMembership[0].color);
+        if (isHighlighted) drawHexagon(scaledX, scaledY, (radius + 48) * scaleFactor, 'black', 4);
+        drawHexagon(scaledX, scaledY, scaledRadius, sortedSpotMembership[0].color);
+        strokeWeight(1);
+
         if (window.showAllLevels) {
-          drawHexagon(scaledX, scaledY, (spot.radius + 25) * scaleFactor, sortedSpotMembership[1].color);
-          drawHexagon(scaledX, scaledY, (spot.radius + 10) * scaleFactor, sortedSpotMembership[2].color);
-        } else if (window.showCellEmojiView){
-          const topCellType = sortedSpotMembership[0].label;
-          const emojiImage = window.cellTypeVectors[topCellType];
+          if (sortedSpotMembership[1]?.value > 0.1) drawHexagon(scaledX, scaledY, (radius + 25) * scaleFactor, sortedSpotMembership[1].color);
+          if (sortedSpotMembership[2]?.value > 0.1) drawHexagon(scaledX, scaledY, (radius + 10) * scaleFactor, sortedSpotMembership[2].color);
+        } else if (window.showCellEmojiView) {
+          const emojiImage = window.cellTypeVectors[sortedSpotMembership[0].label];
           if (emojiImage) {
-              drawCellTypeVectors(emojiImage, scaledX, scaledY, spot.scaledRadius * 1.5);
+            drawCellTypeVectors(emojiImage, scaledX, scaledY, scaledRadius * 1.5);
           } else {
-              textAlign(CENTER, CENTER);
-              textSize(10);
-              text("?", scaledX, scaledY);
+            textAlign(CENTER, CENTER);
+            textSize(10);
+            text("?", scaledX, scaledY);
           }
         }
       }
+
       if (window.showCluster) {
-        requiredDemos = ['demo6', 'demo7', 'demo8', 'demo9'];
-        let shapeRadius = 0;
-        if (requiredDemos.includes(window.whichDemo)) {
-          if(window.selectedClusterView === "numbers"){
-            shapeRadius = (spot.radius - 80) * scaleFactor;
-          } else {
-            shapeRadius = (spot.radius - 50) * scaleFactor;
-          }
-        }
-        else {
-          shapeRadius = (spot.radius - 30) * scaleFactor;
-        }
-        // const shapeRadius = (spot.radius - 30) * scaleFactor;
+        const shapeRadius = ['demo6', 'demo7', 'demo8', 'demo9'].includes(window.whichDemo)
+          ? (radius - (window.selectedClusterView === "numbers" ? 80 : 50)) * scaleFactor
+          : (radius - 30) * scaleFactor;
+
         if (saveFlag) {
           svgElements.push(drawClusterSVG(scaledX, scaledY, shapeRadius, spot, sortedSpotMembership[0].color));
         } else {
           switchCaseCluster(scaledX, scaledY, shapeRadius, spot, sortedSpotMembership[0].color);
         }
       }
+
     } else {
+      if (isCellTypeFilterActive && Array.isArray(cellCompositionValues)) {
+        const sorted = cellCompositionValues.slice().sort((a, b) => b.value - a.value);
+        const topNormalized = normalize(sorted[0]?.label);
+        const selectedNormalized = window.selectedCellTypesFromDropdown.map(normalize);
+        if (!selectedNormalized.includes(topNormalized)) return;
+      }
+
+      const geneColor = window.sketchOptions.selectedGene
+        ? (spot.values.find(v => v.label === window.sketchOptions.selectedGene)?.color || '#cccccc')
+        : (spot.values[0]?.color || '#cccccc');
+
       if (saveFlag) {
-        svgElements.push(drawHexagonSVG(scaledX, scaledY, (spot.radius + 40) * scaleFactor, spot.values[window.sketchOptions.selectedGene].color));
+        svgElements.push(drawHexagonSVG(scaledX, scaledY, scaledRadius, geneColor));
         if (window.showEmojiView) {
-          const topCellType = spot.cellCompositionValues?.slice().sort((a, b) => b.value - a.value)[0].label;
-          const emojiImage = window.cellTypeVectors[topCellType];
-          if (emojiImage) {
-            svgElements.push(drawCellTypeVectorSVG(emojiImage, scaledX, scaledY, spot.scaledRadius * 1.5));
-          }
+          const emojiImage = window.cellTypeVectors[cellCompositionValues?.slice().sort((a, b) => b.value - a.value)[0].label];
+          if (emojiImage) svgElements.push(drawCellTypeVectorSVG(emojiImage, scaledX, scaledY, scaledRadius * 1.5));
         }
       } else {
-        let geneColor;
-        if (window.sketchOptions.selectedGene) {
-          const geneIndex = spot.values.findIndex(v => v.label === window.sketchOptions.selectedGene);
-          geneColor = geneIndex !== -1 ? spot.values[geneIndex].color : '#cccccc';
-        } else {
-          geneColor = spot.values[0]?.color || '#cccccc';
-        }
-
-        // if (isCellTypeFilterActive && Array.isArray(spot.cellCompositionValues)) {
-        //   const sortedCellTypes = spot.cellCompositionValues.slice().sort((a, b) => b.value - a.value);
-        //   const topCellType = sortedCellTypes[0]?.label;
-        //   if (!window.selectedCellTypesFromDropdown.includes(topCellType)) {
-        //     return;
-        //   }
-        // }
-
-        if (isCellTypeFilterActive && Array.isArray(spot.cellCompositionValues)) {
-          const sortedCellTypes = spot.cellCompositionValues.slice().sort((a, b) => b.value - a.value);
-          const topCellType = sortedCellTypes[0]?.label;
-
-          const topNormalized = normalize(topCellType);
-          const selectedNormalized = window.selectedCellTypesFromDropdown.map(normalize);
-
-          if (!selectedNormalized.includes(topNormalized)) {
-            return;
-          }
-        }
-
-        drawHexagon(scaledX, scaledY, (spot.radius + 40) * scaleFactor, geneColor);
+        if (isHighlighted) drawHexagon(scaledX, scaledY, (radius + 48) * scaleFactor, 'black', 4);
+        drawHexagon(scaledX, scaledY, scaledRadius, geneColor);
 
         if (window.showEmojiView) {
-          const topCellType = spot.cellCompositionValues?.slice().sort((a, b) => b.value - a.value)[0].label;
-          const emojiImage = window.cellTypeVectors[topCellType];
-          if (emojiImage) {
-            drawCellTypeVectors(emojiImage, scaledX, scaledY, spot.scaledRadius * 1.5);
-          }
+          const emojiImage = window.cellTypeVectors[cellCompositionValues?.slice().sort((a, b) => b.value - a.value)[0].label];
+          if (emojiImage) drawCellTypeVectors(emojiImage, scaledX, scaledY, scaledRadius * 1.5);
         }
       }
+
       if (window.showCluster) {
-        requiredDemos = ['demo6', 'demo7', 'demo8', 'demo9'];
-        let shapeRadius = 0;
-        if (requiredDemos.includes(window.whichDemo)) {
-          if(window.selectedClusterView === "numbers"){
-            shapeRadius = (spot.radius - 80) * scaleFactor;
-          } else {
-            shapeRadius = (spot.radius - 50) * scaleFactor;
-          }
-        }
-        else {
-          shapeRadius = (spot.radius - 30) * scaleFactor;
-        }
-        // const shapeRadius = (spot.radius - 30) * scaleFactor;
+        const shapeRadius = ['demo6', 'demo7', 'demo8', 'demo9'].includes(window.whichDemo)
+          ? (radius - (window.selectedClusterView === "numbers" ? 80 : 50)) * scaleFactor
+          : (radius - 30) * scaleFactor;
+
         if (saveFlag) {
-          svgElements.push(drawClusterSVG(scaledX, scaledY, shapeRadius, spot, spot.values[0].color));
+          svgElements.push(drawClusterSVG(scaledX, scaledY, shapeRadius, spot, geneColor));
         } else {
-          switchCaseCluster(scaledX, scaledY, shapeRadius, spot, spot.values[0].color);
+          switchCaseCluster(scaledX, scaledY, shapeRadius, spot, geneColor);
         }
       }
     }
   });
-
-  if (saveFlag) {
-    return svgElements;
-  }
-
+  
+  if (saveFlag) return svgElements;
 }
 
 function switchCaseCluster(scaledX, scaledY, shapeRadius, spot, colorValue) {
-  if (window.selectedClusterView === "shapes") {
-    const clusterNumber = parseInt(spot.cluster, 10);
+  const clusterView = window.selectedClusterView;
+  const clusterStr = spot.cluster?.toString();
+  const clusterNum = parseInt(clusterStr, 10);
+  const maxShapeCluster = 30;
 
-    // Define the range of clusters that have shapes
-    const maxShapeCluster = 30;
+  if (clusterView === "shapes") {
+    // If in range 1–30 or 0 (special case)
+    const isShapeCluster = (clusterNum >= 1 && clusterNum <= maxShapeCluster) || clusterNum === 0;
 
-    if ((clusterNumber >= 1 && clusterNumber <= maxShapeCluster) || clusterNumber === 0) {
-      let clusterKey = spot.cluster === "0" ? "11" : spot.cluster;
-      switch (clusterKey) {
-      // switch (spot.cluster) {
-        case "1":
-          drawTriangle(scaledX, scaledY, shapeRadius);
-          break;
-        case "2":
-          drawX(scaledX, scaledY, shapeRadius);
-          break;
-        case "3":
-          drawCircle(scaledX, scaledY, shapeRadius);
-          break;
-        case "4":
-          drawStar(scaledX, scaledY, shapeRadius);
-          break;
-        case "5":
-          drawHexagon(scaledX, scaledY, shapeRadius, colorValue);
-          break;
-        case "6":
-          drawSquare(scaledX, scaledY, shapeRadius);
-          break;
-        case "7":
-          drawDiamond(scaledX, scaledY, shapeRadius);
-          break;
-        case "8":
-          drawPlus(scaledX, scaledY, shapeRadius);
-          break;
-        case "9":
-          drawMinus(scaledX, scaledY, shapeRadius);
-          break;
-        case "10":
-          drawSlash(scaledX, scaledY, shapeRadius);
-          break;
-        case "11":
-          drawPentagon(scaledX, scaledY, shapeRadius);
-          break;
-        case "12":
-          drawArrow(scaledX, scaledY, shapeRadius);
-          break;
-        case "13":
-          drawChevron(scaledX, scaledY, shapeRadius);
-          break;
-        case "14":
-          drawHash(scaledX, scaledY, shapeRadius);
-          break;
-        case "15":
-          drawCrescent(scaledX, scaledY, shapeRadius);
-          break;
-        case "16":
-          drawEllipse(scaledX, scaledY, shapeRadius);
-          break;
-        case "17":
-          drawPieSlice(scaledX, scaledY, shapeRadius);
-          break;
-        case "18":
-          drawInfinity(scaledX, scaledY, shapeRadius);
-          break;
-        case "19":
-          drawBowtie(scaledX, scaledY, shapeRadius);
-          break;
-        case "20":
-          drawDoubleCircle(scaledX, scaledY, shapeRadius);
-          break;
-        case "21":
-          drawTrapezoid(scaledX, scaledY, shapeRadius);
-          break;
-        case "22":
-          drawSpiral(scaledX, scaledY, shapeRadius);
-          break;
-        case "23":
-          drawZigzag(scaledX, scaledY, shapeRadius);
-          break;
-        case "24":
-          drawBackSlash(scaledX, scaledY, shapeRadius);
-          break;
-        case "25":
-          drawCross(scaledX, scaledY, shapeRadius);
-          break;
-        case "26":
-          drawRhombus(scaledX, scaledY, shapeRadius);
-          break;
-        case "27":
-          drawTShape(scaledX, scaledY, shapeRadius);
-          break;
-        case "28":
-          drawBracket(scaledX, scaledY, shapeRadius);
-          break;
-        case "29":
-          drawLightning(scaledX, scaledY, shapeRadius);
-          break;
-        case "30":
-          drawStarburst(scaledX, scaledY, shapeRadius);
-          break;
+    if (isShapeCluster) {
+      const clusterKey = clusterStr === "0" ? "11" : clusterStr;
+
+      const shapeDrawMap = {
+        "1": drawTriangle,
+        "2": drawX,
+        "3": drawCircle,
+        "4": drawStar,
+        "5": () => drawHexagon(scaledX, scaledY, shapeRadius, colorValue),
+        "6": drawSquare,
+        "7": drawDiamond,
+        "8": drawPlus,
+        "9": drawMinus,
+        "10": drawSlash,
+        "11": drawPentagon,
+        "12": drawArrow,
+        "13": drawChevron,
+        "14": drawHash,
+        "15": drawCrescent,
+        "16": drawEllipse,
+        "17": drawPieSlice,
+        "18": drawInfinity,
+        "19": drawBowtie,
+        "20": drawDoubleCircle,
+        "21": drawTrapezoid,
+        "22": drawSpiral,
+        "23": drawZigzag,
+        "24": drawBackSlash,
+        "25": drawCross,
+        "26": drawRhombus,
+        "27": drawTShape,
+        "28": drawBracket,
+        "29": drawLightning,
+        "30": drawStarburst
+      };
+
+      const drawFn = shapeDrawMap[clusterKey];
+      if (drawFn) {
+        typeof drawFn === 'function' ? drawFn(scaledX, scaledY, shapeRadius) : drawFn();
       }
     } else {
-      // If cluster number is greater than 30, loop it back to numbers 1-30
-      const loopedClusterNumber = ((clusterNumber - 1) % maxShapeCluster) + 1;
-      drawClusterNumber(scaledX, scaledY, shapeRadius, loopedClusterNumber, colorValue);
+      const loopedCluster = ((clusterNum - 1) % maxShapeCluster) + 1;
+      drawClusterNumber(scaledX, scaledY, shapeRadius, loopedCluster, colorValue);
     }
-  } else if (window.selectedClusterView === "numbers") {
-    // Displaying the cluster number instead of a shape
+
+  } else if (clusterView === "numbers") {
     drawClusterNumber(scaledX, scaledY, shapeRadius, spot.cluster, colorValue);
   }
 }
@@ -1043,11 +773,11 @@ function drawClusterSVG(x, y, radius, spot, color) {
     } else {
       // If cluster number is greater than 30, loop it back to numbers 1-30
       const loopedClusterNumber = ((clusterNumber - 1) % maxShapeCluster) + 1;
-      return `<text x="${x}" y="${y}" font-size="${radius * 3}" font-family="Arial" stroke="none" text-anchor="middle" fill="${color}" dominant-baseline="central">${loopedClusterNumber}</text>`;
+      return `<text x="${x}" y="${y}" dy="${radius * 0.9}" font-size="${radius * 3}" font-family="Arial" stroke="none" text-anchor="middle" fill="${color}">${loopedClusterNumber}</text>`;
     }
   } else if (window.selectedClusterView === "numbers") {
 
-    return `<text x="${x}" y="${y}" font-size="${radius * 3}" font-family="Arial" stroke="none" text-anchor="middle" fill="${color}" dominant-baseline="central">${spot.cluster}</text>`;
+    return `<text x="${x}" y="${y}" dy="${radius * 0.9}" font-size="${radius * 3}" font-family="Arial" stroke="none" text-anchor="middle" fill="${color}">${spot.cluster}</text>`;
   }
 }
 
@@ -1117,9 +847,14 @@ function getStarSVG(x, y, r, color) {
   return `<polygon points="${points.join(" ")}" fill="none" stroke="${color}" />`;
 }
 
-function drawSquare(x, y, r) {
+function drawSquare(x, y, r, color='none', strokeWeightValue = 0.9) {
+  noFill();
+  if (color != 'none') stroke(color);
+  strokeWeight(strokeWeightValue);
+  beginShape();
   rectMode(CENTER);
   rect(x, y, r * 2, r * 2);
+  endShape(CLOSE);
 }
 
 function drawDiamond(x, y, r) {
@@ -1525,10 +1260,10 @@ function getStarburstSVG(x, y, radius, color) {
   return `<g>${lines.join("\n")}</g>`;
 }
 
-function drawHexagon(x, y, radius, color) {
+function drawHexagon(x, y, radius, color, strokeWeightValue = 0.9) {
   noFill();
   stroke(color);
-  strokeWeight(0.9);
+  strokeWeight(strokeWeightValue);
 
   beginShape();
   for (let i = 0; i < 6; i++) {

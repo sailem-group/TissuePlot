@@ -14,10 +14,6 @@ self.onmessage = async function (e) {
         Math.seedrandom(randomSeed);
         const umap = new UMAPConstructor({ random: Math.random });
 
-        // const rng = new Math.seedrandom('my-fixed-seed');
-        // const umap = new UMAPConstructor({ random: rng });
-
-
         // Perform UMAP fitting
         const embedding = umap.fit(geneExpressionData);
 
