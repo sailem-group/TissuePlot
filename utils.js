@@ -94,7 +94,7 @@ window.cellTypeToEmojiMap = {
     "Mesothelial cells": "Mesothelial_cell.svg",
     "Myofibroblasts": "Myofibroblast.svg",
     "T cells": "t-cell.svg",
-    "Tumour cells": "Cancer_cell.svg"
+    "Tumor cells": "Cancer_cell.svg"
 };
 window.selectedClusterView = "shapes";
 window.showDemoButton = "clicked";

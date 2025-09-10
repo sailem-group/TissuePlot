@@ -236,6 +236,7 @@ async function showSpotInfo(clickedHex, allSpots, index, barcode, barChartData, 
   showOverallCellTypeDistribution(allSpots);
   showOverallClusterDistribution(allSpots);
   if (window.mode === "genes") {
+    window.updateSelectedGeneLabel();
     document.getElementById("stackGeneClusterInfo").style.display = 'block';
     document.getElementById("stackGeneCellInfo").style.display = 'block';
     showGeneExpressionByClusterBarChart(allSpots);

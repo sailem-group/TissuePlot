@@ -120,6 +120,7 @@ document.getElementById('geneOptionsList').addEventListener('click', function (e
     selectAll.checked = selected.length === allBoxes.length;
 
     updateSelectedGenesFromCheckboxes();
+    window.updateSelectedGeneLabel();
     updateChartsIfInGeneMode();
   }, 0);
 });
@@ -134,6 +135,7 @@ document.getElementById('selectAllGenes').addEventListener('change', function ()
 
   resetGeneSelectionUI();
   updateSelectedGenesFromCheckboxes();
+  window.updateSelectedGeneLabel();
   updateChartsIfInGeneMode();
 });
 
@@ -172,6 +174,7 @@ document.addEventListener('click', function (e) {
     if (selectAllCheckbox) selectAllCheckbox.checked = isMainGeneItem;
 
     window.sketchOptions.selectedGenes = selectedGenes;
+    window.updateSelectedGeneLabel();
     updateChartsIfInGeneMode();
     document.getElementById('erasePopupGene').style.display = 'inline-block';
 
@@ -190,6 +193,7 @@ document.addEventListener('click', function (e) {
     if (selectAll) selectAll.checked = false;
 
     window.sketchOptions.selectedGenes = [selectedGene];
+    window.updateSelectedGeneLabel();
     updateChartsIfInGeneMode();
     document.getElementById('erasePopupGene').style.display = 'inline-block';
   }
@@ -224,6 +228,23 @@ document.getElementById('erasePopupGene').addEventListener('click', function () 
 
   this.style.display = 'none';
 });
+
+window.updateSelectedGeneLabel = function() {
+  const geneType = document.getElementById("SelectedGeneTypeForCluster");
+  const geneCellType = document.getElementById("SelectedGeneTypeForCell");
+  const selected = window.sketchOptions?.selectedGenes || [];
+
+  if (selected.length === 0) {
+    geneType.textContent = "N/A";
+    geneCellType.textContent = "N/A";
+  } else if (selected.length === 1) {
+    geneType.textContent = selected[0]; // Single gene
+    geneCellType.textContent = selected[0];
+  } else {
+    geneType.textContent = "Selected Gene(s)"; // Multiple
+    geneCellType.textContent = "Selected Gene(s)";
+  }
+}
 
 // ==== EXPRESSION THRESHOLD TOGGLE HANDLER ====
 document.querySelectorAll('.expression-threshold-option').forEach(item => {
