@@ -812,7 +812,7 @@ async function showDemo(demoValue = 'demo5', options = {}) {
     loadImageForDemo(demoValue);
     document.getElementById("umapTab").classList.remove("d-none");
     window.showDemoButton = "clicked"
-    window.uploadedEmojiFile == false;
+    window.uploadedEmojiFile = false;
 
     setSlidersForDemo(window.whichDemo);
 
@@ -2242,7 +2242,12 @@ function populateGeneDropdown(dataHeaders) {
 }
 
 window.generateVis = function () {
-    dataSpots = []
+    dataSpots = [];
+    if (!document.querySelector("#canvasContainer canvas")) {
+        // console.warn("Canvas not ready yet, delaying generateVis");
+        setTimeout(generateVis, 50);
+        return;
+    }
     if (!positionsData || positionsData.length == 0) {
         alert("Position Data missing")
         return;
