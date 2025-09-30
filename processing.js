@@ -2869,8 +2869,13 @@ class Spot {
         let summary = ``;
         if (mode == "cellComposition") {
             this.values.forEach((value, i) => {
-                summary += `<span class="legendColor" style="background-color:${value.color}"></span> ${dataHeaders[i]}: ${Number(value.value).toFixed(2)} <br/>`
-            })
+                const emoji = getEmojiSVGForCellType(value.label, 16); // 👈 new
+                summary += `
+                    <span class="legendColor" style="background-color:${value.color}"></span>
+                    <span class="celltype-emoji">${emoji}</span>
+                    ${dataHeaders[i]}: ${Number(value.value).toFixed(2)} <br/>
+                `;
+            });
 
         } else {
             this.values.forEach((value, i) => {
@@ -3204,5 +3209,52 @@ function generateCellTypeDropdown(cellTypes) {
         window.selectedCellTypesFromDropdown = null;
     });
 }
+
+// Build a tiny inline <svg> string from our pre-parsed vector (window.cellTypeVectors[cellType])
+function _svgFromVector(vec, size = 16) {
+  if (!vec || !vec.shapes || !vec.shapes.length) return "";
+  const vb = vec.viewBoxSize || 100;
+  const parts = vec.shapes.map(s => {
+    if (s.type === "path") {
+      // keep fills/strokes if present
+      const fill = (s.fill && s.fill !== "none") ? ` fill="${s.fill}"` : ` fill="none"`;
+      const stroke = s.stroke ? ` stroke="${s.stroke}"` : "";
+      const sw = s.strokeWidth ? ` stroke-width="${s.strokeWidth}"` : "";
+      const lc = s.linecap ? ` stroke-linecap="${s.linecap}"` : "";
+      return `<path d="${s.d}"${fill}${stroke}${sw}${lc}/>`;
+    } else if (s.type === "text") {
+      const fill = s.fill ? ` fill="${s.fill}"` : "";
+      const ff = s.fontFamily ? ` font-family="${s.fontFamily}"` : "";
+      const fs = s.fontSize ? ` font-size="${s.fontSize}"` : "";
+      return `<text x="${s.x}" y="${s.y}"${fill}${ff}${fs}>${s.text}</text>`;
+    }
+    return "";
+  }).join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${vb} ${vb}" style="vertical-align:middle">${parts}</svg>`;
+}
+
+// Pick the best source for the emoji and return a small inline SVG or an <img> fallback
+function getEmojiSVGForCellType(cellType, size = 16) {
+  if (!cellType) return "";
+  const norm = (typeof normalizeName === "function") ? normalizeName(cellType) : cellType;
+
+  // 1) uploaded/custom parsed vectors
+  const vecByOriginal = window.cellTypeVectors?.[cellType];
+  const vecByNorm = window.cellTypeVectors?.[norm];
+  const vec = vecByOriginal || vecByNorm;
+  if (vec) return _svgFromVector(vec, size);
+
+  // 2) pre-mapped smoothsvg assets
+  const map = window.cellTypeToEmojiMap || {};
+  const file = map[cellType] || map[norm];
+  if (file) {
+    // inline as <img> so it also works for static files
+    return `<img src="./smoothsvg/${file}" width="${size}" height="${size}" style="vertical-align:middle" alt="${cellType}">`;
+  }
+
+  // 3) nothing found
+  return "";
+}
+
 
 updateColorScalePreview();
